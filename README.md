@@ -15,6 +15,10 @@ A comical cartoon slap-'em-up starring a crew of sloths.
   | 7 | Lantern Valley (China) | cranes, golden monkeys, pagodas; boss: **The Dancing Dragon** |
   | 8 | Operation Nap Time (military base) | drones, helmet monkeys with water balloons; final boss: **General Bonkers** |
 
+  **Health & power-ups:** a heart (+50 HP) waits just past every gate and before each boss. Enemies sometimes drop leaf snacks (+10) or hearts. Each map has two glowing power-up bubbles, and crates sometimes hold one:
+  🛡️ Bubble Shield (no damage), 👊 Super Slap (double damage), 🔫 Rapid Fire (unlimited ammo), ☕ Coffee (super speed): each lasts 12 seconds.
+  🍌 Lucky Banana: an extra life. If you get snoozed you pop right back up.
+
   Secret: type **S L O T H** on the map-select screen to unlock every map.
 - **Slapdown Duel**: a 1v1 fighting mode, best of 3 rounds. Play against a friend on one keyboard, or against the CPU at three difficulty levels (Sleepy / Grumpy / Savage).
 

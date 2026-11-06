@@ -12,6 +12,7 @@
   const GRAV = 1900;
   const REST = SS.Art.SLOTH_REST;
   const SPECIAL_COST = 100;
+  SS.POWER_TIME = 12; // seconds a power-up lasts
 
   const MOVES = {
     slap: { startup: 0.07, active: 0.09, recover: 0.14, dmg: 6, kbx: 220, kby: -140, reach: 64, stun: 0.28, wind: -1.3, swing: 0.35 },
@@ -38,6 +39,9 @@
       this.ammoT = 0;
       this.gunT = 0;
       this.muzzleT = 0;
+      // Power-ups: name -> seconds left. lucky = extra lives (Lucky Banana).
+      this.powers = {};
+      this.lucky = 0;
       this.hp = def.hp;
       this.maxHp = def.hp;
       this.meter = 0;
@@ -63,6 +67,11 @@
     }
     get canSpecial() { return this.meter >= SPECIAL_COST; }
 
+    powerUp(type) {
+      if (type === 'lucky') this.lucky++;
+      else this.powers[type] = SS.POWER_TIME;
+    }
+
     // ------------------------------------------------------------------
     update(dt, ctrl, world) {
       this.t += dt;
@@ -72,6 +81,10 @@
       if (this.comboT <= 0) this.combo = 0;
       this.gunT -= dt;
       this.muzzleT -= dt;
+      for (const k of Object.keys(this.powers)) {
+        this.powers[k] -= dt;
+        if (this.powers[k] <= 0) delete this.powers[k];
+      }
       if (this.ammo < this.maxAmmo && this.state !== 'ko') {
         this.ammoT += dt;
         if (this.ammoT >= this.ammoRegen) { this.ammoT = 0; this.ammo++; }
@@ -112,11 +125,12 @@
         } else {
           this.state = 'idle';
           const accel = this.onGround ? 2600 : 1400;
-          this.vx = approach(this.vx, dir * this.def.speed, accel * dt);
+          const speed = this.def.speed * (this.powers.coffee ? 1.6 : 1);
+          this.vx = approach(this.vx, dir * speed, accel * (this.powers.coffee ? 1.6 : 1) * dt);
           if (dir && !this.autoFace) this.facing = dir;
         }
         if (ctrl.jumpP && this.onGround && this.state !== 'block') {
-          this.vy = -this.def.jump;
+          this.vy = -this.def.jump * (this.powers.coffee ? 1.12 : 1);
           this.onGround = false;
           SS.Audio.jump();
         }
@@ -186,6 +200,7 @@
     }
 
     tryShoot(world) {
+      if (this.powers.rapid) { this.startMove('shoot'); return; } // unlimited ammo
       if (this.ammo <= 0) {
         SS.Audio.emptyClick();
         world.fx.text(this.x, this.y - this.h - 10, '*click* out of ammo!', '#cccccc', 16);
@@ -236,9 +251,10 @@
         if (!U.overlap(box, target.box)) continue;
         this.hitList.add(target);
         const dir = omni ? (target.x >= this.x ? 1 : -1) : this.facing;
-        const dmg = h.dmg * this.def.power;
+        const sup = this.powers.superslap ? 1 : 0;
+        const dmg = h.dmg * this.def.power * (sup ? 2 : 1);
         const hit = {
-          dmg, kbx: h.kbx * dir, kby: h.kby, stun: h.stun, sleep: h.sleep || 0,
+          dmg, kbx: h.kbx * dir * (sup ? 1.5 : 1), kby: h.kby * (sup ? 1.3 : 1), stun: h.stun, sleep: h.sleep || 0,
           big: !!h.big, from: this, dir,
         };
         const result = target.takeHit(hit, world);
@@ -269,7 +285,7 @@
 
       if (m.kind === 'shoot') {
         if (!m.fired && m.t >= 0.04) { m.fired = true; this.fireBullet(world); }
-        if (m.t > 0.22) finish();
+        if (m.t > (this.powers.rapid ? 0.1 : 0.22)) finish();
       } else if (m.kind === 'slap' || m.kind === 'heavy') {
         const d = m.def;
         if (m.t >= d.startup && m.t < d.startup + d.active) {
@@ -335,6 +351,13 @@
     // ------------------------------------------------------------------
     takeHit(hit, world) {
       if (this.state === 'ko' || this.invuln > 0) return 'miss';
+      if (this.powers.shield) {
+        this.vx = hit.kbx * 0.2;
+        SS.Audio.tone(300, 0.2, 'sine', 0.3, 700);
+        world.fx.burst(this.x, this.y - this.h * 0.5, '#4cc9f0', 8, 200);
+        world.fx.text(this.x, this.y - this.h - 10, 'BOING! (shielded)', '#9bf6ff', 18);
+        return 'blocked';
+      }
       const facingAttacker = hit.from ? (hit.from.x - this.x) * this.facing > 0 : true;
       if (this.state === 'block' && facingAttacker && !hit.sleep) {
         this.hp -= hit.dmg * 0.12;
@@ -366,6 +389,20 @@
     }
 
     knockOut(world) {
+      if (this.lucky > 0) {
+        // Lucky Banana: pop right back up!
+        this.lucky--;
+        this.hp = this.maxHp * 0.5;
+        this.state = 'idle';
+        this.move = null;
+        this.sleep = 0;
+        this.invuln = 2;
+        this.vy = -500;
+        SS.Audio.win();
+        world.fx.burst(this.x, this.y - this.h * 0.5, '#ffd23f', 30, 400);
+        world.fx.text(this.x, this.y - this.h - 30, 'LUCKY BANANA! BACK UP!', '#ffd23f', 28);
+        return;
+      }
       this.hp = 0;
       this.state = 'ko';
       this.sleep = 0;
@@ -414,17 +451,49 @@
       const floor = world.floorBelow ? world.floorBelow(this.x, this.y) : world.groundY;
       SS.Art.shadow(ctx, this.x, floor, 34 * this.def.scale * Math.max(0.4, 1 - (floor - this.y) / 400));
       if (this.invuln > 0.1 && Math.floor(this.t * 20) % 2 === 0) return;
+      if (this.powers.superslap) {
+        // angry red aura
+        ctx.fillStyle = `rgba(255,77,109,${0.18 + Math.sin(this.t * 10) * 0.08})`;
+        ctx.beginPath();
+        ctx.ellipse(this.x, this.y - this.h * 0.5, this.w * 0.95, this.h * 0.62, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (this.powers.coffee && Math.abs(this.vx) > 40) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 3; i++) {
+          const ly = this.y - this.h * (0.25 + i * 0.25);
+          const lx = this.x - Math.sign(this.vx) * (this.w * 0.6 + i * 6);
+          ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - Math.sign(this.vx) * 26, ly); ctx.stroke();
+        }
+      }
       const busy = ['hurt', 'ko', 'sleep', 'block', 'win'].includes(this.state);
       const holdingGun = !busy && (this.move ? this.move.kind === 'shoot' : this.gunT > 0);
       SS.Art.sloth(ctx, {
         gun: holdingGun, muzzle: this.muzzleT > 0,
-        x: this.x, y: this.y, facing: this.facing, scale: this.def.scale, look: this.def.look,
+        x: this.x + (this.powers.coffee ? SS.U.rand(-1.2, 1.2) : 0), y: this.y,
+        facing: this.facing, scale: this.def.scale, look: this.def.look,
         t: this.t, pose, walk: this.walk, arm: this.armAngle(),
         slapping: this.isSwinging(),
         mouth: this.state === 'attack' ? 'open' : this.state === 'hurt' ? 'ouch' : undefined,
         flash: this.flash > 0,
         squash: this.move && this.move.kind === 'bellyflop' && this.move.phase === 'impact' ? 0.25 : 0,
       });
+      const sh = this.powers.shield;
+      if (sh && (sh > 2 || Math.floor(this.t * 8) % 2 === 0)) {
+        const r = this.h * 0.62 + Math.sin(this.t * 6) * 3;
+        ctx.fillStyle = 'rgba(76,201,240,0.18)';
+        ctx.strokeStyle = 'rgba(155,246,255,0.85)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - this.h * 0.5, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.beginPath();
+        ctx.ellipse(this.x - r * 0.4, this.y - this.h * 0.5 - r * 0.5, r * 0.18, r * 0.1, -0.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   };
 

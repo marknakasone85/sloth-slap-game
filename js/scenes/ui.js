@@ -177,6 +177,25 @@
         f.ammo > 0 ? '#ffb703' : '#aaa', align === 'right' ? 'right' : 'left');
     },
 
+    // Active power-ups as round icons with a countdown ring (+ Lucky Banana lives).
+    powers(ctx, x, y, f, t) {
+      const list = Object.keys(f.powers).map((k) => [k, f.powers[k] / SS.POWER_TIME]);
+      for (let i = 0; i < f.lucky; i++) list.push(['lucky', 1]);
+      list.forEach(([type, frac], i) => {
+        const cx = x + i * 40;
+        const c = SS.Art.POWER_COLORS[type];
+        if (frac < 0.2 && Math.floor(t * 6) % 2 === 0) return; // blink when almost over
+        ctx.fillStyle = 'rgba(43,25,61,0.85)';
+        ctx.beginPath(); ctx.arc(cx, y, 17, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = c;
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(cx, y, 15, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac); ctx.stroke();
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.arc(cx, y, 11, 0, Math.PI * 2); ctx.fill();
+        SS.Art.powerIcon(ctx, type, cx, y, 9);
+      });
+    },
+
     // Fade overlay helper
     fade(ctx, a) {
       if (a <= 0) return;

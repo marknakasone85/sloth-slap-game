@@ -135,6 +135,10 @@
       this.tone(900, 0.12, 'square', 0.12, 180);
       this.tone(90, 0.1, 'sine', 0.35, 40);
     },
+    powerUp() {
+      [392, 523, 659, 784, 1046].forEach((f, i) => this.tone(f, 0.12, 'square', 0.11, null, i * 0.05));
+      this.tone(200, 0.4, 'sine', 0.2, 800);
+    },
     emptyClick() { this.tone(1800, 0.03, 'square', 0.08); this.tone(1200, 0.03, 'square', 0.06, null, 0.06); },
     ammo() { [660, 880, 1100].forEach((f, i) => this.tone(f, 0.07, 'square', 0.1, null, i * 0.05)); },
 

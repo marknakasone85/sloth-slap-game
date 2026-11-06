@@ -44,6 +44,10 @@
     },
   };
   SS.ENEMY_TYPES = TYPES;
+  SS.POWER_TYPES = ['shield', 'superslap', 'rapid', 'coffee', 'lucky'];
+  SS.POWER_NAMES = {
+    shield: 'BUBBLE SHIELD!', superslap: 'SUPER SLAP!', rapid: 'RAPID FIRE!', coffee: 'COFFEE RUSH!', lucky: 'LUCKY BANANA! (extra life)',
+  };
 
   // How each kind of enemy splatters and what silly noise it makes when it goes down.
   const GORE = {
@@ -106,6 +110,12 @@
         world.fx.text(this.x + 30, cy - 40, g.word, '#ffffff', 26);
         SS.Audio.funnyDeath(g.sound);
         if (this.isBoss) SS.Audio.funnyDeath('boss');
+        // Sometimes drop a snack: leaf (+10) or, rarely, a heart (+50).
+        if (world.addPickup && !this.isBoss) {
+          const r = Math.random();
+          if (r < 0.07) world.addPickup('heart', this.x, world.groundY - 6);
+          else if (r < 0.37) world.addPickup('leaf', this.x, world.groundY - 6);
+        }
         this.alive = false;
         this.dying = 1.2;
         this.vx = hit.dir * U.rand(500, 700);
@@ -402,6 +412,7 @@
         world.fx.text(this.x, this.y - 60, 'CRUNCH!', '#ffd23f', 26);
         if (this.loot !== 'none') world.addPickup(this.loot, this.x, this.y - 30);
         world.addPickup('ammo', this.x + 34, this.y - 4);
+        if (Math.random() < 0.25) world.addPickup(U.choice(SS.POWER_TYPES), this.x - 34, this.y - 4);
       }
       return 'hit';
     }
@@ -440,6 +451,9 @@
       if (this.taken) return;
       if (this.type === 'banana') SS.Art.banana(ctx, this.x, this.y, this.t);
       else if (this.type === 'ammo') SS.Art.ammoBox(ctx, this.x, this.y, this.t);
+      else if (this.type === 'heart') SS.Art.heart(ctx, this.x, this.y, this.t);
+      else if (this.type === 'leaf') SS.Art.leaf(ctx, this.x, this.y, this.t);
+      else if (SS.POWER_TYPES.includes(this.type)) SS.Art.powerOrb(ctx, this.type, this.x, this.y, this.t);
       else SS.Art.hibiscus(ctx, this.x, this.y - 16, this.t);
     }
   };

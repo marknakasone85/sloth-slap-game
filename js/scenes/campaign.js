@@ -23,7 +23,7 @@
       this.showControls = false;
       this.showStrip = SS.Save.get('keyStrip', true);
 
-      this.player = new SS.Fighter(this.def, 120, { team: 'player', mercy: 0.6 });
+      this.player = new SS.Fighter(this.def, 120, { team: 'player', mercy: 0.8 });
       this.enemies = this.L.enemies.map((e) => new SS.Enemy(e.type, e.x, e.y));
       this.crates = this.L.crates.map((c) => new SS.Crate(c.x, c.loot));
       this.gongs = (this.L.gongs || []).map((g) => new SS.Gong(g.id, g.x));
@@ -38,6 +38,21 @@
         this.arenaX = this.L.boss.x - 380;
       }
       this.bossAwake = false;
+      this.placeHelpers();
+    }
+
+    // Hearts right after every gate (where you respawn) and before the boss,
+    // plus two power-up bubbles per map (a different pair on each map).
+    placeHelpers() {
+      const add = (type, x) => this.pickups.push(new SS.Pickup(type, x, this.groundY - 6));
+      for (const g of this.gates) add('heart', g.x + 140);
+      if (this.boss) add('heart', this.arenaX - 120);
+      const types = SS.POWER_TYPES;
+      [0.3, 0.62].forEach((f, i) => {
+        let x = this.L.length * f;
+        for (const g of this.gates.concat(this.gongs)) if (Math.abs(g.x - x) < 90) x += 160;
+        add(types[(this.levelIndex * 2 + i) % types.length], x);
+      });
     }
 
     enter() { SS.Audio.playMusic(this.L.music); }
@@ -144,7 +159,20 @@
         pk.update(dt);
         if (!pk.taken && U.overlap(pk.box, p.box) && p.state !== 'ko') {
           pk.taken = true;
-          if (pk.type === 'ammo') {
+          if (pk.type === 'heart') {
+            p.heal(50);
+            SS.Audio.heal();
+            this.fx.text(pk.x, pk.y - 50, '+50 HP', '#ff4d6d', 24);
+          } else if (pk.type === 'leaf') {
+            p.heal(10);
+            SS.Audio.pickup();
+            this.fx.text(pk.x, pk.y - 40, 'leafy snack +10', '#52e07a', 18);
+          } else if (SS.POWER_TYPES.includes(pk.type)) {
+            p.powerUp(pk.type);
+            SS.Audio.powerUp();
+            this.fx.burst(pk.x, pk.y - 24, SS.Art.POWER_COLORS[pk.type], 20, 300);
+            this.fx.text(pk.x, pk.y - 70, SS.POWER_NAMES[pk.type], SS.Art.POWER_COLORS[pk.type], 26);
+          } else if (pk.type === 'ammo') {
             p.ammo = p.maxAmmo;
             SS.Audio.ammo();
             this.fx.text(pk.x, pk.y - 40, 'AMMO FULL!', '#ffb703', 20);
@@ -242,7 +270,7 @@
 
     // Come back at the last opened gate with full health (costs some score).
     respawn() {
-      const p = new SS.Fighter(this.def, this.checkpoint, { team: 'player', mercy: 0.6 });
+      const p = new SS.Fighter(this.def, this.checkpoint, { team: 'player', mercy: 0.8 });
       p.invuln = 1.5;
       p.meter = 50;
       this.player = p;
@@ -337,6 +365,7 @@
       UI.text(ctx, full ? 'SPECIAL! (H / L)' : 'special', 256, 70, 11, full ? '#00f5d4' : '#aaa');
       UI.text(ctx, `${Math.ceil(p.hp)}`, 256, 51, 14, '#fff');
       UI.ammo(ctx, 26, 90, p);
+      UI.powers(ctx, 356, 30, p, this.t);
 
       UI.panel(ctx, W - 232, 10, 220, 58);
       UI.outlineText(ctx, `SCORE ${this.score}`, W - 122, 28, 18, '#ffffff', 'center');

@@ -344,6 +344,103 @@
     ctx.restore();
   };
 
+  // Health heart (+50)
+  A.heart = function (ctx, x, y, t = 0) {
+    const pulse = 1 + Math.sin(t * 6) * 0.08;
+    ctx.save();
+    ctx.translate(x, y - 20 + Math.sin(t * 3) * 3);
+    ctx.scale(pulse, pulse);
+    ctx.fillStyle = 'rgba(255,77,109,0.25)';
+    el(ctx, 0, 0, 22, 22);
+    ctx.fillStyle = '#ff4d6d';
+    ctx.beginPath();
+    ctx.moveTo(0, 12);
+    ctx.bezierCurveTo(-22, -2, -12, -20, 0, -8);
+    ctx.bezierCurveTo(12, -20, 22, -2, 0, 12);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-2, -8, 4, 12);
+    ctx.fillRect(-6, -4, 12, 4);
+    ctx.restore();
+  };
+
+  // Leaf snack (+10) dropped by enemies
+  A.leaf = function (ctx, x, y, t = 0) {
+    ctx.save();
+    ctx.translate(x, y - 14 + Math.sin(t * 4) * 3);
+    ctx.rotate(Math.sin(t * 2) * 0.3);
+    ctx.fillStyle = '#52b788';
+    ctx.beginPath();
+    ctx.moveTo(-12, 0);
+    ctx.quadraticCurveTo(0, -12, 12, 0);
+    ctx.quadraticCurveTo(0, 12, -12, 0);
+    ctx.fill();
+    ctx.strokeStyle = '#2d6a4f';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(-12, 0); ctx.lineTo(12, 0); ctx.stroke();
+    ctx.restore();
+  };
+
+  // Power-up bubbles. Also used (small) for the HUD icons.
+  A.POWER_COLORS = { shield: '#4cc9f0', superslap: '#ff4d6d', rapid: '#ffb703', coffee: '#b07d50', lucky: '#ffd23f' };
+  A.powerIcon = function (ctx, type, x, y, r) {
+    ctx.save();
+    ctx.translate(x, y);
+    const k = r / 16;
+    ctx.scale(k, k);
+    if (type === 'shield') {
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(0, -10); ctx.lineTo(9, -6); ctx.quadraticCurveTo(8, 6, 0, 11);
+      ctx.quadraticCurveTo(-8, 6, -9, -6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#4cc9f0';
+      ctx.fillRect(-1.5, -6, 3, 12);
+    } else if (type === 'superslap') {
+      // open palm
+      ctx.fillStyle = '#ffffff';
+      el(ctx, 0, 3, 7, 7);
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.roundRect(-7 + i * 3.8, -10, 3, 10, 1.5); ctx.fill(); }
+      ctx.beginPath(); ctx.roundRect(5, -1, 7, 3, 1.5); ctx.fill();
+      SS.UI.text(ctx, 'x2', 0, 4, 7, '#ff4d6d', 'center');
+    } else if (type === 'rapid') {
+      ctx.fillStyle = '#ffffff';
+      for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.roundRect(i * 6 - 2, -9, 4.5, 16, 2.2); ctx.fill(); }
+    } else if (type === 'coffee') {
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.roundRect(-7, -4, 12, 12, 2); ctx.fill();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.arc(6, 2, 3.5, -1.4, 1.4); ctx.stroke();
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(-3, -6); ctx.quadraticCurveTo(-6, -9, -3, -12); ctx.moveTo(2, -6); ctx.quadraticCurveTo(-1, -9, 2, -12); ctx.stroke();
+    } else if (type === 'lucky') {
+      ctx.rotate(-0.4);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 2, 10, 0.3, Math.PI - 0.3);
+      ctx.arc(0, -4, 12, Math.PI - 0.5, 0.5, true);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  };
+  A.powerOrb = function (ctx, type, x, y, t = 0) {
+    const c = A.POWER_COLORS[type] || '#fff';
+    const cy = y - 24 + Math.sin(t * 3) * 4;
+    ctx.save();
+    ctx.globalAlpha = 0.35 + Math.sin(t * 5) * 0.15;
+    ctx.fillStyle = c;
+    el(ctx, x, cy, 26, 26);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = c;
+    el(ctx, x, cy, 18, 18);
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, cy, 18, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    el(ctx, x - 6, cy - 8, 5, 3, -0.5);
+    A.powerIcon(ctx, type, x, cy, 14);
+    ctx.restore();
+  };
+
   A.ammoBox = function (ctx, x, y, t = 0) {
     ctx.save();
     ctx.translate(x, y + Math.sin(t * 4 + 2) * 3);
