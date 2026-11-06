@@ -171,6 +171,25 @@
           this.wobble(320, 0.7, 'sawtooth', 0.15, 7, 25, 160);
           this.wobble(240, 0.6, 'sawtooth', 0.1, 7, 20, 120, 0.4);
           break;
+        case 'boing':
+          this.tone(180, 0.3, 'sine', 0.35, 900);
+          this.tone(320, 0.18, 'triangle', 0.3, 140, 0.28);
+          break;
+        case 'baa':
+          this.wobble(540, 0.55, 'sawtooth', 0.12, 28, 45, 420);
+          break;
+        case 'squeak':
+          this.tone(1800, 0.08, 'square', 0.1, 2600);
+          this.tone(2000, 0.1, 'square', 0.08, 3000, 0.1);
+          break;
+        case 'rawr':
+          this.wobble(150, 0.65, 'sawtooth', 0.2, 24, 35, 80);
+          this.noise(0.4, 0.4, 500, 0.8);
+          break;
+        case 'beep':
+          [1400, 1000, 700].forEach((f, i) => this.tone(f, 0.08, 'square', 0.1, null, i * 0.09));
+          this.wobble(260, 0.35, 'sawtooth', 0.1, 40, 50, 60, 0.27);
+          break;
         case 'boss':
           this.tone(1200, 0.9, 'sine', 0.3, 120); // slide whistle down...
           this.noise(0.5, 1, 300, 0.5, 0.8);      // ...KABOOM
@@ -216,6 +235,26 @@
         bpm: 120,
         bass: [41, null, 48, null, 41, null, 48, null, 43, null, 50, null, 36, null, 43, null],
         lead: [65, null, 65, 67, 69, null, 65, null, 72, null, 70, 69, 67, null, null, null],
+      },
+      mountain: {
+        bpm: 112,
+        bass: [43, null, 50, null, 47, null, 50, null, 45, null, 52, null, 50, null, 47, null],
+        lead: [67, 71, 74, 79, null, 74, 71, null, 69, 72, 76, 81, null, 76, 72, null],
+      },
+      castle: {
+        bpm: 100,
+        bass: [45, null, null, 45, 52, null, null, 52, 43, null, null, 43, 50, null, 52, null],
+        lead: [69, null, 72, 74, 76, null, 74, 72, 71, null, 67, 69, 71, null, null, null],
+      },
+      dino: {
+        bpm: 126,
+        bass: [36, null, 36, 43, null, 36, 41, null, 36, null, 36, 43, null, 41, 39, null],
+        lead: [60, null, 63, null, 65, 67, null, 63, 60, null, 58, null, 60, null, null, null],
+      },
+      space: {
+        bpm: 120,
+        bass: [41, null, 41, null, 44, null, 44, null, 39, null, 39, null, 46, null, 44, null],
+        lead: [77, 80, 84, 80, 77, 80, 84, 87, 75, 79, 82, 79, 74, 77, 82, 86],
       },
       duel: {
         bpm: 138,

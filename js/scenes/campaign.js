@@ -18,6 +18,7 @@
       this.L = SS.LEVELS[opts.level];
       this.net = !!opts.net;
       this.groundY = SS.GROUND_Y;
+      this.gravity = this.L.gravity || 1; // space station = low gravity
       this.fx = new SS.FX();
       if (this.net) { SS.Sync.wrapFX(this.fx); SS.Sync.installAudioHook(); }
       this.platforms = this.L.platforms || [];
@@ -505,6 +506,7 @@
       ctx.save();
       ctx.translate(-Math.round(this.camX) + sh.x, sh.y);
       for (const pl of this.platforms) SS.drawPlatform(ctx, pl);
+      SS.drawProps(ctx, this.L, this.groundY, this.t);
       this.fx.drawDecals(ctx);
       if (!this.boss || !this.boss.alive) SS.Art.hammock(ctx, this.goalX + 60, this.groundY, this.t);
       for (const g of this.gongs) g.draw(ctx);
@@ -532,6 +534,13 @@
       if (this.net && this.state === 'play' && this.t < 6) {
         SS.UI.outlineText(ctx, `Wi-Fi game - join code ${SS.Net.code}`, W / 2, 136, 14, '#9bf6ff', 'center');
       }
+    }
+  };
+
+  // Map decorations such as the time machine (shared with the Wi-Fi guest view)
+  SS.drawProps = function (ctx, L, groundY, t) {
+    for (const p of L.props || []) {
+      if (p.type === 'timeMachine') SS.Art.timeMachine(ctx, p.x, groundY, t);
     }
   };
 

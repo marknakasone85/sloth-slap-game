@@ -13,7 +13,12 @@ A comical cartoon slap-'em-up starring a crew of sloths.
   | 5 | Crab Cove | boss: **Big Pinchy the Super Crab** |
   | 6 | Pizza Piazza (Italy) | pigeons, pizza-flinging chef monkeys, leaning tower |
   | 7 | Lantern Valley (China) | cranes, golden monkeys, pagodas; boss: **The Dancing Dragon** |
-  | 8 | Operation Nap Time (military base) | drones, helmet monkeys with water balloons; final boss: **General Bonkers** |
+  | 8 | Operation Nap Time (military base) | drones, helmet monkeys with water balloons; boss: **General Bonkers** |
+  | 9 | Mount Snoozemore (mountain) | charging goats, eagles, snowball monkeys, boxing kangaroos; boss: **Big Fluffy the Yeti** |
+  | 10 | Castle Kerfuffle (castle) | bats, knight monkeys with cannonballs, boxing kangaroos; boss: **King Kanga** |
+  | 11 | Lava Lagoon (inside the volcano) | fire beetles, bouncing lava blobs, fire bats, kangaroos |
+  | 12 | Jurassic Jog (time machine) | charging raptors, pterodactyls, rock-throwing cave monkeys; boss: **Tiny-Arms Rex** |
+  | 13 | Space Station Zzz (low gravity!) | alien blobs, astronaut monkeys, astro-kangaroos, mini UFOs; final boss: **The Big UFO** |
 
   **Health & power-ups:** a heart (+50 HP) waits just past every gate and before each boss. Enemies sometimes drop leaf snacks (+10) or hearts. Each map has two glowing power-up bubbles, and crates sometimes hold one:
   🛡️ Bubble Shield (no damage), 👊 Super Slap (double damage), 🔫 Rapid Fire (unlimited ammo), ☕ Coffee (super speed): each lasts 12 seconds.

@@ -229,20 +229,35 @@
       this.w = opts.w || 320;
       this.h = opts.h || 52;
       this.gap = opts.gap || 14;
+      this.cols = opts.cols || 1;       // 2+ = a grid (arrow keys move in all directions)
+      this.gapX = opts.gapX || 20;
+      this.fontSize = opts.fontSize || 22;
       this.sel = 0;
       this.t = 0;
     }
 
     rect(i) {
-      return { x: this.x - this.w / 2, y: this.y + i * (this.h + this.gap), w: this.w, h: this.h };
+      const c = i % this.cols, r = Math.floor(i / this.cols);
+      const total = this.cols * this.w + (this.cols - 1) * this.gapX;
+      return { x: this.x - total / 2 + c * (this.w + this.gapX), y: this.y + r * (this.h + this.gap), w: this.w, h: this.h };
     }
 
     // Returns the chosen item (or null).
     update(dt) {
       this.t += dt;
       const n = this.items.length;
-      if (SS.Menu.up()) { this.sel = (this.sel - 1 + n) % n; SS.Audio.select(); }
-      if (SS.Menu.down()) { this.sel = (this.sel + 1) % n; SS.Audio.select(); }
+      if (this.cols > 1) {
+        const c = this.cols;
+        let s = this.sel;
+        if (SS.Menu.up() && s - c >= 0) s -= c;
+        if (SS.Menu.down() && s + c < n) s += c;
+        if (SS.Menu.left() && s % c > 0) s--;
+        if (SS.Menu.right() && s % c < c - 1 && s + 1 < n) s++;
+        if (s !== this.sel) { this.sel = s; SS.Audio.select(); }
+      } else {
+        if (SS.Menu.up()) { this.sel = (this.sel - 1 + n) % n; SS.Audio.select(); }
+        if (SS.Menu.down()) { this.sel = (this.sel + 1) % n; SS.Audio.select(); }
+      }
       const p = SS.Input.pointer;
       for (let i = 0; i < n; i++) {
         const r = this.rect(i);
@@ -267,7 +282,7 @@
         ctx.lineWidth = 3;
         ctx.stroke();
         const label = typeof item.label === 'function' ? item.label() : item.label;
-        UI.text(ctx, label, r.x + r.w / 2, r.y + r.h / 2 + bob + 1, 22, on ? '#2b193d' : '#ffffff', 'center');
+        UI.text(ctx, label, r.x + r.w / 2, r.y + r.h / 2 + bob + 1, this.fontSize, on ? '#2b193d' : '#ffffff', 'center');
       });
     }
   };

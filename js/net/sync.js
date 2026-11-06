@@ -78,7 +78,7 @@
           });
         }),
         en: scene.enemies.map((e) => [e.uid, e.type, r1(e.x), r1(e.y), e.facing, e.flash > 0 ? 1 : 0, e.alive ? 1 : 0,
-          r2(e.spin), r2(e.throwing || 0), e.hurt > 0.8 ? 1 : 0, r2(e.t)]),
+          r2(e.spin), r2(e.throwing || 0), e.hurt > 0.8 ? 1 : 0, r2(e.t), e.visualFlags()]),
         cr: scene.crates.map((c) => [c.alive ? 1 : 0, r2(c.wobble), c.flash > 0 ? 1 : 0]),
         go: scene.gongs.map((g) => [g.done ? 1 : 0, r2(g.ring)]),
         ga: scene.gates.map((g) => [g.opened ? 1 : 0, r2(g.lift)]),

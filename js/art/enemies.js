@@ -173,6 +173,28 @@
       ctx.ellipse(6, -108, 11, 11, 0, 0, Math.PI * 2);
       ctx.ellipse(15, -102, 9, 9, 0, 0, Math.PI * 2);
       ctx.fill();
+    } else if (hat === 'knight') {
+      ctx.fillStyle = C('#9aa3ad');
+      ctx.beginPath();
+      ctx.arc(4, -76, 22, Math.PI, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(-18, -78, 44, 8);
+      ctx.fillStyle = C('#2b2b2b');
+      ctx.fillRect(4, -82, 20, 3);
+      ctx.fillStyle = C('#e63946');
+      ctx.beginPath();
+      ctx.moveTo(-2, -96); ctx.quadraticCurveTo(-26, -112, -30, -88); ctx.quadraticCurveTo(-14, -98, -2, -92);
+      ctx.fill();
+    } else if (hat === 'astro') {
+      ctx.fillStyle = C('rgba(190,230,255,0.25)');
+      ctx.beginPath(); ctx.arc(6, -72, 28, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = C('rgba(220,245,255,0.9)');
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(6, -72, 28, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = C('#cccccc');
+      ctx.beginPath(); ctx.moveTo(6, -100); ctx.lineTo(6, -112); ctx.stroke();
+      ctx.fillStyle = C('#ff4d6d');
+      ctx.beginPath(); ctx.arc(6, -114, 4, 0, Math.PI * 2); ctx.fill();
     } else if (hat === 'helmet' || hat === 'general') {
       ctx.fillStyle = C(hat === 'general' ? '#3c4a22' : '#556b2f');
       ctx.beginPath();

@@ -41,6 +41,129 @@
     },
   };
 
+  Object.assign(THEMES, {
+    mountain: {
+      sky: ['#8ecae6', '#eef6fb'], far: '#9db4c8', mid: '#2d6a4f',
+      ground: '#7d8597', top: '#f8fbff', deco: 'pine', orb: '#ffffff', farStyle: 'snowpeaks', snow: true,
+    },
+    castle: {
+      sky: ['#2b2d52', '#c06c84'], far: '#4a4e7a', mid: '#6c6f80',
+      ground: '#55565f', top: '#6b8f5e', deco: 'castle', orb: '#f8f4e3', farStyle: 'castle', bricks: true,
+    },
+    lava: {
+      sky: ['#1a0b0b', '#8c2f1b'], far: '#3a1512', mid: '#2a100e',
+      ground: '#2b1d1d', top: '#ff7b00', deco: 'lavafall', orb: '#ff9f1c', farStyle: 'volcanoes',
+      lava: true, embers: true, noClouds: true,
+    },
+    dino: {
+      sky: ['#f6bd60', '#fdf0d5'], far: '#8a9a5b', mid: '#386641',
+      ground: '#7f5539', top: '#6a994e', deco: 'fern', orb: '#fff3b0', farStyle: 'volcanoes',
+    },
+    space: {
+      sky: ['#05060f', '#1b1f3b'], far: '#2a2f55', mid: '#5c677d',
+      ground: '#3d4457', top: '#9aa5b8', deco: 'station', orb: '#c77dff', farStyle: 'stars',
+      noClouds: true, metal: true, noOrb: true,
+    },
+  });
+
+  // ---------- Mountain ----------
+  function pine(ctx, x, base, h, c) {
+    ctx.fillStyle = '#4a2c17';
+    ctx.fillRect(x - 6, base - h * 0.3, 12, h * 0.3);
+    for (let i = 0; i < 3; i++) {
+      const w = 60 - i * 14, y = base - h * 0.25 - i * h * 0.24;
+      ctx.fillStyle = c;
+      ctx.beginPath(); ctx.moveTo(x - w, y); ctx.lineTo(x, y - h * 0.38); ctx.lineTo(x + w, y); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#f8fbff';
+      ctx.beginPath(); ctx.moveTo(x - w * 0.35, y - h * 0.25); ctx.lineTo(x, y - h * 0.38); ctx.lineTo(x + w * 0.35, y - h * 0.25); ctx.closePath(); ctx.fill();
+    }
+  }
+
+  // ---------- Castle ----------
+  function castle(ctx, x, base, h, i, t) {
+    if (i % 2 === 0) {
+      ctx.fillStyle = '#6c6f80';
+      ctx.fillRect(x - 34, base - h, 68, h);
+      for (let k = 0; k < 4; k++) ctx.fillRect(x - 34 + k * 20, base - h - 14, 12, 14);
+      ctx.fillStyle = '#2b2d52';
+      ctx.beginPath(); ctx.arc(x, base - h + 40, 9, Math.PI, 0); ctx.rect(x - 9, base - h + 40, 18, 18); ctx.fill();
+      ctx.fillStyle = i % 4 === 0 ? '#e63946' : '#3a86ff';
+      ctx.beginPath(); ctx.moveTo(x - 16, base - h + 70); ctx.lineTo(x + 16, base - h + 70); ctx.lineTo(x + 16, base - h + 130); ctx.lineTo(x, base - h + 116); ctx.lineTo(x - 16, base - h + 130); ctx.fill();
+      ctx.fillStyle = '#ffd23f';
+      SS.FX.star(ctx, x, base - h + 92, 8);
+    } else {
+      ctx.fillStyle = '#5d606f';
+      ctx.fillRect(x - 70, base - h * 0.55, 140, h * 0.55);
+      for (let k = 0; k < 7; k++) ctx.fillRect(x - 70 + k * 21, base - h * 0.55 - 10, 12, 10);
+      // flickering torch
+      ctx.fillStyle = '#5c3d2e';
+      ctx.fillRect(x - 3, base - h * 0.35, 6, 18);
+      const fl = 1 + Math.sin(t * 20 + i) * 0.2;
+      ctx.fillStyle = '#ff7b00';
+      ctx.beginPath(); ctx.ellipse(x, base - h * 0.35 - 6, 6 * fl, 10 * fl, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffd23f';
+      ctx.beginPath(); ctx.ellipse(x, base - h * 0.35 - 4, 3, 5, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // ---------- Lava cave ----------
+  function lavafall(ctx, x, base, h, i, t) {
+    ctx.fillStyle = '#2a100e';
+    ctx.beginPath(); ctx.moveTo(x - 50, base); ctx.lineTo(x - 30, base - h); ctx.lineTo(x + 30, base - h - 20); ctx.lineTo(x + 50, base); ctx.closePath(); ctx.fill();
+    if (i % 2 === 0) {
+      const g = ctx.createLinearGradient(0, base - h, 0, base);
+      g.addColorStop(0, '#ffd23f'); g.addColorStop(1, '#ff4d00');
+      ctx.fillStyle = g;
+      const wob = Math.sin(t * 4 + i) * 3;
+      ctx.fillRect(x - 8 + wob, base - h, 16, h);
+      ctx.fillStyle = 'rgba(255,123,0,0.25)';
+      ctx.beginPath(); ctx.ellipse(x, base - 4, 46, 12, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // ---------- Dinosaur times ----------
+  function fern(ctx, x, base, h, i, t) {
+    ctx.fillStyle = '#6b4226';
+    ctx.fillRect(x - 7, base - h * 0.6, 14, h * 0.6);
+    ctx.fillStyle = i % 2 ? '#386641' : '#4f772d';
+    const sway = Math.sin(t * 1.3 + i) * 0.1;
+    for (let k = 0; k < 7; k++) {
+      ctx.save();
+      ctx.translate(x, base - h * 0.6);
+      ctx.rotate(-Math.PI + (k / 6) * Math.PI + sway);
+      ctx.beginPath(); ctx.ellipse(48, 0, 52, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // ---------- Space station ----------
+  function station(ctx, x, base, h, i, t) {
+    ctx.fillStyle = '#4a5468';
+    ctx.fillRect(x - 60, base - h, 120, h);
+    ctx.fillStyle = '#5c677d';
+    ctx.fillRect(x - 60, base - h, 120, 10);
+    if (i % 2 === 0) {
+      // porthole with stars and a planet outside
+      ctx.fillStyle = '#05060f';
+      ctx.beginPath(); ctx.arc(x, base - h * 0.6, 34, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      for (let k = 0; k < 6; k++) ctx.fillRect(x - 24 + hash(i * 9 + k) * 48, base - h * 0.6 - 24 + hash(i * 5 + k) * 48, 2, 2);
+      ctx.fillStyle = '#4cc9f0';
+      ctx.beginPath(); ctx.arc(x + 12, base - h * 0.6 + 10, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#9aa5b8';
+      ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(x, base - h * 0.6, 34, 0, Math.PI * 2); ctx.stroke();
+    } else {
+      // console with blinking lights
+      ctx.fillStyle = '#2b3245';
+      ctx.fillRect(x - 46, base - h * 0.55, 92, 50);
+      for (let k = 0; k < 8; k++) {
+        ctx.fillStyle = Math.floor(t * 3 + k * 1.7 + i) % 3 === 0 ? '#52e07a' : k % 2 ? '#ff4d6d' : '#ffd23f';
+        ctx.fillRect(x - 38 + (k % 4) * 22, base - h * 0.55 + 10 + Math.floor(k / 4) * 18, 10, 8);
+      }
+    }
+  }
+
   // ---------- Italy ----------
   function italy(ctx, x, base, h, i) {
     if (i % 5 === 0) {
@@ -217,6 +340,67 @@
   function farLayer(ctx, th, camX, t, groundY) {
     const style = th.farStyle || 'hills';
     ctx.fillStyle = th.far;
+    if (style === 'stars') {
+      for (let i = 0; i < 90; i++) {
+        const x = ((hash(i) * 2400 - camX * 0.05) % W + W) % W, y = hash(i + 300) * (groundY - 60);
+        ctx.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(t * (1 + hash(i + 7) * 2) + i));
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x, y, hash(i + 50) < 0.15 ? 3 : 2, hash(i + 50) < 0.15 ? 3 : 2);
+      }
+      ctx.globalAlpha = 1;
+      // ringed planet
+      const px = 760 - camX * 0.02, py = 110;
+      ctx.fillStyle = '#c77dff';
+      ctx.beginPath(); ctx.arc(px, py, 48, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.beginPath(); ctx.arc(px - 14, py - 14, 22, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#ffd6a5';
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.ellipse(px, py, 84, 18, -0.3, 0, Math.PI * 2); ctx.stroke();
+      // station trusses
+      ctx.strokeStyle = th.far;
+      ctx.lineWidth = 6;
+      const off = camX * 0.25;
+      for (let x = -(off % 160); x < W + 160; x += 160) {
+        ctx.beginPath(); ctx.moveTo(x, groundY - 150); ctx.lineTo(x + 80, groundY - 90); ctx.lineTo(x + 160, groundY - 150); ctx.stroke();
+      }
+      ctx.beginPath(); ctx.moveTo(0, groundY - 150); ctx.lineTo(W, groundY - 150); ctx.stroke();
+      return;
+    }
+    if (style === 'snowpeaks' || style === 'volcanoes') {
+      for (let layer = 0; layer < 2; layer++) {
+        const par = 0.1 + layer * 0.12, sp = style === 'volcanoes' ? 320 : 200;
+        const off = camX * par, first = Math.floor(off / sp) - 1;
+        for (let i = first; i < first + W / sp + 3; i++) {
+          const x = i * sp - off + hash(i + layer * 30) * 70;
+          const ph = (style === 'volcanoes' ? 170 : 210) + hash(i * 3 + layer) * 120 - layer * 50;
+          const w = style === 'volcanoes' ? 150 : 110;
+          ctx.fillStyle = layer ? th.far : 'rgba(255,255,255,0.35)';
+          if (layer === 0) ctx.fillStyle = style === 'volcanoes' ? 'rgba(120,60,40,0.35)' : '#c9d8e6';
+          ctx.beginPath();
+          if (style === 'volcanoes') {
+            ctx.moveTo(x - w, groundY); ctx.lineTo(x - 22, groundY - ph); ctx.lineTo(x + 22, groundY - ph); ctx.lineTo(x + w, groundY);
+          } else {
+            ctx.moveTo(x - w, groundY); ctx.lineTo(x, groundY - ph); ctx.lineTo(x + w, groundY);
+          }
+          ctx.closePath(); ctx.fill();
+          if (style === 'snowpeaks') {
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.moveTo(x - w * 0.28, groundY - ph * 0.72); ctx.lineTo(x, groundY - ph);
+            ctx.lineTo(x + w * 0.28, groundY - ph * 0.72); ctx.lineTo(x + 8, groundY - ph * 0.78); ctx.lineTo(x - 6, groundY - ph * 0.7);
+            ctx.closePath(); ctx.fill();
+          } else if (layer === 1) {
+            // smoke puffs
+            for (let k = 0; k < 3; k++) {
+              const sy = ((t * 18 + k * 40 + i * 13) % 120);
+              ctx.fillStyle = `rgba(90,80,80,${0.5 - sy / 260})`;
+              ctx.beginPath(); ctx.arc(x + Math.sin(t + k) * 10, groundY - ph - 10 - sy, 14 + sy * 0.15, 0, Math.PI * 2); ctx.fill();
+            }
+          }
+        }
+      }
+      return;
+    }
     if (style === 'peaks') {
       // misty karst mountains
       for (let layer = 0; layer < 2; layer++) {
@@ -247,7 +431,20 @@
     }
     ctx.lineTo(W, groundY);
     ctx.fill();
-    if (style === 'cypress') {
+    if (style === 'castle') {
+      // a big castle on the far hills
+      const off = camX * 0.12;
+      for (let x = -(off % 900) + 200; x < W + 400; x += 900) {
+        ctx.fillStyle = '#3a3d66';
+        ctx.fillRect(x - 120, groundY - 250, 240, 120);
+        for (const tx of [-130, -40, 50, 130]) {
+          ctx.fillRect(x + tx - 18, groundY - 300, 36, 170);
+          ctx.beginPath(); ctx.moveTo(x + tx - 24, groundY - 300); ctx.lineTo(x + tx, groundY - 345); ctx.lineTo(x + tx + 24, groundY - 300); ctx.fill();
+        }
+        ctx.fillStyle = '#ffd23f';
+        for (const wx of [-60, 0, 60]) ctx.fillRect(x + wx - 5, groundY - 220, 10, 16);
+      }
+    } else if (style === 'cypress') {
       ctx.fillStyle = '#3d5a3a';
       const sp = 70, off = camX * 0.2, first = Math.floor(off / sp) - 1;
       for (let i = first; i < first + W / sp + 3; i++) {
@@ -351,16 +548,18 @@
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
-    ctx.fillStyle = th.orb;
-    ctx.globalAlpha = 0.9;
-    ctx.beginPath();
-    ctx.arc(780, 90, 46, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
+    if (!th.noOrb) {
+      ctx.fillStyle = th.orb;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.arc(780, 90, 46, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
 
     // drifting clouds
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 5 && !th.noClouds; i++) {
       const cx = ((i * 260 - camX * 0.08 + t * 8) % (W + 300) + W + 300) % (W + 300) - 150;
       const cy = 60 + hash(i) * 90;
       ctx.beginPath();
@@ -398,6 +597,11 @@
       else if (th.deco === 'italy') italy(ctx, x, groundY, h, i);
       else if (th.deco === 'pagoda') pagoda(ctx, x, groundY, h * 0.9, i, t);
       else if (th.deco === 'base') base(ctx, x, groundY, h * 0.7, i);
+      else if (th.deco === 'pine') pine(ctx, x, groundY, h, th.mid);
+      else if (th.deco === 'castle') castle(ctx, x, groundY, h * 0.9, i, t);
+      else if (th.deco === 'lavafall') lavafall(ctx, x, groundY, h, i, t);
+      else if (th.deco === 'fern') fern(ctx, x, groundY, h * 0.8, i, t);
+      else if (th.deco === 'station') station(ctx, x, groundY, h * 0.8, i, t);
       else rock(ctx, x, groundY, h * 0.8, th.mid);
     }
 
@@ -406,7 +610,7 @@
     ctx.fillRect(0, groundY, W, H - groundY);
     ctx.fillStyle = th.top;
     ctx.fillRect(0, groundY - 4, W, 14);
-    for (let x = -((camX) % 24); x < W; x += 24) {
+    for (let x = -((camX) % 24); x < W && !th.metal; x += 24) {
       ctx.beginPath();
       ctx.arc(x + 12, groundY + 8, 10, 0, Math.PI);
       ctx.fill();
@@ -419,6 +623,34 @@
       ctx.beginPath();
       ctx.ellipse(x, groundY + 40 + hash(i) * 30, 8, 4, 0, 0, Math.PI * 2);
       ctx.fill();
+    }
+    if (th.bricks) {
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      for (let row = 0; row < 4; row++) {
+        const oy = groundY + 16 + row * 20;
+        ctx.fillRect(0, oy, W, 2);
+        for (let x = -((camX + row * 24) % 48); x < W; x += 48) ctx.fillRect(x, oy, 2, 20);
+      }
+    }
+    if (th.metal) {
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      for (let x = -(camX % 80); x < W; x += 80) ctx.fillRect(x, groundY + 6, 2, H - groundY);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      for (let x = -(camX % 80); x < W; x += 80) { ctx.fillRect(x + 8, groundY + 18, 4, 4); ctx.fillRect(x + 68, groundY + 18, 4, 4); }
+      // hazard stripes
+      for (let x = -(camX % 40); x < W; x += 40) {
+        ctx.fillStyle = '#ffd23f';
+        ctx.beginPath(); ctx.moveTo(x, groundY + 4); ctx.lineTo(x + 20, groundY + 4); ctx.lineTo(x + 10, groundY + 12); ctx.lineTo(x - 10, groundY + 12); ctx.fill();
+      }
+    }
+    if (th.snow || th.embers) {
+      for (let i = 0; i < 60; i++) {
+        const sp = 20 + hash(i) * 40;
+        const fx = ((hash(i + 5) * 1400 + Math.sin(t + i) * 20 - camX * 0.6) % W + W) % W;
+        let fy = th.snow ? (hash(i + 9) * H + t * sp) % H : H - ((hash(i + 9) * H + t * sp * 1.5) % H);
+        ctx.fillStyle = th.snow ? 'rgba(255,255,255,0.85)' : `rgba(255,${120 + Math.floor(hash(i) * 100)},0,0.8)`;
+        ctx.beginPath(); ctx.arc(fx, fy, th.snow ? 2 + hash(i + 2) * 2 : 1.5 + hash(i + 2) * 1.5, 0, Math.PI * 2); ctx.fill();
+      }
     }
     if (th.cobble) {
       ctx.fillStyle = 'rgba(255,255,255,0.12)';

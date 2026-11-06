@@ -16,6 +16,11 @@
     { name: 'Pizza Piazza', theme: 'italy' },
     { name: 'Lantern Valley', theme: 'china' },
     { name: 'Army Base', theme: 'military' },
+    { name: 'Mount Snoozemore', theme: 'mountain' },
+    { name: 'Castle Kerfuffle', theme: 'castle' },
+    { name: 'Lava Lagoon', theme: 'lava' },
+    { name: 'Jurassic Jog', theme: 'dino' },
+    { name: 'Space (low gravity!)', theme: 'space', gravity: 0.55 },
   ];
 
   const P1KEYS = { left: ['KeyA', 'Pad0Left'], right: ['KeyD', 'Pad0Right'], ok: ['KeyF', 'Space', 'Pad0A'], back: ['KeyG', 'Pad0B'] };
@@ -154,7 +159,7 @@
             ? { level: i, mode: 'coop', players: [{ id: 0, cid: cid(0), local: 'P1' }, { id: 1, cid: cid(1), local: 'P2' }] }
             : { charId: cid(0), level: i }));
         },
-      })), W / 2, 152, { w: 480, h: 38, gap: 7 });
+      })), W / 2, 146, { w: 410, h: 38, gap: 7, cols: 2, fontSize: 17 });
     }
 
     openDifficultyMenu() {
@@ -178,10 +183,10 @@
             p2: SS.CHARACTERS[this.cur[1]].id,
             vsCpu: this.vsCpu,
             cpuLevel: this.cpuLevel !== undefined ? this.cpuLevel : 1,
-            theme: s.theme,
+            theme: s.theme, gravity: s.gravity,
           }));
         },
-      })), W / 2, 158, { w: 360, h: 37, gap: 6 });
+      })), W / 2, 152, { w: 320, h: 40, gap: 8, cols: 2, fontSize: 18 });
     }
 
     // ------------------------------------------------------------------
@@ -197,8 +202,8 @@
           this.cheated -= 1 / 60;
           UI.outlineText(ctx, 'ALL MAPS UNLOCKED!', W / 2, 74, 26, '#00f5d4', 'center');
         }
+        this.drawPickedSloths(ctx); // behind the buttons
         this.menu.draw(ctx);
-        this.drawPickedSloths(ctx);
         UI.text(ctx, 'Esc = back', W / 2, H - 16, 14, '#ddd', 'center');
         UI.backButton(ctx);
         return;

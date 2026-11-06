@@ -151,7 +151,7 @@
 
     physics(dt, world) {
       const prevY = this.y;
-      this.vy += GRAV * dt;
+      this.vy += GRAV * (world.gravity || 1) * dt;
       this.x += this.vx * dt;
       this.y += this.vy * dt;
       const wasGround = this.onGround;
@@ -546,7 +546,7 @@
     update(dt, world) {
       this.t += dt;
       this.life -= dt;
-      this.vy += this.gravity * dt;
+      this.vy += this.gravity * (world.gravity || 1) * dt;
       this.x += this.vx * dt;
       this.y += this.vy * dt;
       if (this.life <= 0) this.dead = true;

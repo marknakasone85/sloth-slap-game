@@ -24,6 +24,7 @@
       this.levelIndex = i;
       this.L = SS.LEVELS[i];
       this.groundY = SS.GROUND_Y;
+      this.gravity = this.L.gravity || 1;
       this.platforms = this.L.platforms || [];
       this.crates = this.L.crates.map((c) => new SS.Crate(c.x, c.loot));
       this.gongs = (this.L.gongs || []).map((g) => new SS.Gong(g.id, g.x));
@@ -75,14 +76,14 @@
       for (const id of Object.keys(this.players)) if (!seen.has(+id)) delete this.players[id];
 
       const ids = new Set();
-      for (const [uid, type, x, y, facing, fl, alive, spin, thr, sleepy, et] of m.en) {
+      for (const [uid, type, x, y, facing, fl, alive, spin, thr, sleepy, et, vf] of m.en) {
         ids.add(uid);
         let e = this.enemies.get(uid);
         if (!e) {
           e = new SS.Enemy(type, x, y);
           this.enemies.set(uid, e);
         }
-        Object.assign(e, { tx: x, ty: y, facing, flash: fl ? 0.1 : 0, alive: !!alive, spin, throwing: thr, hurt: sleepy ? 1 : 0, t: et });
+        Object.assign(e, { tx: x, ty: y, facing, flash: fl ? 0.1 : 0, alive: !!alive, spin, throwing: thr, hurt: sleepy ? 1 : 0, t: et, remoteFlags: vf || 0 });
       }
       for (const uid of [...this.enemies.keys()]) if (!ids.has(uid)) this.enemies.delete(uid);
 
@@ -192,6 +193,7 @@
       ctx.save();
       ctx.translate(-Math.round(this.camX) + sh.x, sh.y);
       for (const pl of this.platforms) SS.drawPlatform(ctx, pl);
+      SS.drawProps(ctx, this.L, this.groundY, this.t);
       this.fx.drawDecals(ctx);
       const bossAlive = s.bo && s.bo[3];
       if (!bossAlive) SS.Art.hammock(ctx, this.goalX + 60, this.groundY, this.t);

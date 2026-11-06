@@ -12,6 +12,7 @@
       this.d1 = SS.charById(opts.p1);
       this.d2 = SS.charById(opts.p2);
       this.theme = opts.theme || 'jungle';
+      this.gravity = opts.gravity || 1;
       this.groundY = SS.GROUND_Y;
       this.platforms = [];
       this.fx = new SS.FX();
