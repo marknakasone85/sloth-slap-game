@@ -1,0 +1,488 @@
+// A sloth fighter. Used by the player in the campaign and by both sides in duels.
+//
+// A "world" object (provided by the scene) must implement:
+//   world.groundY, world.fx, world.platforms
+//   world.bounds(fighter) -> { min, max }          horizontal limits
+//   world.targets(team)   -> slappable things       each has box, alive, takeHit(hit)
+//   world.spawn(projectile)
+//   world.faceTarget(fighter) -> x to face, or null
+//   world.onHit(attacker, target, hit, result)     optional (score, meter...)
+(function () {
+  const U = SS.U;
+  const GRAV = 1900;
+  const REST = SS.Art.SLOTH_REST;
+  const SPECIAL_COST = 100;
+
+  const MOVES = {
+    slap: { startup: 0.07, active: 0.09, recover: 0.14, dmg: 6, kbx: 220, kby: -140, reach: 64, stun: 0.28, wind: -1.3, swing: 0.35 },
+    heavy: { startup: 0.24, active: 0.1, recover: 0.3, dmg: 13, kbx: 520, kby: -340, reach: 72, stun: 0.5, wind: -2.7, swing: 0.45, big: true },
+  };
+
+  const approach = (v, target, amt) => (v < target ? Math.min(target, v + amt) : Math.max(target, v - amt));
+
+  SS.Fighter = class {
+    constructor(def, x, opts = {}) {
+      this.def = def;
+      this.x = x;
+      this.y = opts.y !== undefined ? opts.y : SS.GROUND_Y;
+      this.vx = 0;
+      this.vy = 0;
+      this.facing = opts.facing || 1;
+      this.team = opts.team || 'player';
+      this.autoFace = !!opts.autoFace;
+      this.mercy = opts.mercy || 0; // brief invulnerability after being hit (campaign)
+      // Gun: limited ammo that slowly refills.
+      this.maxAmmo = opts.maxAmmo || 6;
+      this.ammo = opts.ammo !== undefined ? opts.ammo : this.maxAmmo;
+      this.ammoRegen = opts.ammoRegen || 2.5;
+      this.ammoT = 0;
+      this.gunT = 0;
+      this.muzzleT = 0;
+      this.hp = def.hp;
+      this.maxHp = def.hp;
+      this.meter = 0;
+      this.state = 'idle';
+      this.move = null;
+      this.onGround = true;
+      this.hitstun = 0;
+      this.sleep = 0;
+      this.invuln = 0;
+      this.flash = 0;
+      this.walk = 0;
+      this.t = Math.random() * 10;
+      this.w = 52 * def.scale;
+      this.h = 112 * def.scale;
+      this.hitList = new Set();
+      this.combo = 0;
+      this.comboT = 0;
+      this.alive = true;
+    }
+
+    get box() {
+      return { x: this.x - this.w / 2, y: this.y - this.h, w: this.w, h: this.h };
+    }
+    get canSpecial() { return this.meter >= SPECIAL_COST; }
+
+    // ------------------------------------------------------------------
+    update(dt, ctrl, world) {
+      this.t += dt;
+      this.flash -= dt;
+      this.invuln -= dt;
+      this.comboT -= dt;
+      if (this.comboT <= 0) this.combo = 0;
+      this.gunT -= dt;
+      this.muzzleT -= dt;
+      if (this.ammo < this.maxAmmo && this.state !== 'ko') {
+        this.ammoT += dt;
+        if (this.ammoT >= this.ammoRegen) { this.ammoT = 0; this.ammo++; }
+      }
+
+      if (this.state === 'ko' || this.state === 'win') {
+        this.vx *= Math.pow(0.05, dt);
+        this.physics(dt, world);
+        return;
+      }
+
+      if (this.sleep > 0) {
+        this.sleep -= dt;
+        this.state = 'sleep';
+        if (Math.random() < dt * 1.5) world.fx.text(this.x + 20, this.y - this.h - 10, 'Zzz', '#bde0fe', 22);
+        if (this.sleep <= 0) this.state = 'idle';
+        this.vx = approach(this.vx, 0, 1500 * dt);
+        this.physics(dt, world);
+        return;
+      }
+
+      if (this.state === 'hurt') {
+        this.hitstun -= dt;
+        if (this.onGround) this.vx = approach(this.vx, 0, 1400 * dt);
+        if (this.hitstun <= 0) this.state = 'idle';
+        this.physics(dt, world);
+        return;
+      }
+
+      ctrl = ctrl || {};
+      if (this.state === 'attack') {
+        this.updateMove(dt, ctrl, world);
+      } else {
+        const dir = (ctrl.right ? 1 : 0) - (ctrl.left ? 1 : 0);
+        if (ctrl.down && this.onGround) {
+          this.state = 'block';
+          this.vx = approach(this.vx, 0, 2500 * dt);
+        } else {
+          this.state = 'idle';
+          const accel = this.onGround ? 2600 : 1400;
+          this.vx = approach(this.vx, dir * this.def.speed, accel * dt);
+          if (dir && !this.autoFace) this.facing = dir;
+        }
+        if (ctrl.jumpP && this.onGround && this.state !== 'block') {
+          this.vy = -this.def.jump;
+          this.onGround = false;
+          SS.Audio.jump();
+        }
+        if (ctrl.slapP) this.startMove('slap');
+        else if (ctrl.heavyP) this.startMove('heavy');
+        else if (ctrl.specialP && this.canSpecial) this.startSpecial(world);
+        else if (ctrl.shootP) this.tryShoot(world);
+      }
+
+      if (this.autoFace && this.state !== 'attack') {
+        const tx = world.faceTarget(this);
+        if (tx !== null && Math.abs(tx - this.x) > 4) this.facing = tx > this.x ? 1 : -1;
+      }
+
+      if (Math.abs(this.vx) > 20 && this.onGround) this.walk += dt * Math.abs(this.vx) * 0.06;
+      this.physics(dt, world);
+    }
+
+    physics(dt, world) {
+      const prevY = this.y;
+      this.vy += GRAV * dt;
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+      const wasGround = this.onGround;
+      this.onGround = false;
+
+      if (this.y >= world.groundY) {
+        this.y = world.groundY;
+        this.vy = 0;
+        this.onGround = true;
+      } else if (this.vy > 0 && world.platforms) {
+        for (const p of world.platforms) {
+          if (prevY <= p.y + 1 && this.y >= p.y && this.x > p.x - 10 && this.x < p.x + p.w + 10) {
+            this.y = p.y;
+            this.vy = 0;
+            this.onGround = true;
+            break;
+          }
+        }
+      }
+      if (this.onGround && !wasGround) this.onLand(world);
+
+      const b = world.bounds(this);
+      this.x = U.clamp(this.x, b.min + this.w / 2, b.max - this.w / 2);
+    }
+
+    onLand(world) {
+      if (this.move && this.move.kind === 'bellyflop' && this.move.phase === 'air') {
+        this.move.phase = 'impact';
+        this.move.t = 0;
+        SS.Audio.bigSlap();
+        world.fx.shake(16);
+        world.fx.burst(this.x, this.y, '#d4a373', 24, 380);
+        world.fx.text(this.x, this.y - this.h - 20, 'BELLY FLOP!', '#ff4d6d', 38);
+        this.hitList.clear();
+        this.doHits(world, { x: this.x - 170, y: this.y - 70, w: 340, h: 80 },
+          { dmg: 18, kbx: 420, kby: -560, stun: 0.7, big: true }, true);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    startMove(name) {
+      this.state = 'attack';
+      this.move = { kind: name, def: MOVES[name], t: 0 };
+      this.hitList.clear();
+      if (this.onGround) this.vx *= 0.3;
+    }
+
+    tryShoot(world) {
+      if (this.ammo <= 0) {
+        SS.Audio.emptyClick();
+        world.fx.text(this.x, this.y - this.h - 10, '*click* out of ammo!', '#cccccc', 16);
+        return;
+      }
+      this.ammo--;
+      this.startMove('shoot');
+    }
+
+    fireBullet(world) {
+      const s = this.def.scale;
+      const mx = this.x + this.facing * (12 + 44 + 44) * s;
+      const my = this.y - (62 + 9) * s;
+      // Bullet starts at the body (not the muzzle) so point-blank enemies still get hit.
+      world.spawn(new SS.Projectile('bullet', this.x + this.facing * 20 * s, my, this.facing * 950, 0, this.team,
+        { dmg: 5, stun: 0.18, kbx: 150, kby: -70, props: true, life: 0.75 }));
+      this.muzzleT = 0.07;
+      this.gunT = 0.6;
+      this.vx -= this.facing * 70; // recoil
+      SS.Audio.shoot();
+      world.fx.text(mx + this.facing * 20, my - 22, SS.U.choice(['BANG!', 'PEW!', 'BLAM!']), '#ffd23f', 18);
+      world.fx.shake(2);
+    }
+
+    startSpecial(world) {
+      this.meter -= SPECIAL_COST;
+      this.state = 'attack';
+      this.move = { kind: this.def.special, t: 0, phase: 'start', fired: false };
+      this.hitList.clear();
+      SS.Audio.special();
+      world.fx.text(this.x, this.y - this.h - 30, this.def.specialName + '!', '#00f5d4', 24);
+    }
+
+    // Attack hitbox in front of the sloth.
+    reachBox(reach) {
+      const r = reach * this.def.scale;
+      const top = this.y - this.h * 0.9;
+      return {
+        x: this.facing > 0 ? this.x : this.x - r - this.w * 0.2,
+        y: top, w: r + this.w * 0.2, h: this.h * 0.75,
+      };
+    }
+
+    doHits(world, box, h, omni = false) {
+      let landed = false;
+      for (const target of world.targets(this.team)) {
+        if (!target.alive || this.hitList.has(target)) continue;
+        if (!U.overlap(box, target.box)) continue;
+        this.hitList.add(target);
+        const dir = omni ? (target.x >= this.x ? 1 : -1) : this.facing;
+        const dmg = h.dmg * this.def.power;
+        const hit = {
+          dmg, kbx: h.kbx * dir, kby: h.kby, stun: h.stun, sleep: h.sleep || 0,
+          big: !!h.big, from: this, dir,
+        };
+        const result = target.takeHit(hit, world);
+        landed = true;
+        if (result !== 'blocked') {
+          this.meter = Math.min(SPECIAL_COST, this.meter + (h.big ? 16 : 10));
+          this.combo++;
+          this.comboT = 1.2;
+          const cx = (box.x + box.w / 2 + target.x) / 2;
+          const cy = target.box.y + target.box.h * 0.35;
+          world.fx.burst(cx, cy, h.big ? '#ff4d6d' : '#ffd23f', h.big ? 18 : 10);
+          world.fx.slapText(cx, cy - 30, h.big);
+          world.fx.shake(h.big ? 10 : 4);
+          SS.Engine.freeze(h.big ? 0.09 : 0.04);
+          if (h.big) SS.Audio.bigSlap(); else SS.Audio.slap();
+        }
+        if (world.onHit) world.onHit(this, target, hit, result);
+      }
+      return landed;
+    }
+
+    updateMove(dt, ctrl, world) {
+      const m = this.move;
+      m.t += dt;
+      if (this.onGround && m.kind !== 'dash') this.vx = approach(this.vx, 0, 1800 * dt);
+
+      const finish = () => { this.state = 'idle'; this.move = null; };
+
+      if (m.kind === 'shoot') {
+        if (!m.fired && m.t >= 0.04) { m.fired = true; this.fireBullet(world); }
+        if (m.t > 0.22) finish();
+      } else if (m.kind === 'slap' || m.kind === 'heavy') {
+        const d = m.def;
+        if (m.t >= d.startup && m.t < d.startup + d.active) {
+          if (!m.swung) { m.swung = true; if (!this.doHits(world, this.reachBox(d.reach), d)) SS.Audio.whiff(); }
+          else this.doHits(world, this.reachBox(d.reach), d);
+        }
+        if (m.t >= d.startup + d.active + d.recover) finish();
+      } else if (m.kind === 'flurry') {
+        const windows = [0.1, 0.24, 0.38];
+        windows.forEach((w0, i) => {
+          if (m.t >= w0 && m.t < w0 + 0.07) {
+            if (m.win !== i) { m.win = i; this.hitList.clear(); SS.Audio.whiff(); }
+            const last = i === windows.length - 1;
+            this.doHits(world, this.reachBox(70), last
+              ? { dmg: 10, kbx: 560, kby: -380, stun: 0.6, big: true }
+              : { dmg: 6, kbx: 90, kby: -60, stun: 0.35 });
+          }
+        });
+        if (m.t > 0.65) finish();
+      } else if (m.kind === 'dash') {
+        if (m.t < 0.08) this.vx = 0;
+        else if (m.t < 0.4) {
+          this.vx = this.facing * 820;
+          this.invuln = 0.05;
+          if (Math.random() < 0.6) world.fx.burst(this.x - this.facing * 30, this.y - 20, '#ffffff', 1, 60);
+          this.doHits(world, this.reachBox(40), { dmg: 15, kbx: 560, kby: -360, stun: 0.6, big: true });
+        } else {
+          this.vx = approach(this.vx, 0, 3000 * dt);
+          if (m.t > 0.6) finish();
+        }
+      } else if (m.kind === 'bellyflop') {
+        if (m.phase === 'start' && m.t > 0.12) {
+          m.phase = 'air';
+          this.vy = -760;
+          this.vx = this.facing * 260;
+          this.onGround = false;
+          SS.Audio.jump();
+        } else if (m.phase === 'impact' && m.t > 0.3) finish();
+        else if (m.phase === 'air' && m.t > 2.5) finish(); // safety
+      } else if (m.kind === 'lullaby') {
+        if (!m.fired && m.t > 0.2) {
+          m.fired = true;
+          world.spawn(new SS.Projectile('note', this.x + this.facing * 40, this.y - this.h * 0.6,
+            this.facing * 430, 0, this.team, { dmg: 6, sleep: 1.8, stun: 0.2, kbx: 60, kby: -60 }));
+          SS.Audio.snore();
+        }
+        if (m.t > 0.5) finish();
+      } else if (m.kind === 'coconuts') {
+        if (!m.fired && m.t > 0.3) {
+          m.fired = true;
+          const tx = world.faceTarget(this);
+          const cx = tx !== null ? tx : this.x + this.facing * 200;
+          for (let i = -1; i <= 1; i++) {
+            world.spawn(new SS.Projectile('coconut', cx + i * 70, -40 - Math.abs(i) * 80,
+              0, 200, this.team, { dmg: 9, stun: 0.5, kbx: 200, kby: -300, big: true, gravity: 900 }));
+          }
+          world.fx.text(this.x, this.y - this.h - 40, 'BY ROYAL DECREE!', '#ffd23f', 26);
+        }
+        if (m.t > 0.65) finish();
+      }
+    }
+
+    // ------------------------------------------------------------------
+    takeHit(hit, world) {
+      if (this.state === 'ko' || this.invuln > 0) return 'miss';
+      const facingAttacker = hit.from ? (hit.from.x - this.x) * this.facing > 0 : true;
+      if (this.state === 'block' && facingAttacker && !hit.sleep) {
+        this.hp -= hit.dmg * 0.12;
+        this.vx = hit.kbx * 0.35;
+        SS.Audio.block();
+        world.fx.burst(this.x + this.facing * 26, this.y - this.h * 0.6, '#9bf6ff', 6, 150);
+        world.fx.text(this.x, this.y - this.h - 10, 'BLOCKED', '#9bf6ff', 18);
+        if (this.hp <= 0) this.knockOut(world);
+        return 'blocked';
+      }
+      this.hp -= hit.dmg;
+      this.vx = hit.kbx / this.def.weight;
+      this.vy = hit.kby / this.def.weight;
+      this.onGround = false;
+      this.flash = 0.1;
+      this.meter = Math.min(SPECIAL_COST, this.meter + 6);
+      this.move = null;
+      if (hit.sleep) {
+        this.sleep = hit.sleep;
+        this.state = 'sleep';
+      } else {
+        this.state = 'hurt';
+        this.hitstun = hit.stun;
+      }
+      SS.Audio.hurt();
+      if (this.mercy) this.invuln = this.mercy;
+      if (this.hp <= 0) this.knockOut(world);
+      return 'hit';
+    }
+
+    knockOut(world) {
+      this.hp = 0;
+      this.state = 'ko';
+      this.sleep = 0;
+      this.move = null;
+      this.vy = -420;
+      this.vx = (this.vx >= 0 ? 1 : -1) * 260;
+      SS.Audio.ko();
+      world.fx.shake(14);
+    }
+
+    heal(n) { this.hp = Math.min(this.maxHp, this.hp + n); }
+
+    // ------------------------------------------------------------------
+    armAngle() {
+      const m = this.move;
+      if (!m) return undefined;
+      if (m.kind === 'slap' || m.kind === 'heavy') {
+        const d = m.def;
+        if (m.t < d.startup) return U.lerp(REST, d.wind, m.t / d.startup);
+        if (m.t < d.startup + d.active) return U.lerp(d.wind, d.swing, (m.t - d.startup) / d.active);
+        return U.lerp(d.swing, REST, Math.min(1, (m.t - d.startup - d.active) / d.recover));
+      }
+      if (m.kind === 'shoot') return -0.05 - Math.max(0, 1 - Math.abs(m.t - 0.06) / 0.08) * 0.35; // recoil kick
+      if (m.kind === 'flurry') return -1.0 + Math.sin(m.t * 45) * 1.3;
+      if (m.kind === 'dash') return 0.05;
+      if (m.kind === 'bellyflop') return -2.4;
+      return -1.6 + Math.sin(m.t * 20) * 0.4;
+    }
+
+    isSwinging() {
+      const m = this.move;
+      if (!m) return false;
+      if (m.def) return m.t >= m.def.startup && m.t < m.def.startup + m.def.active + 0.05;
+      return m.kind === 'flurry' || m.kind === 'dash';
+    }
+
+    draw(ctx, world) {
+      const pose = this.state === 'ko' ? 'ko'
+        : this.state === 'win' ? 'win'
+        : this.state === 'sleep' ? 'sleep'
+        : this.state === 'hurt' ? 'hurt'
+        : this.state === 'block' ? 'block'
+        : !this.onGround ? 'jump'
+        : Math.abs(this.vx) > 20 && this.state !== 'attack' ? 'walk'
+        : 'idle';
+      const floor = world.floorBelow ? world.floorBelow(this.x, this.y) : world.groundY;
+      SS.Art.shadow(ctx, this.x, floor, 34 * this.def.scale * Math.max(0.4, 1 - (floor - this.y) / 400));
+      if (this.invuln > 0.1 && Math.floor(this.t * 20) % 2 === 0) return;
+      const busy = ['hurt', 'ko', 'sleep', 'block', 'win'].includes(this.state);
+      const holdingGun = !busy && (this.move ? this.move.kind === 'shoot' : this.gunT > 0);
+      SS.Art.sloth(ctx, {
+        gun: holdingGun, muzzle: this.muzzleT > 0,
+        x: this.x, y: this.y, facing: this.facing, scale: this.def.scale, look: this.def.look,
+        t: this.t, pose, walk: this.walk, arm: this.armAngle(),
+        slapping: this.isSwinging(),
+        mouth: this.state === 'attack' ? 'open' : this.state === 'hurt' ? 'ouch' : undefined,
+        flash: this.flash > 0,
+        squash: this.move && this.move.kind === 'bellyflop' && this.move.phase === 'impact' ? 0.25 : 0,
+      });
+    }
+  };
+
+  // ---------- Projectiles (DJ notes, coconuts, monkey throws) ----------
+  const PROJ_WORD = { bullet: 'POW!', note: 'LULLABY!', pizza: 'SPLAT!', pie: 'SPLAT!', balloon: 'SPLOOSH!', bubble: 'POP!', peach: 'BONK!', lantern: 'FWUMP!' };
+  const PROJ_COLOR = { bullet: '#ffd23f', pizza: '#f4c542', pie: '#fff8e7', balloon: '#4cc9f0', bubble: '#bde0fe', peach: '#ffab91', lantern: '#e63946' };
+  SS.Projectile = class {
+    constructor(kind, x, y, vx, vy, team, hit) {
+      this.kind = kind;
+      this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+      this.team = team;
+      this.hit = hit;
+      this.gravity = hit.gravity || 0;
+      this.life = hit.life || 3;
+      this.t = 0;
+      this.dead = false;
+      this.hitList = new Set();
+    }
+    get box() { return { x: this.x - 14, y: this.y - 14, w: 28, h: 28 }; }
+
+    update(dt, world) {
+      this.t += dt;
+      this.life -= dt;
+      this.vy += this.gravity * dt;
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+      if (this.life <= 0) this.dead = true;
+      if (this.y >= world.groundY - 8 && this.kind !== 'note') {
+        this.dead = true;
+        world.fx.burst(this.x, world.groundY - 6, PROJ_COLOR[this.kind] || '#8d6e4a', 8, 160);
+        SS.Audio.crate();
+        return;
+      }
+      for (const target of world.targets(this.team)) {
+        if (!target.alive || (target.isProp && !this.hit.props) || this.hitList.has(target)) continue;
+        if (!U.overlap(this.box, target.box)) continue;
+        this.hitList.add(target);
+        const dir = this.vx !== 0 ? Math.sign(this.vx) : (target.x >= this.x ? 1 : -1);
+        const h = this.hit;
+        const res = target.takeHit({
+          dmg: h.dmg, kbx: (h.kbx || 100) * dir, kby: h.kby || -100, stun: h.stun || 0.3,
+          sleep: h.sleep || 0, big: !!h.big, from: this, dir,
+        }, world);
+        if (res !== 'miss') {
+          world.fx.burst(this.x, this.y, this.kind === 'note' ? '#c77dff' : '#ffd23f', 12);
+          world.fx.text(this.x, this.y - 30, PROJ_WORD[this.kind] || 'BONK!', '#fff', 26);
+          SS.Audio.slap();
+          world.fx.shake(this.kind === 'bullet' ? 3 : 6);
+          this.dead = true;
+          break;
+        }
+      }
+    }
+
+    draw(ctx) {
+      if (this.kind === 'note') SS.Art.note(ctx, this.x, this.y, { t: this.t });
+      else if (this.kind === 'coconut') SS.Art.coconut(ctx, this.x, this.y, { t: this.t });
+      else SS.Art.projectile(ctx, this.kind, this.x, this.y, this.t, Math.sign(this.vx) || 1);
+    }
+  };
+})();

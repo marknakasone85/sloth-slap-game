@@ -1,0 +1,26 @@
+{
+  "name": "sloth-slap-game",
+  "productName": "The Sloth Slap Game",
+  "version": "0.1.0",
+  "description": "A comical cartoon sloth slap-'em-up with a campaign and a 1v1 Slapdown Duel mode.",
+  "main": "desktop/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist": "electron-builder --mac --win"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.slothslap.game",
+    "productName": "The Sloth Slap Game",
+    "files": ["index.html", "css/**", "js/**", "desktop/**"],
+    "directories": { "output": "dist" },
+    "mac": { "target": ["dmg"], "category": "public.app-category.arcade-games" },
+    "win": { "target": ["nsis", "portable"] }
+  }
+}
