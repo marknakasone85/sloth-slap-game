@@ -49,10 +49,12 @@
       window.addEventListener('pointerup', () => {
         this.pointer.down = false;
       });
+      if (SS.Touch) SS.Touch.init(canvas);
     },
 
-    // Read gamepads (first two) into virtual keys.
+    // Read gamepads (first two) and the touch buttons into virtual keys.
     poll() {
+      if (SS.Touch) SS.Touch.poll();
       if (!navigator.getGamepads) return;
       const pads = navigator.getGamepads();
       for (let i = 0; i < 2; i++) {
@@ -96,14 +98,14 @@
 
   // ---------- Control schemes ----------
   const P1 = {
-    left: ['KeyA', 'Pad0Left'],
-    right: ['KeyD', 'Pad0Right'],
-    up: ['KeyW', 'Pad0Up', 'Pad0A'],
-    down: ['KeyS', 'Pad0Down'],
-    slap: ['KeyF', 'Pad0X'],
-    heavy: ['KeyG', 'Pad0Y'],
-    special: ['KeyH', 'Pad0B'],
-    shoot: ['KeyR', 'Pad0R'],
+    left: ['KeyA', 'Pad0Left', 'TouchLeft'],
+    right: ['KeyD', 'Pad0Right', 'TouchRight'],
+    up: ['KeyW', 'Pad0Up', 'Pad0A', 'TouchJump'],
+    down: ['KeyS', 'Pad0Down', 'TouchDown'],
+    slap: ['KeyF', 'Pad0X', 'TouchSlap'],
+    heavy: ['KeyG', 'Pad0Y', 'TouchHeavy'],
+    special: ['KeyH', 'Pad0B', 'TouchSpecial'],
+    shoot: ['KeyR', 'Pad0R', 'TouchShoot'],
   };
   const P2 = {
     left: ['ArrowLeft', 'Pad1Left'],
@@ -147,6 +149,6 @@
     right: () => I.anyHit(['ArrowRight', 'KeyD', 'Pad0Right', 'Pad1Right']),
     confirm: () => I.anyHit(['Enter', 'Space', 'KeyF', 'Pad0A', 'Pad1A', 'Pad0Start']),
     back: () => I.anyHit(['Escape', 'Backspace', 'Pad0B', 'Pad1B']),
-    pause: () => I.anyHit(['Escape', 'KeyP', 'Pad0Start', 'Pad1Start']),
+    pause: () => I.anyHit(['Escape', 'KeyP', 'Pad0Start', 'Pad1Start', 'TouchPause']),
   };
 })();

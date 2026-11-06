@@ -165,14 +165,17 @@
       this.menu = new SS.MenuList([
         { label: 'Back to the game', act: () => { this.menu = null; } },
         { label: 'Controls', act: () => { this.showControls = true; } },
-        {
-          label: () => 'Key hints on screen: ' + (this.showStrip ? 'ON' : 'OFF'),
-          act: () => { this.showStrip = !this.showStrip; SS.Save.set('keyStrip', this.showStrip); },
-        },
+        { label: () => SS.onscreenLabel(this), act: () => SS.cycleOnscreen(this) },
         { label: () => 'Blood: ' + (SS.Settings.blood ? 'ON' : 'OFF (confetti)'), act: () => SS.toggleBlood() },
         { label: () => 'Sound: ' + (SS.Audio.muted ? 'OFF' : 'ON'), act: () => SS.Audio.toggleMute() },
         { label: 'Leave Wi-Fi Game', act: () => { SS.Net.leave(); SS.Engine.setScene(new SS.MenuScene()); } },
       ], W / 2, 190, { w: 340, h: 40, gap: 8 });
+    }
+
+    wantsTouch() { return !!this.snap && !this.menu && !this.ended && !this.showControls; }
+    touchPlayer() {
+      const me = this.snap && this.snap.pl.find((p) => p.id === SS.Net.id);
+      return me ? { canSpecial: !!me.cs, ammo: me.am } : null;
     }
 
     // ---------------- draw ----------------
@@ -213,7 +216,7 @@
       const alive = s.pl.filter((p) => p.st !== 'ko');
       const leadX = (alive.length ? alive : s.pl).reduce((m, p) => Math.max(m, p.x), 0);
       const strips = [];
-      if (this.showStrip && me && s.st === 'play' && !this.menu) {
+      if (this.showStrip && me && s.st === 'play' && !this.menu && !SS.Touch.enabled) {
         strips.push({
           fighter: { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am },
           opts: { tag: `YOU (P${me.id + 1})`, tagColor: SS.PLAYER_COLORS[me.id % 4] },

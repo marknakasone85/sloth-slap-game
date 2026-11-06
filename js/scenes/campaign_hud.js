@@ -18,7 +18,7 @@
     UI.bar(ctx, 26, 44, 220, 14, p.hp / p.mhp, p.hp / p.mhp > 0.3 ? '#52e07a' : '#ff4d6d');
     const full = p.canSpecial;
     UI.bar(ctx, 26, 66, 220, 9, p.meter / 100, full ? (Math.floor(hud.t * 6) % 2 ? '#00f5d4' : '#ffffff') : '#00b4d8');
-    UI.text(ctx, full ? 'SPECIAL! (H / L)' : 'special', 256, 70, 11, full ? '#00f5d4' : '#aaa');
+    UI.text(ctx, full ? (SS.Touch.enabled ? 'SPECIAL! (SUPER)' : 'SPECIAL! (H / L)') : 'special', 256, 70, 11, full ? '#00f5d4' : '#aaa');
     UI.text(ctx, `${Math.ceil(p.hp)}`, 256, 51, 14, '#fff');
     UI.ammo(ctx, 26, 90, p);
     UI.powers(ctx, 356, 30, p, hud.t);

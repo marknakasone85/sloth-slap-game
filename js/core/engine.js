@@ -114,9 +114,14 @@ window.SS = window.SS || {};
       const ctx = this.ctx;
       ctx.setTransform(this.pixel, 0, 0, this.pixel, 0, 0);
 
+      // On a phone held upright the game waits (it asks you to turn the phone sideways).
+      const upright = SS.Touch && SS.Touch.enabled && SS.Touch.portrait() && this.scene && this.scene.wantsTouch;
       if (this.scene) {
-        if (!frozen) this.scene.update(dt);
+        if (!frozen && !upright) this.scene.update(dt);
         this.scene.draw(ctx);
+        if (SS.Touch && SS.Touch.enabled) {
+          SS.Touch.draw(ctx, this.scene.touchPlayer ? this.scene.touchPlayer() : null);
+        }
       }
 
       if (!frozen) SS.Input.endFrame();

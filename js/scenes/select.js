@@ -54,6 +54,7 @@
       this.t += dt;
       const n = SS.CHARACTERS.length;
 
+      if (UI.backTapped()) { SS.Audio.select(); this.goBack(); return; }
       if (this.menu) {
         if (this.phase === 'level') this.checkCheat();
         if (SS.Menu.back()) { SS.Audio.select(); this.goBack(); return; }
@@ -199,6 +200,7 @@
         this.menu.draw(ctx);
         this.drawPickedSloths(ctx);
         UI.text(ctx, 'Esc = back', W / 2, H - 16, 14, '#ddd', 'center');
+        UI.backButton(ctx);
         return;
       }
 
@@ -220,6 +222,7 @@
         ? 'P1: A/D + F    P2: ←/→ + ,    (Esc = back)'
         : '←/→ to choose, Enter to pick, Esc = back';
       UI.text(ctx, hint, W / 2, H - 16, 14, '#ddd', 'center');
+      UI.backButton(ctx);
     }
 
     drawCard(ctx, c, i) {

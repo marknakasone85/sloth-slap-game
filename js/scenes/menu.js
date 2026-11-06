@@ -99,7 +99,7 @@
 
       this.menu.draw(ctx);
 
-      UI.text(ctx, 'v0.1  -  Arrows/WASD + Enter, or click', W / 2, H - 14, 13, 'rgba(255,255,255,0.7)', 'center');
+      UI.text(ctx, 'Arrows/WASD + Enter, or click / tap', W / 2, H - 14, 13, 'rgba(255,255,255,0.7)', 'center');
     }
 
     drawHelp(ctx) {

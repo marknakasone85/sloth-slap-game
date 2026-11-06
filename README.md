@@ -64,6 +64,17 @@ npm run dist:win     # build dist/*.exe   (best run on Windows)
 - Only use it on your own home Wi-Fi, not on public Wi-Fi.
 - The first time, macOS may ask whether Python can accept incoming network connections. Click **Allow**, or nobody else can connect.
 
+## Playing on phones and tablets
+
+Phones and tablets play in the web browser. On the computer, double-click `share-on-network.command`, then on the phone (on the same Wi-Fi) open the address it shows, like `http://192.168.1.23:8000`. Phones can't open the `index.html` file directly.
+
+- **Touch buttons** appear the first time you touch the screen. On the left: ◀ ▶ to move and BLOCK. On the right: SLAP (big), JUMP, BIG, SHOOT and SUPER (glows when your special is ready). Pause is at the bottom middle. Use several fingers at once to run and slap together.
+- Hold the phone **sideways**. If you hold it upright, the game waits and asks you to turn it.
+- Menus work by tapping, and screens that use Esc have a **◀ Back** button.
+- Works for the solo campaign, Slapdown Duel vs the CPU, and **joining a Wi-Fi co-op game from a phone**.
+- Tip: on iPhone/iPad, *Share → Add to Home Screen* makes it open full-screen like an app.
+- Pause → **On-screen controls** switches between touch buttons, key hints, or nothing.
+
 ## Playing together on Wi-Fi (2-4 players)
 
 1. **Host** (the computer that runs the game): double-click `share-on-network.command`, then open **http://localhost:8000** in a browser on that same computer. Choose **Campaign → Host Wi-Fi Game**, pick your sloth, and the lobby shows a **4-digit join code**.

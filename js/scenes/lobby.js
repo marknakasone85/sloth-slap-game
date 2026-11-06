@@ -261,7 +261,7 @@
 
     update(dt) {
       this.t += dt;
-      if (SS.Menu.back() && !(this.phase === 'code' && I.hit('Backspace') && this.code)) {
+      if (UI.backTapped() || (SS.Menu.back() && !(this.phase === 'code' && I.hit('Backspace') && this.code))) {
         SS.Net.leave();
         SS.Engine.setScene(new SS.CampaignModeScene());
         return;
@@ -284,6 +284,15 @@
         if (SS.Menu.left()) { this.cur = (this.cur - 1 + n) % n; SS.Audio.select(); if (this.isReady) this.sendPick(false); }
         if (SS.Menu.right()) { this.cur = (this.cur + 1) % n; SS.Audio.select(); if (this.isReady) this.sendPick(false); }
         if (SS.Menu.confirm()) { SS.Audio.confirm(); this.sendPick(!this.isReady); }
+        // taps: left/right side of the card to choose, the button to get ready
+        const p = I.pointer;
+        if (p.pressed && p.y > 120 && p.y < 390) {
+          if (p.x < W / 2 - 60) { this.cur = (this.cur - 1 + n) % n; SS.Audio.select(); if (this.isReady) this.sendPick(false); }
+          else if (p.x > W / 2 + 60) { this.cur = (this.cur + 1) % n; SS.Audio.select(); if (this.isReady) this.sendPick(false); }
+        } else if (p.pressed && p.y >= 400 && p.y <= 440 && Math.abs(p.x - W / 2) < 190) {
+          SS.Audio.confirm();
+          this.sendPick(!this.isReady);
+        }
       }
       if (SS.Net.active && SS.Net.silence() > 25) this.fail('Lost the connection to the host.');
     }
@@ -308,6 +317,7 @@
         if (this.phase === 'connecting') UI.text(ctx, 'Connecting...', W / 2, 488, 18, '#9bf6ff', 'center');
         if (this.error) UI.outlineText(ctx, this.error, W / 2, 488, 16, '#ff4d6d', 'center');
         UI.text(ctx, 'Enter = join    Esc = back', W / 2, H - 18, 13, '#dddddd', 'center');
+        UI.backButton(ctx);
         return;
       }
       const me = SS.Net.id;
@@ -317,14 +327,19 @@
       SS.Art.sloth(ctx, { x: W / 2, y: 330, look: c.look, scale: 1.3 / Math.max(1, c.scale), t: this.t, pose: this.isReady ? 'win' : 'idle' });
       UI.outlineText(ctx, `◀  ${c.name}  ▶`, W / 2, 360, 22, '#ffffff', 'center');
       UI.text(ctx, c.specialName, W / 2, 380, 13, '#9bf6ff', 'center');
-      UI.outlineText(ctx, this.isReady ? 'READY! Waiting for the host to start...' : 'Press Enter when you are ready',
-        W / 2, 420, 18, this.isReady ? '#52e07a' : '#ffd23f', 'center');
+      ctx.fillStyle = this.isReady ? 'rgba(82,224,122,0.25)' : '#ffd23f';
+      ctx.beginPath();
+      ctx.roundRect(W / 2 - 190, 400, 380, 40, 12);
+      ctx.fill();
+      UI.text(ctx, this.isReady ? 'READY! Waiting for the host... (tap to change)' : 'I\'m ready!  (Enter or tap)',
+        W / 2, 421, 17, this.isReady ? '#52e07a' : '#2b193d', 'center');
       if (this.inGame) UI.text(ctx, 'A map is already being played - you will drop in next to your team.', W / 2, 448, 14, '#cccccc', 'center');
       if (this.lobby) {
         const L = SS.LEVELS[this.lobby.level];
         UI.text(ctx, `Players: ${this.lobby.players.length}/4     Map ${this.lobby.level + 1}: ${L ? L.name : ''}`, W / 2, 470, 15, '#ffffff', 'center');
       }
-      UI.text(ctx, '←/→ choose sloth    Enter = ready    Esc = leave', W / 2, H - 18, 13, '#dddddd', 'center');
+      UI.text(ctx, '←/→ (or tap the sides) choose sloth    Enter = ready    Esc = leave', W / 2, H - 18, 13, '#dddddd', 'center');
+      UI.backButton(ctx);
     }
   };
 })();

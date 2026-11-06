@@ -81,7 +81,7 @@
         UI.text(ctx, r[3], 735, y, 17, col, 'center');
       });
       UI.text(ctx, 'Solo campaign also accepts arrows + J (slap) / K (big slap) / L (special) / ; (shoot).', W / 2, 464, 14, '#cccccc', 'center');
-      UI.text(ctx, 'Special needs a full blue meter. Ammo refills slowly; crates drop ammo boxes.', W / 2, 484, 14, '#cccccc', 'center');
+      UI.text(ctx, 'Special needs a full blue meter. Phones & tablets: touch buttons appear when you tap.', W / 2, 484, 14, '#cccccc', 'center');
       UI.text(ctx, 'Press any key to go back.', W / 2, 502, 13, '#9bf6ff', 'center');
     },
 
@@ -194,6 +194,22 @@
         ctx.beginPath(); ctx.arc(cx, y, 11 * size, 0, Math.PI * 2); ctx.fill();
         SS.Art.powerIcon(ctx, type, cx, y, 9 * size);
       });
+    },
+
+    // "Back" button for touch screens (phones have no Esc key). Shown only in touch mode.
+    BACK_RECT: { x: 12, y: 12, w: 96, h: 38 },
+    backButton(ctx) {
+      if (!SS.Touch.enabled) return;
+      const r = UI.BACK_RECT;
+      ctx.fillStyle = 'rgba(43,25,61,0.85)';
+      ctx.beginPath();
+      ctx.roundRect(r.x, r.y, r.w, r.h, 12);
+      ctx.fill();
+      UI.text(ctx, '\u25C0 Back', r.x + r.w / 2, r.y + r.h / 2 + 1, 16, '#ffffff', 'center');
+    },
+    backTapped() {
+      const p = SS.Input.pointer, r = UI.BACK_RECT;
+      return SS.Touch.enabled && p.pressed && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
     },
 
     // Fade overlay helper

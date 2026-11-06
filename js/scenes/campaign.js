@@ -418,10 +418,7 @@
       this.menu = new SS.MenuList([
         { label: 'Resume', act: () => this.resume() },
         { label: 'Controls', act: () => { this.showControls = true; } },
-        {
-          label: () => 'Key hints on screen: ' + (this.showStrip ? 'ON' : 'OFF'),
-          act: () => { this.showStrip = !this.showStrip; SS.Save.set('keyStrip', this.showStrip); },
-        },
+        { label: () => SS.onscreenLabel(this), act: () => SS.cycleOnscreen(this) },
         { label: () => 'Blood: ' + (SS.Settings.blood ? 'ON' : 'OFF (confetti)'), act: () => SS.toggleBlood() },
         { label: 'Restart Map', act: () => this.restart() },
         { label: () => 'Sound: ' + (SS.Audio.muted ? 'OFF' : 'ON'), act: () => SS.Audio.toggleMute() },
@@ -462,6 +459,10 @@
       s.openLevelMenu();
     }
 
+    // touch buttons: only while actually playing
+    wantsTouch() { return this.state === 'play' && !this.menu && !this.showControls; }
+    touchPlayer() { const s = this.slots.find((x) => x.local); return s ? s.f : null; }
+
     // ---------------- draw ----------------
     hudModel() {
       const lead = this.leader();
@@ -475,7 +476,7 @@
         };
       });
       const strips = [];
-      if (this.showStrip && this.state === 'play') {
+      if (this.showStrip && this.state === 'play' && !SS.Touch.enabled) {
         const locals = this.slots.filter((s) => s.local);
         if (locals.length === 1) strips.push({ fighter: locals[0].f, opts: {} });
         else {

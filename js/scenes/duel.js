@@ -169,10 +169,7 @@
       this.menu = new SS.MenuList([
         { label: 'Resume', act: () => { this.state = this.prevState; this.menu = null; } },
         { label: 'Controls', act: () => { this.showControls = true; } },
-        {
-          label: () => 'Key hints on screen: ' + (this.showStrip ? 'ON' : 'OFF'),
-          act: () => { this.showStrip = !this.showStrip; SS.Save.set('keyStrip', this.showStrip); },
-        },
+        { label: () => SS.onscreenLabel(this), act: () => SS.cycleOnscreen(this) },
         { label: 'Restart Match', act: () => SS.Engine.setScene(new SS.DuelScene(this.opts)) },
         { label: () => 'Sound: ' + (SS.Audio.muted ? 'OFF' : 'ON'), act: () => SS.Audio.toggleMute() },
         { label: 'Quit to Menu', act: () => SS.Engine.setScene(new SS.MenuScene()) },
@@ -223,7 +220,11 @@
     }
 
     // Each player's keys along the bottom: one strip vs the CPU, two side-by-side for 2 players.
+    wantsTouch() { return ['intro', 'fight', 'roundEnd'].includes(this.state) && !this.showControls; }
+    touchPlayer() { return this.f1; }
+
     drawKeyStrips(ctx) {
+      if (SS.Touch.enabled) return; // the touch buttons are the controls
       if (this.cpu) {
         UI.keyStrip(ctx, this.f1, this.t, { tag: 'YOU', tagColor: '#ffd23f' });
         return;
