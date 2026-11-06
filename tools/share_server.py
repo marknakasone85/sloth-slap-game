@@ -65,6 +65,7 @@ class Client:
         self.queue = collections.deque(maxlen=400)  # a slow player just misses old updates
         self.cond = threading.Condition(LOCK)
         self.streams = 0
+        self.stream_gen = 0   # only the newest connection may take messages (an old one may be dead)
         self.last_seen = time.time()
         self.gone = False
 
@@ -296,6 +297,11 @@ class GameOnlyHandler(http.server.SimpleHTTPRequestHandler):
                 c = None
             else:
                 c.streams += 1
+                # A player who reconnects gets a new stream. The old one stops right away instead of
+                # taking messages and writing them into a connection that is probably dead.
+                c.stream_gen += 1
+                gen = c.stream_gen
+                c.cond.notify_all()
         if c is None:
             return self.json_reply(403, {"error": "Not in this game."})
         self.send_response(200)
@@ -306,13 +312,19 @@ class GameOnlyHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.flush()
             while True:
                 with LOCK:
+                    if c.stream_gen != gen:
+                        break
                     if not c.queue and not c.gone:
                         c.cond.wait(timeout=10)
+                    if c.stream_gen != gen:
+                        break
                     items = list(c.queue)
                     c.queue.clear()
                     c.last_seen = time.time()
                     gone = c.gone
-                chunk = "".join(f"data: {t}\n\n" for t in items) if items else ": ping\n\n"
+                # The ping is a real message (comments are invisible to the page), so a quiet game
+                # never looks like a lost connection.
+                chunk = "".join(f"data: {t}\n\n" for t in items) if items else 'data: {"from":"server","m":{"t":"ping"}}\n\n'
                 self.wfile.write(chunk.encode())
                 self.wfile.flush()
                 if gone:

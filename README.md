@@ -127,6 +127,11 @@ The folder is a git repository, so every saved version of the game can be restor
 
 In single-player you can also use the arrow keys, Space, and J / K / L. In both the campaign and Slapdown Duel, a key-hint strip along the bottom shows each player's keys and lights up the move they're doing. You can switch it off in the pause menu, and **Pause → Controls** shows the full list. Enemies splatter in their own color (monkeys red, beetles green, crabs blue, drones oil) and make silly noises when they go down. **Pause → Blood: OFF** swaps the blood for confetti. Gamepads work too: X = slap, Y = big slap, B = special, RB = shoot, A = jump, LB = block. Menus also work with the mouse or touch.
 
+## For developers
+
+- `CLAUDE.md` is the project guide: the rules, the code map, how the Wi-Fi play works, and how to add sloths, maps and enemies.
+- `tools/run-tests.sh` runs the automated tests in about 10 seconds, with no browser or installs. Add `--full` to play every sloth on every map.
+
 ## Project layout
 
 ```

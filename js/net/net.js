@@ -54,6 +54,7 @@
         this.lastHeard = performance.now();
         let msg;
         try { msg = JSON.parse(e.data); } catch (err) { return; }
+        if (msg.from === 'server' && msg.m && msg.m.t === 'ping') return; // keep-alive: only resets the silence timer
         if (this.onMessage) this.onMessage(msg.m, msg.from);
       };
     },
