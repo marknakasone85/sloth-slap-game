@@ -328,6 +328,7 @@
         if (this.checkpoint) items.push({ label: 'Continue from Checkpoint', act: () => this.respawn() });
         items.push({ label: 'Restart Map', act: () => this.restart() });
         if (!this.net) items.push({ label: 'Choose Map', act: () => this.toSelect() });
+        if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
         items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
         this.menu = new SS.MenuList(items, W / 2, 270, { w: 340, h: 46, gap: 10 });
       }
@@ -410,6 +411,7 @@
       const items = [];
       if (this.levelIndex + 1 < SS.LEVELS.length) items.push({ label: 'Next Map', act: () => this.goLevel(this.levelIndex + 1) });
       items.push({ label: 'Play Again', act: () => this.restart() });
+      if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
       items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
       this.menu = new SS.MenuList(items, W / 2, 300, { w: 300, h: 46, gap: 10 });
     }
@@ -447,6 +449,13 @@
       SS.Engine.setScene(new SS.CampaignScene(Object.assign({}, this.opts, { level: i, players: this.currentPlayers() })));
     }
     restart() { this.goLevel(this.levelIndex); }
+    backToLobby() {
+      SS.Net.send({ t: 'toLobby' }, 'all', true);
+      SS.Engine.setScene(new SS.LobbyScene({
+        mode: 'campaign', resume: true, level: Math.min(this.levelIndex + (this.state === 'won' ? 1 : 0), SS.LEVELS.length - 1),
+        players: this.slots.map((s) => ({ id: s.id, cid: s.cid, ready: true })),
+      }));
+    }
     quit() {
       if (this.net) SS.Net.leave();
       SS.Engine.setScene(new SS.MenuScene());

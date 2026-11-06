@@ -11,12 +11,11 @@
       this.slapT = 1.5;
       this.slapper = 0;
       this.menu = new SS.MenuList([
-        { label: 'Campaign', go: () => new SS.CampaignModeScene() },
-        { label: 'Slapdown Duel  (vs CPU)', go: () => new SS.SelectScene({ mode: 'duel', vsCpu: true }) },
-        { label: 'Slapdown Duel  (2 Players)', go: () => new SS.SelectScene({ mode: 'duel', vsCpu: false }) },
+        { label: 'Campaign', go: () => new SS.CampaignModeScene({ kind: 'campaign' }) },
+        { label: 'Slapdown Duel', go: () => new SS.CampaignModeScene({ kind: 'duel' }) },
         { label: 'How to Play', help: true },
         { label: () => 'Sound: ' + (SS.Audio.muted ? 'OFF' : 'ON'), mute: true },
-      ], W / 2, 212, { w: 360, h: 44, gap: 9 });
+      ], W / 2, 222, { w: 360, h: 50, gap: 12 });
     }
 
     enter() { SS.Audio.playMusic('menu'); }

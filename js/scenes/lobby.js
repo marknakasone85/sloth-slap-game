@@ -1,12 +1,14 @@
-// Campaign "how do you want to play?" menu, plus the Wi-Fi co-op lobby (host) and join screen (guest).
+// "How do you want to play?" menus (Campaign / Slapdown Duel), the Wi-Fi lobby
+// (host: co-op campaign or battle) and the join screen (guest).
 (function () {
   const UI = SS.UI;
   const I = SS.Input;
   const W = SS.W, H = SS.H;
+  const MAX_PLAYERS = 4;
   const isLocalhost = () => ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 
-  function bg(ctx, t) {
-    SS.Art.background(ctx, 'jungle', t * 20, t, 470);
+  function bg(ctx, t, theme = 'jungle') {
+    SS.Art.background(ctx, theme, t * 20, t, 470);
     ctx.fillStyle = 'rgba(20,10,30,0.45)';
     ctx.fillRect(0, 0, W, H);
   }
@@ -21,35 +23,46 @@
       UI.outlineText(ctx, '?', x, y - 60, 60, 'rgba(255,255,255,0.4)', 'center');
     }
     UI.outlineText(ctx, tag, x, y - 132, 18, color, 'center');
-    UI.text(ctx, label, x, y + 38, 13, label === 'READY!' ? '#52e07a' : '#cccccc', 'center');
+    UI.text(ctx, label, x, y + 38, 13, label === 'READY!' || label === 'CPU' ? '#52e07a' : '#cccccc', 'center');
   }
 
-  // ---------------------------------------------------------------- mode menu
+  // ---------------------------------------------------------------- mode menus
+  // kind: 'campaign' or 'duel'
   SS.CampaignModeScene = class {
-    constructor() {
+    constructor(opts = {}) {
+      this.kind = opts.kind || 'campaign';
       this.t = 0;
       this.info = null;
-      this.menu = new SS.MenuList([
-        { label: 'Solo', act: () => SS.Engine.setScene(new SS.SelectScene({ mode: 'campaign' })) },
-        { label: '2 Players (this computer)', act: () => SS.Engine.setScene(new SS.SelectScene({ mode: 'coop' })) },
-        { label: 'Host Wi-Fi Game (2-4 players)', act: () => this.tryHost() },
+      const go = (s) => () => SS.Engine.setScene(s());
+      const items = this.kind === 'duel' ? [
+        { label: 'vs CPU', act: go(() => new SS.SelectScene({ mode: 'duel', vsCpu: true })) },
+        { label: '2 Players (this computer)', act: go(() => new SS.SelectScene({ mode: 'duel', vsCpu: false })) },
+        { label: 'Host Wi-Fi Battle (2-4 players)', act: () => this.tryHost('hostBattle') },
+        { label: 'Join Wi-Fi Battle', act: () => this.tryJoin() },
+        { label: 'Back', act: go(() => new SS.MenuScene()) },
+      ] : [
+        { label: 'Solo', act: go(() => new SS.SelectScene({ mode: 'campaign' })) },
+        { label: '2 Players (this computer)', act: go(() => new SS.SelectScene({ mode: 'coop' })) },
+        { label: 'Host Wi-Fi Game (2-4 players)', act: () => this.tryHost('host') },
         { label: 'Join Wi-Fi Game', act: () => this.tryJoin() },
-        { label: 'Back', act: () => SS.Engine.setScene(new SS.MenuScene()) },
-      ], W / 2, 190, { w: 400, h: 46, gap: 10 });
+        { label: 'Back', act: go(() => new SS.MenuScene()) },
+      ];
+      this.menu = new SS.MenuList(items, W / 2, 190, { w: 400, h: 46, gap: 10 });
     }
     enter() { SS.Audio.playMusic('menu'); }
 
-    tryHost() {
+    tryHost(mode) {
       if (!SS.Net.available() || !isLocalhost()) {
+        const where = this.kind === 'duel' ? 'Slapdown Duel > Host Wi-Fi Battle' : 'Campaign > Host Wi-Fi Game';
         this.info = [
           'To host a Wi-Fi game:',
           '1. Double-click share-on-network.command in the game folder.',
           '2. On THIS computer, open  http://localhost:8000  in your browser.',
-          '3. Choose Campaign > Host Wi-Fi Game.',
+          `3. Choose ${where}.`,
         ];
         return;
       }
-      SS.Engine.setScene(new SS.SelectScene({ mode: 'host' }));
+      SS.Engine.setScene(new SS.SelectScene({ mode }));
     }
 
     tryJoin() {
@@ -58,7 +71,7 @@
           'To join a Wi-Fi game:',
           'Open the address shown in the HOST\'s sharing window',
           '(it looks like  http://192.168.1.23:8000 )',
-          'then choose Campaign > Join Wi-Fi Game.',
+          'then choose Join Wi-Fi Game / Join Wi-Fi Battle.',
         ];
         return;
       }
@@ -71,15 +84,16 @@
         if (I.anyPressed()) { this.info = null; SS.Audio.select(); }
         return;
       }
-      if (SS.Menu.back()) { SS.Engine.setScene(new SS.MenuScene()); return; }
+      if (SS.Menu.back() || UI.backTapped()) { SS.Engine.setScene(new SS.MenuScene()); return; }
       const item = this.menu.update(dt);
       if (item) item.act();
     }
 
     draw(ctx) {
-      bg(ctx, this.t);
-      UI.outlineText(ctx, 'CAMPAIGN', W / 2, 90, 54, '#ffd23f', 'center');
-      UI.text(ctx, 'How many sloths are slapping today?', W / 2, 140, 18, '#ffffff', 'center');
+      bg(ctx, this.t, this.kind === 'duel' ? 'temple' : 'jungle');
+      const duel = this.kind === 'duel';
+      UI.outlineText(ctx, duel ? 'SLAPDOWN DUEL' : 'CAMPAIGN', W / 2, 90, 54, '#ffd23f', 'center');
+      UI.text(ctx, duel ? 'Who wants to get slapped?' : 'How many sloths are slapping today?', W / 2, 140, 18, '#ffffff', 'center');
       if (this.info) {
         UI.panel(ctx, 120, 200, W - 240, 200);
         this.info.forEach((line, i) => UI.text(ctx, line, W / 2, 240 + i * 34, i === 0 ? 22 : 17, i === 0 ? '#ffd23f' : '#ffffff', 'center'));
@@ -88,25 +102,35 @@
       }
       this.menu.draw(ctx);
       UI.text(ctx, 'Wi-Fi games: everyone must be on the same home Wi-Fi.', W / 2, H - 20, 13, '#dddddd', 'center');
+      UI.backButton(ctx);
     }
   };
 
   // ---------------------------------------------------------------- host lobby
+  // opts: { mode: 'campaign' | 'battle', cid } new game
+  //       { mode, resume: true, players, level | stage }  back from a game (same join code)
   SS.LobbyScene = class {
     constructor(opts) {
+      this.mode = opts.mode || 'campaign';
       this.t = 0;
-      this.players = [{ id: 0, cid: opts.cid, ready: true }];
+      this.players = opts.resume ? opts.players.map((p) => Object.assign({}, p)) : [{ id: 0, cid: opts.cid, ready: true }];
+      if (opts.resume) for (const p of this.players) if (p.id !== 0 && p.cpu === undefined) p.ready = false;
       const unlocked = SS.Save.get('unlocked', 1);
       this.maxLevel = Math.min(unlocked, SS.LEVELS.length) - 1;
-      this.level = 0;
+      this.level = Math.min(opts.level || 0, this.maxLevel);
+      this.stage = opts.stage || 0;
+      this.resume = !!opts.resume;
       this.error = null;
       this.ready = false;
       this.syncT = 0;
     }
 
+    get battle() { return this.mode === 'battle'; }
+
     enter() {
       SS.Audio.playMusic('menu');
       SS.Net.onMessage = (m, from) => this.onNet(m, from);
+      if (this.resume && SS.Net.role === 'host') { this.ready = true; this.broadcast(); return; }
       SS.Net.host().then(() => { this.ready = true; this.broadcast(); })
         .catch((e) => { this.error = e.message; });
     }
@@ -115,8 +139,9 @@
       if (!m) return;
       if (from === 'server') {
         if (m.t === 'joined') {
+          if (this.players.length >= MAX_PLAYERS) this.removeCpu(); // a real player beats a CPU
           this.players.push({ id: m.id, cid: null, ready: false });
-          SS.Net.send({ t: 'welcome', inGame: false }, m.id, true);
+          SS.Net.send({ t: 'welcome', inGame: false, mode: this.mode }, m.id, true);
           SS.Audio.confirm();
         } else if (m.t === 'left') {
           this.players = this.players.filter((p) => p.id !== m.id);
@@ -135,14 +160,41 @@
       }
     }
 
+    addCpu() {
+      if (!this.battle || this.players.length >= MAX_PLAYERS) return;
+      let id = 10;
+      while (this.players.some((p) => p.id === id)) id++;
+      this.players.push({ id, cid: SS.U.choice(SS.CHARACTERS).id, ready: true, cpu: 1 });
+      SS.Audio.confirm();
+      this.broadcast();
+    }
+    removeCpu() {
+      const idx = this.players.map((p) => p.cpu !== undefined).lastIndexOf(true);
+      if (idx >= 0) { this.players.splice(idx, 1); SS.Audio.select(); this.broadcast(); }
+    }
+
     broadcast() {
       if (!this.ready) return;
-      SS.Net.send({ t: 'lobby', level: this.level, players: this.players.map((p) => ({ id: p.id, cid: p.cid, ready: p.ready })) }, 'all', true);
+      SS.Net.send({
+        t: 'lobby', mode: this.mode, level: this.level,
+        place: this.battle ? SS.STAGES[this.stage].name : `Map ${this.level + 1}: ${SS.LEVELS[this.level].name}`,
+        players: this.players.map((p) => ({ id: p.id, cid: p.cid, ready: p.ready, cpu: p.cpu !== undefined })),
+      }, 'all', true);
     }
 
     start() {
       const ready = this.players.filter((p) => p.ready && p.cid);
-      SS.Net.send({ t: 'start', level: this.level }, 'all', true);
+      if (this.battle) {
+        if (ready.length < 2) { this.warn = 'You need at least 2 sloths. Wait for a friend or press C to add a CPU.'; this.warnT = 4; SS.Audio.hurt(); return; }
+        const st = SS.STAGES[this.stage];
+        SS.Net.send({ t: 'start', mode: 'battle' }, 'all', true);
+        SS.Engine.setScene(new SS.DuelScene({
+          net: true, theme: st.theme, gravity: st.gravity, stageIndex: this.stage,
+          players: ready.map((p) => ({ id: p.id, cid: p.cid, local: p.id === 0 ? 'SOLO' : null, cpu: p.cpu })),
+        }));
+        return;
+      }
+      SS.Net.send({ t: 'start', mode: 'campaign', level: this.level }, 'all', true);
       SS.Engine.setScene(new SS.CampaignScene({
         level: this.level, net: true,
         players: ready.map((p) => ({ id: p.id, cid: p.cid, local: p.id === 0 ? 'SOLO' : null })),
@@ -151,22 +203,33 @@
 
     update(dt) {
       this.t += dt;
-      if (SS.Menu.back()) {
+      this.warnT = (this.warnT || 0) - dt;
+      if (SS.Menu.back() || UI.backTapped()) {
         SS.Net.leave();
-        SS.Engine.setScene(new SS.CampaignModeScene());
+        SS.Engine.setScene(new SS.CampaignModeScene({ kind: this.battle ? 'duel' : 'campaign' }));
         return;
       }
       if (this.error || !this.ready) return;
-      if (SS.Menu.left()) { this.level = Math.max(0, this.level - 1); SS.Audio.select(); this.broadcast(); }
-      if (SS.Menu.right()) { this.level = Math.min(this.maxLevel, this.level + 1); SS.Audio.select(); this.broadcast(); }
+      const count = this.battle ? SS.STAGES.length : this.maxLevel + 1;
+      const change = (d) => {
+        if (this.battle) this.stage = (this.stage + d + count) % count;
+        else this.level = Math.max(0, Math.min(this.maxLevel, this.level + d));
+        SS.Audio.select();
+        this.broadcast();
+      };
+      if (SS.Menu.left()) change(-1);
+      if (SS.Menu.right()) change(1);
+      if (I.hit('KeyC')) this.addCpu();
+      if (I.hit('KeyX')) this.removeCpu();
       if (I.anyHit(['Enter', 'Pad0Start', 'Pad0A'])) { SS.Audio.confirm(); this.start(); return; }
       this.syncT += dt;
       if (this.syncT > 1) { this.syncT = 0; this.broadcast(); }
     }
 
     draw(ctx) {
-      bg(ctx, this.t);
-      UI.outlineText(ctx, 'WI-FI CO-OP LOBBY', W / 2, 44, 38, '#ffd23f', 'center');
+      const st = SS.STAGES[this.stage];
+      bg(ctx, this.t, this.battle ? st.theme : 'jungle');
+      UI.outlineText(ctx, this.battle ? 'WI-FI BATTLE LOBBY' : 'WI-FI CO-OP LOBBY', W / 2, 44, 38, '#ffd23f', 'center');
       if (this.error) {
         UI.panel(ctx, 120, 160, W - 240, 160);
         UI.outlineText(ctx, 'Could not start the Wi-Fi game', W / 2, 200, 24, '#ff4d6d', 'center');
@@ -180,57 +243,66 @@
       }
       UI.panel(ctx, W / 2 - 330, 70, 660, 92);
       UI.outlineText(ctx, `JOIN CODE:  ${SS.Net.code}`, W / 2, 98, 30, '#00f5d4', 'center');
-      UI.text(ctx, `On the other computers open:  ${SS.Net.address}`, W / 2, 128, 15, '#ffffff', 'center');
-      UI.text(ctx, 'then choose  Campaign > Join Wi-Fi Game  and type the code.', W / 2, 148, 13, '#cccccc', 'center');
+      UI.text(ctx, `On the other computers or phones open:  ${SS.Net.address}`, W / 2, 128, 15, '#ffffff', 'center');
+      UI.text(ctx, `then choose  ${this.battle ? 'Slapdown Duel > Join Wi-Fi Battle' : 'Campaign > Join Wi-Fi Game'}  and type the code.`, W / 2, 148, 13, '#cccccc', 'center');
 
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < MAX_PLAYERS; i++) {
         const x = 150 + i * 220;
-        const p = this.players.find((q) => q.id === i);
-        const label = !p ? 'waiting for player...' : i === 0 ? 'HOST' : p.ready ? 'READY!' : 'choosing a sloth...';
-        slothCard(ctx, x, 380, p && p.cid, `P${i + 1}`, SS.PLAYER_COLORS[i], i === 0 ? 'READY!' : label, this.t + i);
-        if (i === 0) UI.text(ctx, 'you (host)', x, 432, 12, '#ffd23f', 'center');
+        const p = this.players[i];
+        const label = !p ? (this.battle ? 'waiting... (C = add CPU)' : 'waiting for player...')
+          : p.id === 0 ? 'READY!' : p.cpu !== undefined ? 'CPU' : p.ready ? 'READY!' : 'choosing a sloth...';
+        // battles number sloths by lobby order (like in the fight); co-op by player slot
+        const n = this.battle || !p ? i : p.id;
+        slothCard(ctx, x, 380, p && p.cid, `P${n + 1}`, SS.PLAYER_COLORS[n % 4], label, this.t + i);
+        if (p && p.id === 0) UI.text(ctx, 'you (host)', x, 432, 12, '#ffd23f', 'center');
       }
-      const L = SS.LEVELS[this.level];
-      UI.outlineText(ctx, `◀  MAP ${this.level + 1}: ${L.name}  ▶`, W / 2, 470, 22, '#ffffff', 'center');
-      const waiting = this.players.some((p) => p.id !== 0 && !p.ready);
-      UI.text(ctx, waiting ? 'Enter = start now (players still choosing can drop in later)   Esc = cancel'
-        : 'Press Enter to start!   Esc = cancel', W / 2, H - 22, 15, '#9bf6ff', 'center');
+      const place = this.battle ? `STAGE: ${st.name}` : `MAP ${this.level + 1}: ${SS.LEVELS[this.level].name}`;
+      UI.outlineText(ctx, `◀  ${place}  ▶`, W / 2, 470, 22, '#ffffff', 'center');
+      if (this.warnT > 0) UI.outlineText(ctx, this.warn, W / 2, 500, 15, '#ff4d6d', 'center');
+      const waiting = this.players.some((p) => p.id !== 0 && p.cpu === undefined && !p.ready);
+      const extra = this.battle ? '   C = add CPU, X = remove CPU' : '';
+      UI.text(ctx, (waiting ? 'Enter = start now (anyone still choosing can jump in later)' : 'Press Enter to start!') + extra + '   Esc = cancel',
+        W / 2, H - 22, 14, '#9bf6ff', 'center');
     }
   };
 
   // ---------------------------------------------------------------- join (guest)
+  // opts.rejoin: already connected (the host went back to the lobby) - just pick and get ready again
   SS.JoinScene = class {
-    constructor() {
+    constructor(opts = {}) {
       this.t = 0;
-      this.phase = 'code'; // code | connecting | pick | ready
+      this.phase = opts.rejoin && SS.Net.active ? 'pick' : 'code'; // code | connecting | pick
       this.code = '';
       this.error = null;
       this.cur = SS.Save.get('lastPicks', [0, 2])[0] % SS.CHARACTERS.length;
       this.lobby = null;
       this.inGame = false;
+      this.mode = null;
       this.keys = [];
       for (let i = 0; i < 12; i++) {
         const label = i < 9 ? String(i + 1) : ['⌫', '0', 'OK'][i - 9];
         this.keys.push({ label, x: W / 2 - 96 + (i % 3) * 66, y: 250 + Math.floor(i / 3) * 56, w: 60, h: 48 });
       }
+      if (this.phase === 'pick') this.isReady = false;
     }
 
     enter() {
       SS.Audio.playMusic('menu');
       SS.Net.onMessage = (m, from) => this.onNet(m, from);
+      if (this.phase === 'pick') this.sendPick(false);
     }
 
-    onNet(m, from) {
+    onNet(m) {
       if (!m) return;
       if (m.t === 'hostLeft') { this.fail(m.reason || 'The host closed the game.'); return; }
-      if (m.t === 'welcome') { this.inGame = !!m.inGame; this.phase = 'pick'; this.sendPick(false); }
-      else if (m.t === 'lobby') this.lobby = m;
-      else if (m.t === 'start') this.toGame(m.level);
-      else if (m.t === 'snap' && (m.pl || []).some((p) => p.id === SS.Net.id)) this.toGame(m.lv, m);
+      if (m.t === 'welcome') { this.inGame = !!m.inGame; this.mode = m.mode || this.mode; this.phase = 'pick'; this.sendPick(false); }
+      else if (m.t === 'lobby') { this.lobby = m; this.mode = m.mode; }
+      else if (m.t === 'start') this.toGame(m.mode, m.level);
+      else if (m.t === 'snap' && (m.pl || []).some((p) => p.id === SS.Net.id)) this.toGame(m.k === 'duel' ? 'battle' : 'campaign', m.lv, m);
     }
 
-    toGame(level, firstSnap) {
-      const scene = new SS.RemoteScene({ level });
+    toGame(mode, level, firstSnap) {
+      const scene = mode === 'battle' ? new SS.RemoteDuelScene() : new SS.RemoteScene({ level: level || 0 });
       SS.Engine.setScene(scene);
       if (firstSnap) scene.onNet(firstSnap);
     }
@@ -263,7 +335,7 @@
       this.t += dt;
       if (UI.backTapped() || (SS.Menu.back() && !(this.phase === 'code' && I.hit('Backspace') && this.code))) {
         SS.Net.leave();
-        SS.Engine.setScene(new SS.CampaignModeScene());
+        SS.Engine.setScene(new SS.MenuScene());
         return;
       }
       if (this.phase === 'code') {
@@ -281,14 +353,15 @@
         if (I.anyHit(['Enter', 'NumpadEnter'])) this.tryJoin();
       } else if (this.phase === 'pick') {
         const n = SS.CHARACTERS.length;
-        if (SS.Menu.left()) { this.cur = (this.cur - 1 + n) % n; SS.Audio.select(); if (this.isReady) this.sendPick(false); }
-        if (SS.Menu.right()) { this.cur = (this.cur + 1) % n; SS.Audio.select(); if (this.isReady) this.sendPick(false); }
+        const pick = (d) => { this.cur = (this.cur + d + n) % n; SS.Audio.select(); if (this.isReady) this.sendPick(false); };
+        if (SS.Menu.left()) pick(-1);
+        if (SS.Menu.right()) pick(1);
         if (SS.Menu.confirm()) { SS.Audio.confirm(); this.sendPick(!this.isReady); }
         // taps: left/right side of the card to choose, the button to get ready
         const p = I.pointer;
         if (p.pressed && p.y > 120 && p.y < 390) {
-          if (p.x < W / 2 - 60) { this.cur = (this.cur - 1 + n) % n; SS.Audio.select(); if (this.isReady) this.sendPick(false); }
-          else if (p.x > W / 2 + 60) { this.cur = (this.cur + 1) % n; SS.Audio.select(); if (this.isReady) this.sendPick(false); }
+          if (p.x < W / 2 - 60) pick(-1);
+          else if (p.x > W / 2 + 60) pick(1);
         } else if (p.pressed && p.y >= 400 && p.y <= 440 && Math.abs(p.x - W / 2) < 190) {
           SS.Audio.confirm();
           this.sendPick(!this.isReady);
@@ -320,8 +393,10 @@
         UI.backButton(ctx);
         return;
       }
-      const me = SS.Net.id;
-      UI.outlineText(ctx, `You are P${me + 1}`, W / 2, 96, 24, SS.PLAYER_COLORS[me % 4], 'center');
+      const what = this.mode === 'battle' ? 'BATTLE' : this.mode === 'campaign' ? 'CO-OP' : '';
+      const idx = this.lobby ? this.lobby.players.findIndex((p) => p.id === SS.Net.id) : -1;
+      const me = this.mode === 'battle' && idx >= 0 ? idx : SS.Net.id;
+      UI.outlineText(ctx, `You are P${me + 1}${what ? '  -  ' + what : ''}`, W / 2, 96, 24, SS.PLAYER_COLORS[me % 4], 'center');
       const c = SS.CHARACTERS[this.cur];
       UI.panel(ctx, W / 2 - 170, 120, 340, 270);
       SS.Art.sloth(ctx, { x: W / 2, y: 330, look: c.look, scale: 1.3 / Math.max(1, c.scale), t: this.t, pose: this.isReady ? 'win' : 'idle' });
@@ -333,10 +408,12 @@
       ctx.fill();
       UI.text(ctx, this.isReady ? 'READY! Waiting for the host... (tap to change)' : 'I\'m ready!  (Enter or tap)',
         W / 2, 421, 17, this.isReady ? '#52e07a' : '#2b193d', 'center');
-      if (this.inGame) UI.text(ctx, 'A map is already being played - you will drop in next to your team.', W / 2, 448, 14, '#cccccc', 'center');
+      if (this.inGame) {
+        UI.text(ctx, this.mode === 'battle' ? 'A battle is going on - you will jump in at the next round.'
+          : 'A map is already being played - you will drop in next to your team.', W / 2, 452, 14, '#cccccc', 'center');
+      }
       if (this.lobby) {
-        const L = SS.LEVELS[this.lobby.level];
-        UI.text(ctx, `Players: ${this.lobby.players.length}/4     Map ${this.lobby.level + 1}: ${L ? L.name : ''}`, W / 2, 470, 15, '#ffffff', 'center');
+        UI.text(ctx, `Players: ${this.lobby.players.length}/4     ${this.lobby.place || ''}`, W / 2, 474, 15, '#ffffff', 'center');
       }
       UI.text(ctx, '←/→ (or tap the sides) choose sloth    Enter = ready    Esc = leave', W / 2, H - 18, 13, '#dddddd', 'center');
       UI.backButton(ctx);

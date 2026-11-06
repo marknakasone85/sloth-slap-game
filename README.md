@@ -30,7 +30,9 @@ A comical cartoon slap-'em-up starring a crew of sloths.
   - **2 Players (this computer):** P1 uses WASD + F/G/H/R and P2 uses the arrow keys + , . / ;
   - **Wi-Fi co-op, 2 to 4 players** on different computers on the same Wi-Fi (see *Playing together on Wi-Fi* below).
   - Everyone shares one screen. If you get snoozed while a teammate is still up, you pop back in next to them after 5 seconds. Checkpoints are only needed if the whole team goes down. Enemies get tougher the more sloths there are.
-- **Slapdown Duel**: a 1v1 fighting mode, best of 3 rounds. Play against a friend on one keyboard, or against the CPU at three difficulty levels (Sleepy / Grumpy / Savage).
+- **Slapdown Duel**: a fighting mode, first to 2 round wins.
+  - **vs CPU** (Sleepy / Grumpy / Savage) or **2 Players** on one keyboard.
+  - **Wi-Fi Battle, 2 to 4 sloths:** free-for-all, and the last sloth standing wins the round (if time runs out, the most health left wins). The host can add **CPU sloths** in the lobby (C = add, X = remove) to fill empty spots. Late arrivals jump in at the next round. After a match: **Rematch** or **Back to Lobby** (same join code, nobody has to rejoin).
 
 There are five sloths, each with their own stats and special move:
 
@@ -82,11 +84,13 @@ Phones and tablets play in the web browser. On the computer, double-click `share
 
 ## Playing together on Wi-Fi (2-4 players)
 
-1. **Host** (the computer that runs the game): double-click `share-on-network.command`, then open **http://localhost:8000** in a browser on that same computer. Choose **Campaign → Host Wi-Fi Game**, pick your sloth, and the lobby shows a **4-digit join code**.
-2. **Everyone else:** open the address shown in the host's sharing window (like `http://192.168.1.23:8000`), choose **Campaign → Join Wi-Fi Game**, type the code, pick a sloth and press **Enter** when ready.
-3. The host picks a map and presses **Enter** to start. Late arrivals can still join and drop in next to the team.
+1. **Host** (the computer that runs the game): double-click `share-on-network.command`, then open **http://localhost:8000** in a browser on that same computer.
+   - Co-op: **Campaign → Host Wi-Fi Game**. Battle: **Slapdown Duel → Host Wi-Fi Battle**.
+   - Pick your sloth and the lobby shows a **4-digit join code**.
+2. **Everyone else** (computers or phones): open the address shown in the host's sharing window (like `http://192.168.1.23:8000`), choose **Join Wi-Fi Game** or **Join Wi-Fi Battle**, type the code, pick a sloth and press **Enter** (or tap) when ready.
+3. The host picks a map or stage with ←/→ (battles: C adds a CPU sloth) and presses **Enter** to start. Late arrivals can still join.
 
-How it works: the host's computer runs the real game. The others send their button presses and draw what the host sends back (about 30 updates a second, roughly 1.5 KB each). The host's game keeps running even if its window is hidden.
+How it works: the host's computer runs the real game. The others send their button presses and draw what the host sends back (about 30 updates a second, roughly 1.5 KB each). The host's game keeps running even if its window is hidden, covered or in a background tab.
 
 Security: only the host's own computer can start a game, joining needs the code, a device that types too many wrong codes is locked out for a minute, every player gets a secret token, messages are small and never saved, other websites can't talk to it, and it's still home-network only and turns off by itself after 3 hours.
 

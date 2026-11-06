@@ -55,24 +55,25 @@ window.SS = window.SS || {};
       this.resize();
       window.addEventListener('resize', () => this.resize());
       SS.Input.init(this.canvas);
-      document.addEventListener('visibilitychange', () => this.backgroundTicker(document.hidden));
       requestAnimationFrame((t) => this.loop(t));
     },
 
-    // Browsers stop animating hidden tabs. When this computer HOSTS a Wi-Fi game,
-    // keep the game running anyway (with a tiny worker timer) so it never freezes for the others.
-    backgroundTicker(hidden) {
-      if (hidden && SS.Net && SS.Net.role === 'host') {
-        if (this.worker) return;
-        try {
-          const src = 'setInterval(function () { postMessage(0); }, 16);';
-          this.worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
-          this.worker.onmessage = () => this.frame(performance.now());
-        } catch (e) { this.worker = null; }
-      } else if (this.worker) {
-        this.worker.terminate();
-        this.worker = null;
-      }
+    // Browsers slow down or stop animating tabs that are hidden, covered or in the background.
+    // While this computer HOSTS a Wi-Fi game, a tiny worker timer stands by and runs the game
+    // whenever normal frames stop arriving, so it never freezes for the other players.
+    startHostTicker() {
+      if (this.worker) return;
+      try {
+        const src = 'setInterval(function () { postMessage(0); }, 16);';
+        this.worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+        this.worker.onmessage = () => {
+          const now = performance.now();
+          if (now - this.lastFrameAt > 40) this.frame(now);
+        };
+      } catch (e) { this.worker = null; }
+    },
+    stopHostTicker() {
+      if (this.worker) { this.worker.terminate(); this.worker = null; }
     },
 
     resize() {
@@ -103,6 +104,7 @@ window.SS = window.SS || {};
     },
 
     frame(ts) {
+      this.lastFrameAt = performance.now();
       const dt = Math.min(0.05, (ts - (this.last || ts)) / 1000);
       this.last = ts;
       this.time += dt;

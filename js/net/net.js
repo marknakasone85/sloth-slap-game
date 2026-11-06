@@ -31,6 +31,7 @@
       const d = await this.api('/net/host');
       Object.assign(this, { role: 'host', id: 0, token: d.token, code: d.code, address: d.address });
       this.open();
+      SS.Engine.startHostTicker();
       return d;
     },
 
@@ -77,6 +78,7 @@
         }).catch(() => {});
       }
       if (this.es) this.es.close();
+      if (this.role === 'host') SS.Engine.stopHostTicker();
       Object.assign(this, { role: null, id: null, token: null, code: null, es: null, status: 'off', onMessage: null });
     },
   });

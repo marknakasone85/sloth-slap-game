@@ -56,6 +56,13 @@
     onNet(m) {
       if (!m) return;
       if (m.t === 'hostLeft') { this.end(m.reason || 'The host ended the game.'); return; }
+      if (m.t === 'toLobby') { SS.Engine.setScene(new SS.JoinScene({ rejoin: true })); return; }
+      if (m.t === 'snap' && m.k === 'duel') { // host switched to a battle
+        const scene = new SS.RemoteDuelScene();
+        SS.Engine.setScene(scene);
+        scene.onNet(m);
+        return;
+      }
       if (m.t !== 'snap' || m.n <= this.lastSeq) return;
       this.lastSeq = m.n;
       if (m.lv !== this.levelIndex) this.setLevel(m.lv);

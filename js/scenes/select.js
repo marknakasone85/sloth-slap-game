@@ -7,7 +7,7 @@
   const START_X = (W - (CARD_W * 5 + GAP * 4)) / 2;
   const CARD_Y = 96;
 
-  const STAGES = [
+  const STAGES = (SS.STAGES = [
     { name: 'Jungle Arena', theme: 'jungle' },
     { name: 'Banana Beach', theme: 'beach' },
     { name: 'Temple Ruins', theme: 'temple' },
@@ -21,7 +21,7 @@
     { name: 'Lava Lagoon', theme: 'lava' },
     { name: 'Jurassic Jog', theme: 'dino' },
     { name: 'Space (low gravity!)', theme: 'space', gravity: 0.55 },
-  ];
+  ]);
 
   const P1KEYS = { left: ['KeyA', 'Pad0Left'], right: ['KeyD', 'Pad0Right'], ok: ['KeyF', 'Space', 'Pad0A'], back: ['KeyG', 'Pad0B'] };
   const P2KEYS = { left: ['ArrowLeft', 'Pad1Left'], right: ['ArrowRight', 'Pad1Right'], ok: ['Comma', 'Enter', 'Numpad1', 'Pad1A'], back: ['Period', 'Pad1B'] };
@@ -84,7 +84,7 @@
           if (p >= 0) { this.cur[p] = c; this.locked[p] = true; SS.Audio.confirm(); }
         }
         if (I.anyHit(['Escape', 'Backspace'])) {
-          SS.Engine.setScene(this.mode === 'coop' ? new SS.CampaignModeScene() : new SS.MenuScene());
+          SS.Engine.setScene(new SS.CampaignModeScene({ kind: this.mode === 'coop' ? 'campaign' : 'duel' }));
           return;
         }
         if (this.locked[0] && this.locked[1]) {
@@ -105,9 +105,11 @@
         SS.Audio.confirm();
         this.locked[p] = true;
         if (this.mode === 'campaign') this.openLevelMenu();
-        else if (this.mode === 'host') {
+        else if (this.mode === 'host' || this.mode === 'hostBattle') {
           this.savePicks();
-          SS.Engine.setScene(new SS.LobbyScene({ cid: SS.CHARACTERS[this.cur[0]].id }));
+          SS.Engine.setScene(new SS.LobbyScene({
+            cid: SS.CHARACTERS[this.cur[0]].id, mode: this.mode === 'hostBattle' ? 'battle' : 'campaign',
+          }));
         }
         else if (this.phase === 'char') this.phase = 'cpuChar';
         else this.openDifficultyMenu();
@@ -124,7 +126,7 @@
         return;
       }
       if (this.phase === 'cpuChar') { this.phase = 'char'; this.locked[0] = false; return; }
-      SS.Engine.setScene(this.mode === 'duel' ? new SS.MenuScene() : new SS.CampaignModeScene());
+      SS.Engine.setScene(new SS.CampaignModeScene({ kind: this.mode === 'duel' || this.mode === 'hostBattle' ? 'duel' : 'campaign' }));
     }
 
     savePicks() { SS.Save.set('lastPicks', this.cur); }
@@ -183,7 +185,7 @@
             p2: SS.CHARACTERS[this.cur[1]].id,
             vsCpu: this.vsCpu,
             cpuLevel: this.cpuLevel !== undefined ? this.cpuLevel : 1,
-            theme: s.theme, gravity: s.gravity,
+            theme: s.theme, gravity: s.gravity, stageIndex: STAGES.indexOf(s),
           }));
         },
       })), W / 2, 152, { w: 320, h: 40, gap: 8, cols: 2, fontSize: 18 });
@@ -209,7 +211,7 @@
         return;
       }
 
-      const title = this.mode === 'campaign' || this.mode === 'host' ? 'CHOOSE YOUR SLOTH'
+      const title = this.mode === 'campaign' || this.mode === 'host' || this.mode === 'hostBattle' ? 'CHOOSE YOUR SLOTH'
         : this.mode === 'coop' ? 'CHOOSE YOUR SLOTHS'
         : this.phase === 'cpuChar' ? 'CHOOSE YOUR OPPONENT' : 'CHOOSE YOUR FIGHTERS';
       UI.outlineText(ctx, title, W / 2, 50, 40, '#ffd23f', 'center');

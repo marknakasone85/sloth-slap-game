@@ -58,6 +58,39 @@
       for (const [m, a] of msg.au || []) if (AUDIO_METHODS.includes(m)) SS.Audio[m](...a);
     },
 
+    // Wi-Fi battle snapshot (Slapdown Duel with 2-4 sloths).
+    duelSnapshot(scene) {
+      const b = this.takeBuffer();
+      return {
+        t: 'snap', k: 'duel', n: ++this.seq, st: scene.state, stT: r2(scene.stateT), timer: r2(scene.timer),
+        rd: scene.round, bn: scene.banner || 0, ba: r2(scene.bannerAge()), th: scene.theme,
+        ttl: scene.state === 'matchEnd' ? scene.matchTitle() : 0,
+        sub: scene.state === 'matchEnd' && scene.matchWinner ? `${scene.matchWinner.def.name} is the Supreme Slapper.` : 0,
+        pl: scene.slots.map((s) => Object.assign(s.f.renderState(), {
+          id: s.id, tag: scene.tagOf(s), tc: scene.colorOf(s), hp: Math.max(0, Math.round(s.f.hp)), mhp: s.f.maxHp,
+          gh: r2(s.ghost), me: Math.round(s.f.meter), cs: s.f.canSpecial ? 1 : 0, am: s.f.ammo, mam: s.f.maxAmmo,
+          amt: r2(s.f.ammoT), amr: s.f.ammoRegen, wins: s.wins, cpu: s.cpu ? 1 : 0,
+        })),
+        pr: scene.projectiles.map((p) => [p.kind, r1(p.x), r1(p.y), Math.round(p.vx), Math.round(p.vy)]),
+        fx: b.fx, au: b.au,
+      };
+    },
+
+    // Guests: send held keys when they change, every press, and a heartbeat twice a second.
+    sendInput(state, dt, c) {
+      const keys = ['jumpP', 'slapP', 'heavyP', 'specialP', 'shootP'];
+      const presses = keys.filter((k) => c[k]);
+      const held = [c.left ? 1 : 0, c.right ? 1 : 0, c.down ? 1 : 0];
+      const changed = !state.lastHeld || held.some((v, i) => v !== state.lastHeld[i]);
+      state.heartbeat = (state.heartbeat || 0) - dt;
+      if (presses.length || changed || state.heartbeat <= 0) {
+        state.heartbeat = 0.5;
+        state.lastHeld = held;
+        state.inSeq = (state.inSeq || 0) + 1;
+        SS.Net.send({ t: 'in', n: state.inSeq, l: held[0], r: held[1], d: held[2], p: presses }, 'host', true);
+      }
+    },
+
     snapshot(scene) {
       const b = this.takeBuffer();
       const powers = (p) => {
