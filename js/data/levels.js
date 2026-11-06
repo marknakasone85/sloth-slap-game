@@ -294,4 +294,92 @@ SS.LEVELS = [
     gates: [{ id: 1, x: 1500 }, { id: 2, x: 3400 }],
     boss: { type: 'bigUfo', x: 4000, y: 280 },
   },
+
+  // ----------------- World tour 3 -----------------
+  {
+    name: 'Capitol Capers',
+    blurb: 'Washington DC! Acorn-tossing squirrels and very angry geese.',
+    theme: 'dc', music: 'march', length: 4400,
+    platforms: [{ x: 700, y: 360, w: 180 }, { x: 950, y: 300, w: 160 }, { x: 1900, y: 350, w: 200 }, { x: 2600, y: 330, w: 200 }],
+    enemies: [
+      { type: 'squirrel', x: 650 }, { type: 'pigeon', x: 850, y: 280 }, { type: 'goose', x: 1100 },
+      { type: 'squirrel', x: 1250 }, { type: 'goose', x: 1650 }, { type: 'pigeon', x: 1850, y: 260 },
+      { type: 'kangaroo', x: 2050 }, { type: 'squirrel', x: 2300 }, { type: 'goose', x: 2500 },
+      { type: 'pigeon', x: 2750, y: 250 }, { type: 'squirrel', x: 2950 },
+    ],
+    crates: [{ x: 550, loot: 'banana' }, { x: 1550, loot: 'hibiscus' }, { x: 2400, loot: 'banana' }, { x: 3300, loot: 'hibiscus' }],
+    pickups: [
+      { type: 'banana', x: 1000, y: 260 }, { type: 'banana', x: 1050, y: 260 },
+      { type: 'banana', x: 1980, y: 310 }, { type: 'banana', x: 2680, y: 290 },
+    ],
+    gongs: [{ id: 1, x: 1350 }, { id: 2, x: 3100 }],
+    gates: [{ id: 1, x: 1450 }, { id: 2, x: 3200 }],
+    boss: { type: 'megaGoose', x: 3800 },
+  },
+  {
+    name: 'Pyramid Panic',
+    blurb: 'Egypt! Mummies shuffle, scorpions pinch and camels spit.',
+    theme: 'egypt', music: 'egypt', length: 4400,
+    platforms: [
+      { x: 650, y: 350, w: 200 }, { x: 950, y: 280, w: 160 }, { x: 1800, y: 340, w: 220 },
+      { x: 2500, y: 320, w: 180 }, { x: 2750, y: 260, w: 160 },
+    ],
+    enemies: [
+      { type: 'scorpion', x: 600 }, { type: 'mummy', x: 850 }, { type: 'vulture', x: 1000, y: 270 },
+      { type: 'camel', x: 1200 }, { type: 'mummy', x: 1650 }, { type: 'scorpion', x: 1800 },
+      { type: 'vulture', x: 2000, y: 250 }, { type: 'camel', x: 2250 }, { type: 'mummy', x: 2550 },
+      { type: 'scorpion', x: 2700 }, { type: 'vulture', x: 2950, y: 240 }, { type: 'mummy', x: 3050 },
+    ],
+    crates: [{ x: 500, loot: 'banana' }, { x: 1550, loot: 'hibiscus' }, { x: 2400, loot: 'banana' }, { x: 3300, loot: 'hibiscus' }],
+    pickups: [
+      { type: 'banana', x: 1000, y: 240 }, { type: 'banana', x: 1050, y: 240 },
+      { type: 'banana', x: 2800, y: 220 }, { type: 'banana', x: 2850, y: 220 },
+    ],
+    gongs: [{ id: 1, x: 1350 }, { id: 2, x: 3100 }],
+    gates: [{ id: 1, x: 1450 }, { id: 2, x: 3200 }],
+    boss: { type: 'mummyKing', x: 3800 },
+  },
+  {
+    name: 'Crystal Caverns',
+    blurb: 'A dark cave full of glowing crystals... and spiders. Stay close to the light!',
+    theme: 'cave', music: 'cave', length: 4300,
+    platforms: [{ x: 700, y: 350, w: 180 }, { x: 1000, y: 290, w: 160 }, { x: 1900, y: 340, w: 200 }, { x: 2500, y: 320, w: 200 }],
+    enemies: [
+      { type: 'spider', x: 600, y: 200 }, { type: 'bat', x: 800, y: 280 }, { type: 'crystalCrab', x: 1000 },
+      { type: 'spider', x: 1150, y: 180 }, { type: 'kangaroo', x: 1600 }, { type: 'bat', x: 1750, y: 260 },
+      { type: 'spider', x: 1950, y: 190 }, { type: 'crystalCrab', x: 2200 }, { type: 'spider', x: 2400, y: 200 },
+      { type: 'bat', x: 2650, y: 250 }, { type: 'crystalCrab', x: 2850 },
+    ],
+    crates: [{ x: 500, loot: 'banana' }, { x: 1500, loot: 'hibiscus' }, { x: 2300, loot: 'banana' }, { x: 3200, loot: 'hibiscus' }],
+    pickups: [
+      { type: 'banana', x: 760, y: 310 }, { type: 'banana', x: 1060, y: 250 },
+      { type: 'banana', x: 1980, y: 300 }, { type: 'banana', x: 2580, y: 280 },
+    ],
+    gongs: [{ id: 1, x: 1300 }, { id: 2, x: 3000 }],
+    gates: [{ id: 1, x: 1400 }, { id: 2, x: 3100 }],
+    boss: { type: 'giantMole', x: 3700 },
+  },
+  {
+    name: 'Big Apple Bash',
+    blurb: 'New York City! Pizza rats, honking taxis and one enormous rat boss.',
+    theme: 'nyc', music: 'nyc', length: 4600,
+    platforms: [
+      { x: 700, y: 350, w: 200 }, { x: 1000, y: 290, w: 160 }, { x: 2000, y: 340, w: 200 },
+      { x: 2300, y: 280, w: 180 }, { x: 2900, y: 330, w: 200 },
+    ],
+    enemies: [
+      { type: 'rat', x: 600 }, { type: 'pigeon', x: 800, y: 280 }, { type: 'hotdogMonkey', x: 1000 },
+      { type: 'taxi', x: 1250 }, { type: 'rat', x: 1650 }, { type: 'rat', x: 1720 },
+      { type: 'pigeon', x: 1900, y: 260 }, { type: 'hotdogMonkey', x: 2150 }, { type: 'taxi', x: 2500 },
+      { type: 'kangaroo', x: 2700 }, { type: 'pigeon', x: 2950, y: 250 }, { type: 'hotdogMonkey', x: 3150 },
+    ],
+    crates: [{ x: 550, loot: 'banana' }, { x: 1600, loot: 'hibiscus' }, { x: 2600, loot: 'banana' }, { x: 3500, loot: 'hibiscus' }],
+    pickups: [
+      { type: 'banana', x: 1060, y: 250 }, { type: 'banana', x: 1110, y: 250 },
+      { type: 'banana', x: 2360, y: 240 }, { type: 'banana', x: 2410, y: 240 },
+    ],
+    gongs: [{ id: 1, x: 1400 }, { id: 2, x: 3300 }],
+    gates: [{ id: 1, x: 1500 }, { id: 2, x: 3400 }],
+    boss: { type: 'megaRat', x: 4000 },
+  },
 ];

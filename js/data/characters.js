@@ -1,7 +1,8 @@
 // Playable sloths. Add a new character by adding an entry here.
 //  speed: walk speed (px/s)   jump: jump velocity   power: damage multiplier
 //  hp: max health             weight: knockback resistance (1 = normal)
-//  special: one of 'flurry' | 'dash' | 'bellyflop' | 'lullaby' | 'coconuts'
+//  special: one of 'flurry' | 'dash' | 'bellyflop' | 'lullaby' | 'coconuts' |
+//           'barrage' | 'missiles' | 'cannon' | 'freeze'
 SS.CHARACTERS = [
   {
     id: 'sir',
@@ -57,6 +58,50 @@ SS.CHARACTERS = [
     },
     scale: 1.05, speed: 180, jump: 630, power: 1.05, hp: 105, weight: 1.1,
     special: 'coconuts', specialName: 'Coconut Decree',
+  },
+  {
+    id: 'sarge',
+    name: 'Sergeant Snooze',
+    quip: 'Ten-hut! Nap time is in five minutes. Slap time is NOW.',
+    look: {
+      fur: '#7d6a4f', furDark: '#5a4a36', face: '#efe2c9', mask: '#3d3020',
+      belly: '#97835f', accessory: 'army', accent: '#556b2f',
+    },
+    scale: 1.05, speed: 185, jump: 630, power: 1.05, hp: 110, weight: 1.15,
+    special: 'barrage', specialName: 'Banana Barrage',
+  },
+  {
+    id: 'wizzy',
+    name: 'Wizzy the Wise',
+    quip: 'Abraca-SLAP-ra! (I studied napping for 900 years.)',
+    look: {
+      fur: '#9e8fb0', furDark: '#6f6283', face: '#f1ecf7', mask: '#3b3350',
+      belly: '#b6a9c7', accessory: 'wizard', accent: '#7b2cbf',
+    },
+    scale: 0.98, speed: 190, jump: 660, power: 0.9, hp: 90, weight: 0.95,
+    special: 'missiles', specialName: 'Magic Snooze Missiles',
+  },
+  {
+    id: 'clawbeard',
+    name: 'Captain Clawbeard',
+    quip: 'Arr! Hand over yer hammock, matey!',
+    look: {
+      fur: '#8b6d4c', furDark: '#5f4a33', face: '#f0dcc0', mask: '#3e2c1c',
+      belly: '#a5865f', accessory: 'pirate', accent: '#e63946',
+    },
+    scale: 1.08, speed: 175, jump: 620, power: 1.15, hp: 115, weight: 1.2,
+    special: 'cannon', specialName: 'Belly Cannon',
+  },
+  {
+    id: 'flo',
+    name: 'Frosty Flo',
+    quip: 'Chill out. No really - I will freeze you.',
+    look: {
+      fur: '#b9c7d6', furDark: '#8a9aad', face: '#f4f9ff', mask: '#4a5a70',
+      belly: '#d4e0ec', accessory: 'beanie', accent: '#4cc9f0',
+    },
+    scale: 0.95, speed: 215, jump: 670, power: 0.9, hp: 95, weight: 0.9,
+    special: 'freeze', specialName: 'Brain Freeze Blast',
   },
 ];
 

@@ -128,6 +128,11 @@
       }
       this.fx.draw(ctx);
       ctx.restore();
+      if (SS.Art.isDark(s.th)) {
+        const lights = Object.values(this.players).map((p) => ({ x: p.x, y: p.y - 62, r: 240 }))
+          .concat(this.proj.map((p) => ({ x: p.x, y: p.y, r: 60 })));
+        SS.Art.darkness(ctx, lights, SS.Art.darkAlpha(s.th));
+      }
 
       SS.DuelHUD.draw(ctx, {
         t: this.t, timer: s.timer,

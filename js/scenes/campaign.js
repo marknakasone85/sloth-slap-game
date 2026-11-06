@@ -57,6 +57,7 @@
       const n = players.length;
       if (n > 1) {
         for (const e of this.enemies) {
+          if (e.d.behavior === 'flyer' || e.d.behavior === 'dangler') continue; // flyers stay one-hit
           const k = e.isBoss ? 1 + 0.5 * (n - 1) : 1 + 0.35 * (n - 1);
           e.hp = e.maxHp = Math.round(e.maxHp * k);
         }
@@ -532,6 +533,12 @@
       for (const pr of this.projectiles) pr.draw(ctx);
       this.fx.draw(ctx);
       ctx.restore();
+      if (SS.Art.isDark(this.L.theme)) {
+        // cave: light only around the sloths (and their shots)
+        const lights = this.fighters.map((f) => ({ x: f.x - this.camX, y: f.y - f.h * 0.55, r: 230 }))
+          .concat(this.projectiles.map((p) => ({ x: p.x - this.camX, y: p.y, r: 60 })));
+        SS.Art.darkness(ctx, lights, SS.Art.darkAlpha(this.L.theme));
+      }
 
       SS.CampaignHUD.draw(ctx, this.hudModel());
       SS.CampaignHUD.overlays(ctx, {

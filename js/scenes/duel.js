@@ -425,6 +425,11 @@
       for (const p of this.projectiles) p.draw(ctx);
       this.fx.draw(ctx);
       ctx.restore();
+      if (SS.Art.isDark(this.theme)) {
+        const lights = this.slots.map((s) => ({ x: s.f.x, y: s.f.y - s.f.h * 0.55, r: 240 }))
+          .concat(this.projectiles.map((p) => ({ x: p.x, y: p.y, r: 60 })));
+        SS.Art.darkness(ctx, lights, SS.Art.darkAlpha(this.theme));
+      }
 
       SS.DuelHUD.draw(ctx, this.hudModel());
       if (this.showStrip && ['intro', 'fight', 'roundEnd'].includes(this.state)) this.drawKeyStrips(ctx);

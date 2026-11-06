@@ -66,6 +66,211 @@
     },
   });
 
+  Object.assign(THEMES, {
+    dc: {
+      sky: ['#9fd3f5', '#f2f8fc'], far: '#e4e8ee', mid: '#f3f1ec',
+      ground: '#b9a88f', top: '#7cb342', deco: 'dc', orb: '#fff6b0', farStyle: 'monuments',
+    },
+    egypt: {
+      sky: ['#ffb347', '#ffe8b0'], far: '#d9a55b', mid: '#c98f45',
+      ground: '#e9c46a', top: '#f2d18b', deco: 'egypt', orb: '#fff1a8', farStyle: 'pyramids',
+    },
+    cave: {
+      sky: ['#140d1d', '#2a1f36'], far: '#251b30', mid: '#3a2d47',
+      ground: '#3a3040', top: '#5c4d63', deco: 'crystal', farStyle: 'stalactites',
+      noClouds: true, noOrb: true, dark: 0.62,
+    },
+    nyc: {
+      sky: ['#2b2d52', '#ff9e7a'], far: '#3a3f63', mid: '#7a4b3a',
+      ground: '#38383e', top: '#9a9aa2', deco: 'nyc', orb: '#ffd6a5', farStyle: 'skyline', street: true,
+    },
+  });
+
+  // ---------- Washington DC ----------
+  function dc(ctx, x, base, h, i, t) {
+    const k = i % 3;
+    if (k === 0) {
+      // cherry blossom tree
+      ctx.fillStyle = '#5a3a2a';
+      ctx.fillRect(x - 6, base - h * 0.55, 12, h * 0.55);
+      ctx.fillStyle = '#ffb7c5';
+      for (const [dx, dy, r] of [[-30, -0.62, 32], [24, -0.66, 30], [0, -0.8, 34], [-12, -0.55, 24], [30, -0.5, 22]]) {
+        ctx.beginPath(); ctx.arc(x + dx, base + h * dy, r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#ff8fab';
+      for (let p = 0; p < 4; p++) {
+        const py = base - h * 0.4 + ((t * 30 + p * 40 + i * 17) % (h * 0.4));
+        ctx.fillRect(x - 30 + p * 18 + Math.sin(t * 2 + p) * 6, py, 4, 3);
+      }
+    } else if (k === 1) {
+      // white columned building
+      const w = 150, bh = h * 0.6;
+      ctx.fillStyle = '#e6e2da';
+      ctx.fillRect(x - w / 2 - 10, base - 14, w + 20, 14);
+      ctx.fillStyle = '#f3f1ec';
+      ctx.fillRect(x - w / 2, base - bh, w, bh - 14);
+      ctx.beginPath(); ctx.moveTo(x - w / 2 - 10, base - bh); ctx.lineTo(x, base - bh - 36); ctx.lineTo(x + w / 2 + 10, base - bh); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#d6d1c6';
+      for (let c = 0; c < 6; c++) ctx.fillRect(x - w / 2 + 10 + c * 25, base - bh + 8, 9, bh - 26);
+    } else {
+      // lamp post + bench
+      ctx.fillStyle = '#2b2b2b';
+      ctx.fillRect(x - 3, base - 110, 6, 110);
+      ctx.fillStyle = '#fff3b0';
+      ctx.beginPath(); ctx.arc(x, base - 116, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#5c3d2e';
+      ctx.fillRect(x + 20, base - 30, 60, 6);
+      ctx.fillRect(x + 20, base - 46, 60, 5);
+      ctx.fillStyle = '#2b2b2b';
+      ctx.fillRect(x + 24, base - 24, 4, 24); ctx.fillRect(x + 72, base - 24, 4, 24);
+    }
+  }
+
+  // ---------- Egypt ----------
+  function egypt(ctx, x, base, h, i, t) {
+    const k = i % 3;
+    if (k === 0) {
+      // obelisk with a golden tip and simple carvings
+      ctx.fillStyle = '#d4a35f';
+      ctx.beginPath(); ctx.moveTo(x - 16, base); ctx.lineTo(x - 11, base - h); ctx.lineTo(x + 11, base - h); ctx.lineTo(x + 16, base); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffd23f';
+      ctx.beginPath(); ctx.moveTo(x - 11, base - h); ctx.lineTo(x, base - h - 22); ctx.lineTo(x + 11, base - h); ctx.fill();
+      ctx.fillStyle = 'rgba(120,70,20,0.45)';
+      for (let y = base - h + 24; y < base - 20; y += 26) {
+        ctx.fillRect(x - 5, y, 10, 3);
+        ctx.beginPath(); ctx.arc(x, y + 12, 4, 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (k === 1) {
+      palm(ctx, x, base, h, '#2a9d8f', t);
+    } else {
+      // sandstone columns with a lintel
+      ctx.fillStyle = '#c98f45';
+      ctx.fillRect(x - 50, base - h * 0.7, 22, h * 0.7);
+      ctx.fillRect(x + 28, base - h * 0.7, 22, h * 0.7);
+      ctx.fillStyle = '#b77d36';
+      ctx.fillRect(x - 60, base - h * 0.7 - 18, 120, 18);
+      ctx.fillStyle = 'rgba(42,157,143,0.6)';
+      ctx.fillRect(x - 60, base - h * 0.7 - 12, 120, 4);
+    }
+  }
+
+  // ---------- Crystal cave ----------
+  function crystal(ctx, x, base, h, i, t) {
+    const k = i % 3;
+    if (k === 0 || k === 2) {
+      const col = k === 0 ? [0, 245, 212] : [199, 125, 255];
+      const glow = 0.25 + Math.sin(t * 2 + i) * 0.1;
+      ctx.fillStyle = `rgba(${col.join(',')},${glow})`;
+      ctx.beginPath(); ctx.arc(x, base - 40, 70, 0, Math.PI * 2); ctx.fill();
+      for (const [dx, ch, cw, rot] of [[-20, 0.5, 14, -0.3], [0, 0.75, 18, 0], [22, 0.45, 13, 0.35], [10, 0.3, 10, 0.6]]) {
+        ctx.save();
+        ctx.translate(x + dx, base);
+        ctx.rotate(rot);
+        ctx.fillStyle = `rgb(${col.join(',')})`;
+        ctx.beginPath(); ctx.moveTo(-cw / 2, 0); ctx.lineTo(-cw / 2, -h * ch * 0.8); ctx.lineTo(0, -h * ch); ctx.lineTo(cw / 2, -h * ch * 0.8); ctx.lineTo(cw / 2, 0); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.fillRect(-cw / 2 + 2, -h * ch * 0.75, 3, h * ch * 0.6);
+        ctx.restore();
+      }
+    } else {
+      // glowing mushrooms + a stalagmite
+      ctx.fillStyle = '#4a3b57';
+      ctx.beginPath(); ctx.moveTo(x - 30, base); ctx.lineTo(x - 6, base - h * 0.7); ctx.lineTo(x + 18, base); ctx.fill();
+      for (const [dx, s] of [[34, 1], [54, 0.7], [18, 0.55]]) {
+        ctx.fillStyle = '#e8e0d0';
+        ctx.fillRect(x + dx - 3 * s, base - 30 * s, 6 * s, 30 * s);
+        ctx.fillStyle = `rgba(155,246,255,${0.7 + Math.sin(t * 3 + dx) * 0.2})`;
+        ctx.beginPath(); ctx.ellipse(x + dx, base - 30 * s, 16 * s, 9 * s, 0, Math.PI, 0); ctx.fill();
+      }
+    }
+  }
+
+  // ---------- New York City ----------
+  function nyc(ctx, x, base, h, i, t) {
+    const k = i % 4;
+    if (k === 0 || k === 1) {
+      // brownstone (k=0) or pizza shop with an awning (k=1)
+      const w = 130, bh = h * 0.9;
+      ctx.fillStyle = k === 0 ? '#7a4b3a' : '#8c5a44';
+      ctx.fillRect(x - w / 2, base - bh, w, bh);
+      ctx.fillStyle = '#5c3528';
+      ctx.fillRect(x - w / 2 - 4, base - bh - 8, w + 8, 10);
+      for (let wy = base - bh + 18; wy < base - 70; wy += 42) {
+        for (let wx = x - w / 2 + 14; wx < x + w / 2 - 20; wx += 38) {
+          ctx.fillStyle = hash(wx * 7 + wy + i) > 0.45 ? '#ffd166' : '#2b2d42';
+          ctx.fillRect(wx, wy, 20, 26);
+        }
+      }
+      if (k === 1) {
+        for (let s = 0; s < 8; s++) {
+          ctx.fillStyle = s % 2 ? '#ffffff' : '#e63946';
+          ctx.fillRect(x - w / 2 + s * (w / 8), base - 70, w / 8, 18);
+        }
+        ctx.fillStyle = '#2b2d42';
+        ctx.fillRect(x - 40, base - 52, 80, 52);
+        SS.UI.outlineText(ctx, 'PIZZA', x, base - 84, 15, '#ffd23f', 'center');
+      } else {
+        // stoop steps
+        ctx.fillStyle = '#6a3f30';
+        for (let s = 0; s < 4; s++) ctx.fillRect(x - 20 - s * 4, base - 8 - s * 8, 40 + s * 8, 8);
+      }
+    } else if (k === 2) {
+      // hot dog cart
+      ctx.fillStyle = '#c0c0c8';
+      ctx.fillRect(x - 40, base - 50, 80, 34);
+      ctx.fillStyle = '#e63946';
+      ctx.fillRect(x - 40, base - 40, 80, 6);
+      ctx.fillStyle = '#2b2b2b';
+      ctx.beginPath(); ctx.arc(x - 26, base - 10, 10, 0, Math.PI * 2); ctx.arc(x + 26, base - 10, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(x - 2, base - 110, 4, 60);
+      for (let s = 0; s < 6; s++) {
+        ctx.fillStyle = s % 2 ? '#ffd23f' : '#3a86ff';
+        ctx.beginPath(); ctx.moveTo(x, base - 112); ctx.lineTo(x - 50 + s * 16.6, base - 90); ctx.lineTo(x - 50 + (s + 1) * 16.6, base - 90); ctx.fill();
+      }
+      SS.UI.text(ctx, 'HOT DOGS', x, base - 30, 9, '#2b2b2b', 'center');
+    } else {
+      // street lamp + fire hydrant
+      ctx.fillStyle = '#2b2b2b';
+      ctx.fillRect(x - 3, base - 150, 6, 150);
+      ctx.fillRect(x - 3, base - 150, 34, 5);
+      ctx.fillStyle = '#fff3b0';
+      ctx.beginPath(); ctx.arc(x + 30, base - 142, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#e63946';
+      ctx.fillRect(x + 50, base - 30, 18, 30);
+      ctx.beginPath(); ctx.arc(x + 59, base - 30, 9, Math.PI, 0); ctx.fill();
+      ctx.fillRect(x + 44, base - 22, 30, 6);
+    }
+  }
+
+  // Darkness with soft holes of light (cave). lights = [{ x, y, r }] in screen coordinates.
+  let darkCanvas = null;
+  SS.Art.darkness = function (ctx, lights, alpha) {
+    if (typeof document === 'undefined' || !document.createElement) return;
+    if (!darkCanvas) {
+      darkCanvas = document.createElement('canvas');
+      darkCanvas.width = W;
+      darkCanvas.height = H;
+    }
+    const c = darkCanvas.getContext('2d');
+    c.globalCompositeOperation = 'source-over';
+    c.clearRect(0, 0, W, H);
+    c.fillStyle = `rgba(6,3,14,${alpha})`;
+    c.fillRect(0, 0, W, H);
+    c.globalCompositeOperation = 'destination-out';
+    for (const l of lights) {
+      const g = c.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r);
+      g.addColorStop(0, 'rgba(0,0,0,1)');
+      g.addColorStop(0.55, 'rgba(0,0,0,0.75)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g;
+      c.beginPath(); c.arc(l.x, l.y, l.r, 0, Math.PI * 2); c.fill();
+    }
+    c.globalCompositeOperation = 'source-over';
+    ctx.drawImage(darkCanvas, 0, 0, W, H);
+  };
+  SS.Art.isDark = (theme) => !!(THEMES[theme] && THEMES[theme].dark);
+  SS.Art.darkAlpha = (theme) => (THEMES[theme] && THEMES[theme].dark) || 0;
+
   // ---------- Mountain ----------
   function pine(ctx, x, base, h, c) {
     ctx.fillStyle = '#4a2c17';
@@ -340,6 +545,82 @@
   function farLayer(ctx, th, camX, t, groundY) {
     const style = th.farStyle || 'hills';
     ctx.fillStyle = th.far;
+    if (style === 'monuments') {
+      // lawn horizon with a domed building and a tall monument, far away
+      ctx.fillStyle = '#9ccc65';
+      ctx.fillRect(0, groundY - 40, W, 40);
+      const off = camX * 0.1;
+      for (let x = -(off % 1100) + 240; x < W + 600; x += 1100) {
+        ctx.fillStyle = '#eef1f5';
+        ctx.fillRect(x - 160, groundY - 120, 320, 80);
+        ctx.fillRect(x - 60, groundY - 160, 120, 40);
+        ctx.beginPath(); ctx.arc(x, groundY - 160, 54, Math.PI, 0); ctx.fill();
+        ctx.fillRect(x - 6, groundY - 236, 12, 26);
+        ctx.fillStyle = '#d6dbe3';
+        for (let c = -140; c <= 140; c += 28) ctx.fillRect(x + c, groundY - 116, 8, 70);
+        // tall obelisk monument
+        ctx.fillStyle = '#e8ebf0';
+        const mx = x + 470;
+        ctx.beginPath(); ctx.moveTo(mx - 16, groundY - 40); ctx.lineTo(mx - 10, groundY - 330); ctx.lineTo(mx, groundY - 350); ctx.lineTo(mx + 10, groundY - 330); ctx.lineTo(mx + 16, groundY - 40); ctx.fill();
+      }
+      return;
+    }
+    if (style === 'pyramids') {
+      const off = camX * 0.12;
+      for (let x = -(off % 800) - 100; x < W + 800; x += 800) {
+        for (const [dx, ph] of [[0, 250], [230, 190], [400, 140]]) {
+          const px = x + dx;
+          ctx.fillStyle = '#e0b46e';
+          ctx.beginPath(); ctx.moveTo(px - ph * 1.1, groundY); ctx.lineTo(px, groundY - ph); ctx.lineTo(px + ph * 1.1, groundY); ctx.fill();
+          ctx.fillStyle = '#c4934e';
+          ctx.beginPath(); ctx.moveTo(px, groundY - ph); ctx.lineTo(px + ph * 1.1, groundY); ctx.lineTo(px + ph * 0.25, groundY); ctx.fill();
+        }
+      }
+      // sand dunes in front
+      ctx.fillStyle = '#e9c46a';
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      for (let x = 0; x <= W; x += 20) ctx.lineTo(x, groundY - 30 - Math.sin((x + camX * 0.3) * 0.01) * 18);
+      ctx.lineTo(W, groundY);
+      ctx.fill();
+      return;
+    }
+    if (style === 'stalactites') {
+      const off = camX * 0.3;
+      ctx.fillStyle = '#1e1529';
+      ctx.fillRect(0, 0, W, 50);
+      for (let i = Math.floor(off / 70) - 1; i < Math.floor(off / 70) + W / 70 + 2; i++) {
+        const x = i * 70 - off + hash(i) * 30, len = 40 + hash(i + 3) * 110;
+        ctx.fillStyle = hash(i + 9) > 0.5 ? '#2b2035' : '#33263f';
+        ctx.beginPath(); ctx.moveTo(x - 18, 40); ctx.lineTo(x, 40 + len); ctx.lineTo(x + 18, 40); ctx.fill();
+      }
+      // far rock wall
+      ctx.fillStyle = th.far;
+      ctx.beginPath(); ctx.moveTo(0, groundY);
+      for (let x = 0; x <= W; x += 30) ctx.lineTo(x, groundY - 90 - hash(Math.floor((x + camX * 0.15) / 30)) * 60);
+      ctx.lineTo(W, groundY); ctx.fill();
+      return;
+    }
+    if (style === 'skyline') {
+      for (let layer = 0; layer < 2; layer++) {
+        const off = camX * (0.1 + layer * 0.12), sp = 70;
+        const first = Math.floor(off / sp) - 1;
+        for (let i = first; i < first + W / sp + 3; i++) {
+          const x = i * sp - off;
+          const bh = (layer ? 130 : 210) + hash(i * 5 + layer) * (layer ? 120 : 200) + (i % 17 === 0 && !layer ? 160 : 0);
+          ctx.fillStyle = layer ? '#4a4f78' : '#323659';
+          ctx.fillRect(x, groundY - bh, sp - 6, bh);
+          if (i % 17 === 0 && !layer) { // a famous-looking spire
+            ctx.beginPath(); ctx.moveTo(x + 10, groundY - bh); ctx.lineTo(x + 32, groundY - bh - 70); ctx.lineTo(x + 54, groundY - bh); ctx.fill();
+          }
+          ctx.fillStyle = layer ? 'rgba(255,209,102,0.7)' : 'rgba(255,209,102,0.45)';
+          for (let wy = groundY - bh + 10; wy < groundY - 10; wy += 16) {
+            for (let wx = 6; wx < sp - 12; wx += 12) if (hash(i * 31 + wx + wy) > 0.55) ctx.fillRect(x + wx, wy, 5, 7);
+          }
+        }
+      }
+      return;
+    }
     if (style === 'stars') {
       for (let i = 0; i < 90; i++) {
         const x = ((hash(i) * 2400 - camX * 0.05) % W + W) % W, y = hash(i + 300) * (groundY - 60);
@@ -602,6 +883,10 @@
       else if (th.deco === 'lavafall') lavafall(ctx, x, groundY, h, i, t);
       else if (th.deco === 'fern') fern(ctx, x, groundY, h * 0.8, i, t);
       else if (th.deco === 'station') station(ctx, x, groundY, h * 0.8, i, t);
+      else if (th.deco === 'dc') dc(ctx, x, groundY, h, i, t);
+      else if (th.deco === 'egypt') egypt(ctx, x, groundY, h, i, t);
+      else if (th.deco === 'crystal') crystal(ctx, x, groundY, h * 0.8, i, t);
+      else if (th.deco === 'nyc') nyc(ctx, x, groundY, h, i, t);
       else rock(ctx, x, groundY, h * 0.8, th.mid);
     }
 
@@ -623,6 +908,16 @@
       ctx.beginPath();
       ctx.ellipse(x, groundY + 40 + hash(i) * 30, 8, 4, 0, 0, Math.PI * 2);
       ctx.fill();
+    }
+    if (th.street) {
+      // sidewalk + road with yellow lane dashes and a crosswalk now and then
+      ctx.fillStyle = '#7a7a82';
+      ctx.fillRect(0, groundY + 10, W, 8);
+      ctx.fillStyle = '#ffd23f';
+      for (let x = -(camX % 70); x < W; x += 70) ctx.fillRect(x, groundY + 46, 36, 5);
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      const cw = 1400, cx = -(camX % cw) + 600;
+      for (let k = 0; k < 7; k++) ctx.fillRect(cx + k * 16, groundY + 24, 9, 56);
     }
     if (th.bricks) {
       ctx.fillStyle = 'rgba(0,0,0,0.18)';

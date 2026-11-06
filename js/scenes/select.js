@@ -3,9 +3,10 @@
   const UI = SS.UI;
   const I = SS.Input;
   const W = SS.W, H = SS.H;
-  const CARD_W = 160, CARD_H = 230, GAP = 18;
-  const START_X = (W - (CARD_W * 5 + GAP * 4)) / 2;
-  const CARD_Y = 96;
+  // sloth cards: rows of 5 (9 sloths = 2 rows)
+  const CARD_W = 160, CARD_H = 150, GAP = 14, PER_ROW = 5, ROW_GAP = 10;
+  const CARD_Y = 70;
+  const DETAILS_Y = CARD_Y + 2 * CARD_H + ROW_GAP + 12;
 
   const STAGES = (SS.STAGES = [
     { name: 'Jungle Arena', theme: 'jungle' },
@@ -21,10 +22,15 @@
     { name: 'Lava Lagoon', theme: 'lava' },
     { name: 'Jurassic Jog', theme: 'dino' },
     { name: 'Space (low gravity!)', theme: 'space', gravity: 0.55 },
+    { name: 'Capitol Plaza', theme: 'dc' },
+    { name: 'Pyramid Sands', theme: 'egypt' },
+    { name: 'Crystal Cave (dark!)', theme: 'cave' },
+    { name: 'Big Apple Street', theme: 'nyc' },
   ]);
 
-  const P1KEYS = { left: ['KeyA', 'Pad0Left'], right: ['KeyD', 'Pad0Right'], ok: ['KeyF', 'Space', 'Pad0A'], back: ['KeyG', 'Pad0B'] };
-  const P2KEYS = { left: ['ArrowLeft', 'Pad1Left'], right: ['ArrowRight', 'Pad1Right'], ok: ['Comma', 'Enter', 'Numpad1', 'Pad1A'], back: ['Period', 'Pad1B'] };
+  const P1KEYS = { left: ['KeyA', 'Pad0Left'], right: ['KeyD', 'Pad0Right'], up: ['KeyW', 'Pad0Up'], down: ['KeyS', 'Pad0Down'], ok: ['KeyF', 'Space', 'Pad0A'], back: ['KeyG', 'Pad0B'] };
+  const P2KEYS = { left: ['ArrowLeft', 'Pad1Left'], right: ['ArrowRight', 'Pad1Right'], up: ['ArrowUp', 'Pad1Up'], down: ['ArrowDown', 'Pad1Down'], ok: ['Comma', 'Enter', 'Numpad1', 'Pad1A'], back: ['Period', 'Pad1B'] };
+  const rowMove = (cur, d, n) => { const t = cur + d * PER_ROW; return t >= 0 && t < n ? t : cur; };
 
   SS.SelectScene = class {
     constructor(opts) {
@@ -43,7 +49,13 @@
     get twoPlayerPick() { return ((this.mode === 'duel' && !this.vsCpu) || this.mode === 'coop') && this.phase === 'char'; }
     get bothShown() { return this.mode === 'duel' || this.mode === 'coop'; }
 
-    cardRect(i) { return { x: START_X + i * (CARD_W + GAP), y: CARD_Y, w: CARD_W, h: CARD_H }; }
+    cardRect(i) {
+      const n = SS.CHARACTERS.length;
+      const row = Math.floor(i / PER_ROW);
+      const inRow = Math.min(PER_ROW, n - row * PER_ROW);
+      const startX = (W - (inRow * CARD_W + (inRow - 1) * GAP)) / 2;
+      return { x: startX + (i % PER_ROW) * (CARD_W + GAP), y: CARD_Y + row * (CARD_H + ROW_GAP), w: CARD_W, h: CARD_H };
+    }
 
     clickedCard() {
       const p = I.pointer;
@@ -76,6 +88,8 @@
           if (this.locked[p]) return;
           if (I.anyHit(k.left)) { this.cur[p] = (this.cur[p] - 1 + n) % n; SS.Audio.select(); }
           if (I.anyHit(k.right)) { this.cur[p] = (this.cur[p] + 1) % n; SS.Audio.select(); }
+          if (I.anyHit(k.up)) { this.cur[p] = rowMove(this.cur[p], -1, n); SS.Audio.select(); }
+          if (I.anyHit(k.down)) { this.cur[p] = rowMove(this.cur[p], 1, n); SS.Audio.select(); }
           if (I.anyHit(k.ok)) { this.locked[p] = true; SS.Audio.confirm(); }
         });
         const c = this.clickedCard();
@@ -98,6 +112,8 @@
       const p = this.phase === 'cpuChar' ? 1 : 0;
       if (SS.Menu.left()) { this.cur[p] = (this.cur[p] - 1 + n) % n; SS.Audio.select(); }
       if (SS.Menu.right()) { this.cur[p] = (this.cur[p] + 1) % n; SS.Audio.select(); }
+      if (SS.Menu.up()) { this.cur[p] = rowMove(this.cur[p], -1, n); SS.Audio.select(); }
+      if (SS.Menu.down()) { this.cur[p] = rowMove(this.cur[p], 1, n); SS.Audio.select(); }
       const c = this.clickedCard();
       if (c >= 0) this.cur[p] = c;
       if (SS.Menu.back()) { SS.Audio.select(); this.goBack(); return; }
@@ -161,7 +177,7 @@
             ? { level: i, mode: 'coop', players: [{ id: 0, cid: cid(0), local: 'P1' }, { id: 1, cid: cid(1), local: 'P2' }] }
             : { charId: cid(0), level: i }));
         },
-      })), W / 2, 146, { w: 410, h: 38, gap: 7, cols: 2, fontSize: 17 });
+      })), W / 2, 146, { w: 296, h: 40, gap: 8, cols: 3, gapX: 12, fontSize: 14 });
     }
 
     openDifficultyMenu() {
@@ -188,7 +204,7 @@
             theme: s.theme, gravity: s.gravity, stageIndex: STAGES.indexOf(s),
           }));
         },
-      })), W / 2, 152, { w: 320, h: 40, gap: 8, cols: 2, fontSize: 18 });
+      })), W / 2, 150, { w: 280, h: 40, gap: 8, cols: 3, gapX: 14, fontSize: 16 });
     }
 
     // ------------------------------------------------------------------
@@ -214,7 +230,7 @@
       const title = this.mode === 'campaign' || this.mode === 'host' || this.mode === 'hostBattle' ? 'CHOOSE YOUR SLOTH'
         : this.mode === 'coop' ? 'CHOOSE YOUR SLOTHS'
         : this.phase === 'cpuChar' ? 'CHOOSE YOUR OPPONENT' : 'CHOOSE YOUR FIGHTERS';
-      UI.outlineText(ctx, title, W / 2, 50, 40, '#ffd23f', 'center');
+      UI.outlineText(ctx, title, W / 2, 36, 36, '#ffd23f', 'center');
 
       SS.CHARACTERS.forEach((c, i) => this.drawCard(ctx, c, i));
 
@@ -226,8 +242,8 @@
       }
 
       const hint = this.twoPlayerPick
-        ? 'P1: A/D + F    P2: ←/→ + ,    (Esc = back)'
-        : '←/→ to choose, Enter to pick, Esc = back';
+        ? 'P1: W/A/S/D + F    P2: arrows + ,    (Esc = back)'
+        : 'Arrow keys to choose, Enter to pick (or tap a sloth), Esc = back';
       UI.text(ctx, hint, W / 2, H - 16, 14, '#ddd', 'center');
       UI.backButton(ctx);
     }
@@ -246,12 +262,12 @@
       ctx.rect(r.x, r.y, r.w, r.h);
       ctx.clip();
       SS.Art.sloth(ctx, {
-        x: r.x + r.w / 2 - 6, y: r.y + 175 + bounce, scale: 1.05 / Math.max(1, c.scale * 0.9), look: c.look,
+        x: r.x + r.w / 2 - 6, y: r.y + 122 + bounce, scale: 0.72 / Math.max(1, c.scale * 0.9), look: c.look,
         t: this.t + i, pose: hl ? 'win' : 'idle',
       });
       ctx.restore();
-      UI.outlineText(ctx, c.name, r.x + r.w / 2, r.y + r.h - 32, 16, '#ffffff', 'center');
-      UI.text(ctx, c.specialName, r.x + r.w / 2, r.y + r.h - 12, 11, '#9bf6ff', 'center');
+      UI.outlineText(ctx, c.name, r.x + r.w / 2, r.y + r.h - 22, 14, '#ffffff', 'center');
+      UI.text(ctx, c.specialName, r.x + r.w / 2, r.y + r.h - 8, 10, '#9bf6ff', 'center');
     }
 
     outline(ctx, r, color, locked, inset) {
@@ -260,18 +276,18 @@
       ctx.beginPath();
       ctx.roundRect(r.x + inset - 2, r.y + inset - 2, r.w - inset * 2 + 4, r.h - inset * 2 + 4, 16);
       ctx.stroke();
-      if (locked) UI.outlineText(ctx, 'READY!', r.x + r.w / 2, r.y + 18 + inset * 3, 18, color, 'center');
+      if (locked) UI.outlineText(ctx, 'READY!', r.x + r.w / 2, r.y + 16 + inset * 3, 16, color, 'center');
     }
 
     drawDetails(ctx, c, cx, color, tag) {
-      const y = CARD_Y + CARD_H + 22;
-      const w = this.twoPlayerPick ? 300 : 520;
-      UI.panel(ctx, cx - w / 2, y, w, 130);
-      UI.outlineText(ctx, `${tag}: ${c.name}`, cx, y + 20, 20, color, 'center');
-      UI.text(ctx, '"' + c.quip + '"', cx, y + 46, this.twoPlayerPick ? 11 : 14, '#eeeeee', 'center');
+      const y = DETAILS_Y;
+      const w = this.twoPlayerPick ? 300 : 560;
+      UI.panel(ctx, cx - w / 2, y, w, 114);
+      UI.outlineText(ctx, `${tag}: ${c.name}`, cx, y + 17, 18, color, 'center');
+      UI.text(ctx, '"' + c.quip + '"', cx, y + 39, this.twoPlayerPick ? 10 : 13, '#eeeeee', 'center');
       const stats = [['Speed', c.speed / 260], ['Power', c.power / 1.4], ['Health', c.hp / 135]];
       stats.forEach(([label, v], i) => {
-        const sy = y + 72 + i * 18;
+        const sy = y + 60 + i * 17;
         UI.text(ctx, label, cx - w / 2 + 24, sy, 13, '#ffd23f');
         UI.bar(ctx, cx - w / 2 + 100, sy - 5, w - 130, 9, v, color);
       });

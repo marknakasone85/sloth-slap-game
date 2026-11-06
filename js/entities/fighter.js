@@ -99,8 +99,8 @@
       if (this.sleep > 0) {
         this.sleep -= dt;
         this.state = 'sleep';
-        if (Math.random() < dt * 1.5) world.fx.text(this.x + 20, this.y - this.h - 10, 'Zzz', '#bde0fe', 22);
-        if (this.sleep <= 0) this.state = 'idle';
+        if (!this.frozen && Math.random() < dt * 1.5) world.fx.text(this.x + 20, this.y - this.h - 10, 'Zzz', '#bde0fe', 22);
+        if (this.sleep <= 0) { this.state = 'idle'; this.frozen = false; }
         this.vx = approach(this.vx, 0, 1500 * dt);
         this.physics(dt, world);
         return;
@@ -258,6 +258,7 @@
           big: !!h.big, from: this, dir,
         };
         const result = target.takeHit(hit, world);
+        if (result === 'miss') continue; // can't be hurt right now (e.g. underground, just respawned)
         landed = true;
         if (result !== 'blocked') {
           this.meter = Math.min(SPECIAL_COST, this.meter + (h.big ? 16 : 10));
@@ -333,6 +334,51 @@
           SS.Audio.snore();
         }
         if (m.t > 0.5) finish();
+      } else if (m.kind === 'barrage') {
+        // soldier: lob three banana bombs that explode where they land
+        if (!m.fired && m.t > 0.25) {
+          m.fired = true;
+          for (let i = 0; i < 3; i++) {
+            world.spawn(new SS.Projectile('bananaBomb', this.x + this.facing * 30, this.y - this.h * 0.75,
+              this.facing * (260 + i * 140), -520 - i * 40, this.team,
+              { dmg: 10, stun: 0.5, kbx: 320, kby: -360, big: true, gravity: 1100, explode: 90 }));
+          }
+          world.fx.text(this.x, this.y - this.h - 40, 'INCOMING!', '#ffd23f', 26);
+        }
+        if (m.t > 0.6) finish();
+      } else if (m.kind === 'missiles') {
+        // wizard: three sparkly missiles that chase the nearest enemy
+        if (!m.fired && m.t > 0.25) {
+          m.fired = true;
+          for (let i = 0; i < 3; i++) {
+            world.spawn(new SS.Projectile('magic', this.x + this.facing * 30, this.y - this.h * 0.8,
+              this.facing * 240, -220 + i * 220, this.team,
+              { dmg: 7, stun: 0.35, kbx: 160, kby: -160, homing: true, life: 2.4 }));
+          }
+          world.fx.text(this.x, this.y - this.h - 40, 'ABRACA-SLAP!', '#e0aaff', 26);
+        }
+        if (m.t > 0.6) finish();
+      } else if (m.kind === 'cannon') {
+        // pirate: one huge cannonball straight ahead
+        if (!m.fired && m.t > 0.22) {
+          m.fired = true;
+          world.spawn(new SS.Projectile('cannonball', this.x + this.facing * 40, this.y - this.h * 0.5,
+            this.facing * 720, 0, this.team, { dmg: 17, stun: 0.6, kbx: 620, kby: -400, big: true, life: 1.3 }));
+          this.vx = -this.facing * 260;
+          SS.Audio.bigSlap();
+          world.fx.shake(10);
+          world.fx.text(this.x + this.facing * 60, this.y - this.h - 20, 'KA-BOOM!', '#ff4d6d', 30);
+        }
+        if (m.t > 0.6) finish();
+      } else if (m.kind === 'freeze') {
+        // ice sloth: an ice shard that freezes whoever it hits
+        if (!m.fired && m.t > 0.2) {
+          m.fired = true;
+          world.spawn(new SS.Projectile('ice', this.x + this.facing * 40, this.y - this.h * 0.6,
+            this.facing * 500, 0, this.team, { dmg: 6, sleep: 2.0, freeze: true, stun: 0.2, kbx: 60, kby: -60, life: 1.6 }));
+          SS.Audio.tone(1400, 0.3, 'sine', 0.2, 2400);
+        }
+        if (m.t > 0.5) finish();
       } else if (m.kind === 'coconuts') {
         if (!m.fired && m.t > 0.3) {
           m.fired = true;
@@ -377,6 +423,7 @@
       this.move = null;
       if (hit.sleep) {
         this.sleep = hit.sleep;
+        this.frozen = !!hit.freeze;
         this.state = 'sleep';
       } else {
         this.state = 'hurt';
@@ -466,6 +513,7 @@
         ps: r2(this.powers.shield || 0), ss: this.powers.superslap ? 1 : 0, co: this.powers.coffee ? 1 : 0,
         vx: Math.round(this.vx), mk: this.move ? this.move.kind : 0, st: this.state, og: this.onGround ? 1 : 0,
         tag: this.tag || 0, tc: this.tagColor || 0,
+        fr: this.frozen && this.state === 'sleep' ? 1 : 0,
       };
     }
 
@@ -509,6 +557,18 @@
         t: s.t, pose: s.pose, walk: s.walk, arm: s.arm === null ? undefined : s.arm,
         slapping: !!s.sl, mouth: s.mo || undefined, flash: !!s.fl, squash: s.sq,
       });
+      if (s.fr) {
+        // frozen in an ice block
+        ctx.fillStyle = 'rgba(155,246,255,0.45)';
+        ctx.strokeStyle = 'rgba(230,250,255,0.9)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(s.x - w * 0.85, s.y - h * 1.05, w * 1.7, h * 1.08, 10);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillRect(s.x - w * 0.6, s.y - h * 0.95, 6, h * 0.5);
+      }
       if (s.ps && (s.ps > 2 || Math.floor(s.t * 8) % 2 === 0)) {
         const r = h * 0.62 + Math.sin(s.t * 6) * 3;
         ctx.fillStyle = 'rgba(76,201,240,0.18)';
@@ -527,7 +587,7 @@
   };
 
   // ---------- Projectiles (DJ notes, coconuts, monkey throws) ----------
-  const PROJ_WORD = { bullet: 'POW!', note: 'LULLABY!', pizza: 'SPLAT!', pie: 'SPLAT!', balloon: 'SPLOOSH!', bubble: 'POP!', peach: 'BONK!', lantern: 'FWUMP!' };
+  const PROJ_WORD = { bullet: 'POW!', note: 'LULLABY!', magic: 'ZAP!', ice: 'FROZEN!', cannonball: 'KABOOM!', bananaBomb: 'KA-SPLAT!', pizza: 'SPLAT!', pie: 'SPLAT!', balloon: 'SPLOOSH!', bubble: 'POP!', peach: 'BONK!', lantern: 'FWUMP!' };
   const PROJ_COLOR = { bullet: '#ffd23f', pizza: '#f4c542', pie: '#fff8e7', balloon: '#4cc9f0', bubble: '#bde0fe', peach: '#ffab91', lantern: '#e63946' };
   SS.Projectile = class {
     constructor(kind, x, y, vx, vy, team, hit) {
@@ -546,12 +606,45 @@
     update(dt, world) {
       this.t += dt;
       this.life -= dt;
+      if (this.hit.homing) {
+        // steer toward the nearest enemy
+        let best = null, bd = Infinity;
+        for (const tg of world.targets(this.team)) {
+          if (!tg.alive || tg.isProp) continue;
+          const b = tg.box;
+          const d = Math.hypot(tg.x - this.x, b.y + b.h / 2 - this.y);
+          if (d < bd) { bd = d; best = tg; }
+        }
+        if (best) {
+          const b = best.box;
+          const dx = best.x - this.x, dy = b.y + b.h / 2 - this.y, dd = Math.hypot(dx, dy) || 1;
+          const k = Math.min(1, dt * 4);
+          this.vx += ((dx / dd) * 520 - this.vx) * k;
+          this.vy += ((dy / dd) * 520 - this.vy) * k;
+        }
+      }
       this.vy += this.gravity * (world.gravity || 1) * dt;
       this.x += this.vx * dt;
       this.y += this.vy * dt;
       if (this.life <= 0) this.dead = true;
-      if (this.y >= world.groundY - 8 && this.kind !== 'note') {
+      if (this.kind === 'magic' || this.kind === 'ice') this.y = Math.min(this.y, world.groundY - 12);
+      if (this.y >= world.groundY - 8 && !['note', 'magic', 'ice'].includes(this.kind)) {
         this.dead = true;
+        if (this.hit.explode) {
+          // banana bomb: splash everyone nearby
+          for (const tg of world.targets(this.team)) {
+            if (!tg.alive || (tg.isProp && !this.hit.props)) continue;
+            if (Math.abs(tg.x - this.x) < this.hit.explode && Math.abs(tg.y - world.groundY) < 70) {
+              const dir = tg.x >= this.x ? 1 : -1;
+              tg.takeHit({ dmg: this.hit.dmg, kbx: this.hit.kbx * dir, kby: this.hit.kby, stun: this.hit.stun, big: true, from: this, dir }, world);
+            }
+          }
+          world.fx.burst(this.x, world.groundY - 10, '#ffe14d', 22, 340);
+          world.fx.text(this.x, world.groundY - 70, 'KA-SPLAT!', '#ffd23f', 26);
+          world.fx.shake(8);
+          SS.Audio.bigSlap();
+          return;
+        }
         world.fx.burst(this.x, world.groundY - 6, PROJ_COLOR[this.kind] || '#8d6e4a', 8, 160);
         SS.Audio.crate();
         return;
@@ -564,7 +657,7 @@
         const h = this.hit;
         const res = target.takeHit({
           dmg: h.dmg, kbx: (h.kbx || 100) * dir, kby: h.kby || -100, stun: h.stun || 0.3,
-          sleep: h.sleep || 0, big: !!h.big, from: this, dir,
+          sleep: h.sleep || 0, freeze: !!h.freeze, big: !!h.big, from: this, dir,
         }, world);
         if (res !== 'miss') {
           world.fx.burst(this.x, this.y, this.kind === 'note' ? '#c77dff' : '#ffd23f', 12);

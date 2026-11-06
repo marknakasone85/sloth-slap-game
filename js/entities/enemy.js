@@ -3,17 +3,17 @@
   const U = SS.U;
   const GRAV = 1900;
 
-  const BIRD = { art: 'bird', behavior: 'flyer', hp: 10, speed: 130, w: 50, h: 40, dmg: 8, score: 150 };
+  const BIRD = { art: 'bird', behavior: 'flyer', hp: 5, speed: 130, w: 50, h: 40, dmg: 8, score: 150 };
   const TYPES = {
     beetle: { art: 'beetle', behavior: 'walker', hp: 12, speed: 75, w: 46, h: 34, dmg: 8, score: 100 },
     toucan: Object.assign({}, BIRD, { colors: { color: '#222', wing: '#111', belly: '#fff6a5', beak: '#ff9f1c' } }),
     seagull: Object.assign({}, BIRD, { colors: { color: '#eeeeee', wing: '#9e9e9e', belly: '#ffffff', beak: '#ffb703' } }),
-    parrot: Object.assign({}, BIRD, { hp: 14, speed: 160, colors: { color: '#e63946', wing: '#3a86ff', belly: '#ffd23f', beak: '#333' } }),
+    parrot: Object.assign({}, BIRD, { hp: 5, speed: 160, colors: { color: '#e63946', wing: '#3a86ff', belly: '#ffd23f', beak: '#333' } }),
     crab: { art: 'crab', behavior: 'crab', hp: 22, speed: 90, w: 64, h: 46, dmg: 9, score: 200, leash: 380 },
     monkey: { art: 'monkey', behavior: 'thrower', hp: 18, speed: 110, w: 46, h: 92, dmg: 7, score: 250, leash: 260 },
     pigeon: Object.assign({}, BIRD, { colors: { color: '#8d8fa8', wing: '#5f6178', belly: '#c3c5d6', beak: '#3a3a3a' } }),
-    crane: Object.assign({}, BIRD, { hp: 14, speed: 160, colors: { color: '#f5f5f5', wing: '#222', belly: '#ffffff', beak: '#d4a017' } }),
-    drone: { art: 'drone', behavior: 'flyer', hp: 14, speed: 150, w: 56, h: 44, dmg: 9, score: 200 },
+    crane: Object.assign({}, BIRD, { hp: 5, speed: 160, colors: { color: '#f5f5f5', wing: '#222', belly: '#ffffff', beak: '#d4a017' } }),
+    drone: { art: 'drone', behavior: 'flyer', hp: 5, speed: 150, w: 64, h: 52, dmg: 9, score: 200 },
     // monkey variants (same "keep distance and throw" brain, different looks and snacks)
     chef: { art: 'monkey', behavior: 'thrower', hp: 18, speed: 110, w: 46, h: 92, dmg: 7, score: 250, leash: 260,
       projectile: 'pizza', colors: { hat: 'chef' } },
@@ -48,10 +48,10 @@
     astroRoo: { art: 'kangaroo', behavior: 'hopper', hp: 24, speed: 130, w: 48, h: 110, dmg: 10, score: 300,
       colors: { helmet: true, color: '#b07850' } },
     goat: { art: 'goat', behavior: 'charger', hp: 22, speed: 120, w: 60, h: 50, dmg: 12, score: 250 },
-    eagle: Object.assign({}, BIRD, { hp: 14, speed: 170, colors: { color: '#6b4226', wing: '#4a2c17', belly: '#f5f5f5', beak: '#ffd23f' } }),
+    eagle: Object.assign({}, BIRD, { hp: 5, speed: 170, colors: { color: '#6b4226', wing: '#4a2c17', belly: '#f5f5f5', beak: '#ffd23f' } }),
     snowMonkey: { art: 'monkey', behavior: 'thrower', w: 46, h: 92, speed: 110, leash: 260, hp: 20, dmg: 7, score: 250, projectile: 'snowball', colors: { fur: '#c9c4bd', face: '#f4a6a6' } },
-    bat: { art: 'bat', behavior: 'flyer', hp: 10, speed: 150, w: 44, h: 36, dmg: 8, score: 150 },
-    fireBat: { art: 'bat', behavior: 'flyer', hp: 12, speed: 160, w: 44, h: 36, dmg: 9, score: 175,
+    bat: { art: 'bat', behavior: 'flyer', hp: 5, speed: 150, w: 50, h: 42, dmg: 8, score: 150 },
+    fireBat: { art: 'bat', behavior: 'flyer', hp: 5, speed: 160, w: 50, h: 42, dmg: 9, score: 175,
       colors: { color: '#9c2f1b', eyes: '#ffd23f' }, gore: { blood: '#ff7b00', sound: 'squeak', word: 'SIZZLE!' } },
     knightMonkey: { art: 'monkey', behavior: 'thrower', w: 46, h: 92, speed: 110, leash: 260, hp: 26, dmg: 9, score: 300, projectile: 'cannonball', colors: { hat: 'knight' } },
     fireBeetle: { art: 'beetle', behavior: 'walker', hp: 14, speed: 95, w: 46, h: 34, dmg: 9, score: 125,
@@ -59,12 +59,12 @@
     lavaBlob: { art: 'blob', behavior: 'walker', hp: 16, speed: 70, w: 50, h: 40, dmg: 10, score: 200, bouncy: true,
       colors: { color: '#ff7b00', glow: true }, gore: { blood: '#ff9f1c', sound: 'squish', word: 'SPLORCH!' } },
     raptor: { art: 'raptor', behavior: 'charger', hp: 20, speed: 150, w: 60, h: 64, dmg: 11, score: 300 },
-    ptero: { art: 'ptero', behavior: 'flyer', hp: 14, speed: 170, w: 60, h: 44, dmg: 9, score: 200 },
+    ptero: { art: 'ptero', behavior: 'flyer', hp: 5, speed: 170, w: 66, h: 50, dmg: 9, score: 200 },
     caveMonkey: { art: 'monkey', behavior: 'thrower', w: 46, h: 92, speed: 110, leash: 260, hp: 20, dmg: 8, score: 250, projectile: 'rock', colors: { fur: '#8a5a3c' } },
     alien: { art: 'blob', behavior: 'walker', hp: 16, speed: 80, w: 50, h: 46, dmg: 9, score: 200, bouncy: true,
       colors: { color: '#7cd63b', alien: true }, gore: { blood: '#7cd63b', sound: 'beep', word: 'BLORP!' } },
     spaceMonkey: { art: 'monkey', behavior: 'thrower', w: 46, h: 92, speed: 110, leash: 260, hp: 22, dmg: 8, score: 300, projectile: 'goo', colors: { hat: 'astro' } },
-    miniUfo: { art: 'ufo', behavior: 'flyer', hp: 14, speed: 150, w: 70, h: 40, dmg: 9, score: 250, scale: 0.8 },
+    miniUfo: { art: 'ufo', behavior: 'flyer', hp: 5, speed: 150, w: 74, h: 48, dmg: 9, score: 250, scale: 0.8 },
 
     yeti: {
       art: 'monkey', behavior: 'boss', boss: true, hp: 320, speed: 150, w: 90, h: 185, dmg: 14, score: 4000,
@@ -87,7 +87,44 @@
       scale: 2.4, name: 'THE BIG UFO', weight: 4, projectile: 'goo', colors: { crown: true },
       restText: 'REFUELING... SLAP IT!', restWord: 'beep', defeatText: 'THE BIG UFO CRASH-LANDS!',
     },
+
+    // ---- world tour 3: Washington DC, Egypt, crystal cave, New York City ----
+    squirrel: { art: 'squirrel', behavior: 'thrower', hp: 14, speed: 140, w: 40, h: 56, dmg: 6, score: 200, leash: 260, projectile: 'acorn' },
+    goose: { art: 'goose', behavior: 'charger', hp: 20, speed: 130, w: 60, h: 70, dmg: 11, score: 250 },
+    vulture: Object.assign({}, BIRD, { colors: { color: '#4a3b30', wing: '#2b2018', belly: '#e8d8c0', beak: '#d4a017' } }),
+    scorpion: { art: 'scorpion', behavior: 'crab', hp: 20, speed: 100, w: 70, h: 44, dmg: 10, score: 225, leash: 380 },
+    mummy: { art: 'mummy', behavior: 'walker', hp: 30, speed: 55, w: 44, h: 112, dmg: 11, score: 250 },
+    camel: { art: 'camel', behavior: 'thrower', hp: 26, speed: 90, w: 80, h: 96, dmg: 8, score: 275, leash: 240, projectile: 'spit' },
+    spider: { art: 'spider', behavior: 'dangler', hp: 5, speed: 0, w: 44, h: 42, dmg: 9, score: 175 },
+    crystalCrab: { art: 'crab', behavior: 'crab', hp: 22, speed: 95, w: 64, h: 46, dmg: 9, score: 200, leash: 380,
+      colors: { color: '#4cc9f0' }, gore: { blood: '#9bf6ff', sound: 'bloop', word: 'CRACK!' } },
+    rat: { art: 'rat', behavior: 'walker', hp: 12, speed: 170, w: 56, h: 34, dmg: 7, score: 150 },
+    taxi: { art: 'taxi', behavior: 'charger', hp: 30, speed: 140, w: 104, h: 70, dmg: 13, score: 350,
+      gore: { blood: 'oil', sound: 'bzzt', word: 'CRUNCH!' } },
+    hotdogMonkey: { art: 'monkey', behavior: 'thrower', w: 46, h: 92, speed: 110, leash: 260, hp: 20, dmg: 7, score: 250, projectile: 'hotdog', colors: { fur: '#7a4a24' } },
+
+    megaGoose: {
+      art: 'goose', behavior: 'boss', boss: true, hp: 320, speed: 170, w: 120, h: 150, dmg: 14, score: 4500,
+      scale: 2.2, name: 'THE MEGA GOOSE', weight: 3, moves: ['charge', 'volley', 'slam', 'charge'], projectile: 'feather',
+      colors: { crown: true }, defeatText: 'THE MEGA GOOSE FLIES HOME IN SHAME!',
+    },
+    mummyKing: {
+      art: 'mummy', behavior: 'boss', boss: true, hp: 340, speed: 120, w: 90, h: 230, dmg: 15, score: 5000,
+      scale: 2.0, name: 'THE MUMMY KING', weight: 3, moves: ['volley', 'slam', 'charge'], projectile: 'scarab',
+      colors: { crown: true }, defeatText: 'THE MUMMY KING UNRAVELS!',
+    },
+    giantMole: {
+      art: 'mole', behavior: 'boss', boss: true, hp: 340, speed: 150, w: 120, h: 110, dmg: 15, score: 5000,
+      scale: 1.6, name: 'THE GIANT MOLE', weight: 3, moves: ['burrow', 'volley', 'burrow', 'slam'], projectile: 'rock',
+      defeatText: 'THE GIANT MOLE GOES BACK TO BED!',
+    },
+    megaRat: {
+      art: 'rat', behavior: 'boss', boss: true, hp: 380, speed: 200, w: 150, h: 90, dmg: 16, score: 6000,
+      scale: 2.8, name: 'MEGA PIZZA RAT', weight: 3, moves: ['charge', 'volley', 'slam', 'charge'], projectile: 'pizza',
+      colors: { crown: true }, defeatText: 'MEGA PIZZA RAT DROPS THE SLICE!',
+    },
   };
+  const FLYING = new Set(['flyer', 'dragon', 'dangler']); // no gravity
   SS.ENEMY_TYPES = TYPES;
   SS.POWER_TYPES = ['shield', 'superslap', 'rapid', 'coffee', 'lucky'];
   SS.POWER_NAMES = {
@@ -110,6 +147,14 @@
     ptero: { blood: '#d62828', sound: 'squawk', word: 'SKRAAA!' },
     trex: { blood: '#d62828', sound: 'rawr', word: 'RAWR...?' },
     ufo: { blood: 'oil', sound: 'beep', word: 'BZZZT-POP!' },
+    squirrel: { blood: '#d62828', sound: 'squeak', word: 'EEP!' },
+    goose: { blood: '#d62828', sound: 'honk', word: 'HONK?!' },
+    scorpion: { blood: '#7cd63b', sound: 'bloop', word: 'SKITTER!' },
+    mummy: { blood: '#c9b48a', sound: 'groan', word: 'UNWRAPPED!' },
+    camel: { blood: '#d62828', sound: 'baa', word: 'PTOOEY!' },
+    spider: { blood: '#7cd63b', sound: 'squeak', word: 'SPLAT!' },
+    mole: { blood: '#d62828', sound: 'rawr', word: 'OOF!' },
+    rat: { blood: '#d62828', sound: 'squeak', word: 'SQUEAK!' },
   };
   const goreFor = (d) => d.gore || GORE[d.art] || GORE.monkey;
 
@@ -143,15 +188,16 @@
     }
 
     takeHit(hit, world) {
-      if (!this.alive) return 'miss';
+      if (!this.alive || this.burrowed) return 'miss';
       this.hp -= hit.dmg;
       this.flash = 0.1;
       this.hurt = this.isBoss ? 0.15 : hit.big ? 0.6 : 0.35;
       const w = this.d.weight || 1;
       this.vx = hit.kbx / w;
-      if (this.d.behavior !== 'flyer' && this.d.behavior !== 'dragon') this.vy = hit.kby / w;
+      if (!FLYING.has(this.d.behavior)) this.vy = hit.kby / w;
       this.state = 'idle';
       if (hit.sleep) this.hurt = hit.sleep;
+      this.frozenT = hit.freeze ? hit.sleep : 0;
       const g = goreFor(this.d);
       const cy = this.y - this.d.h * 0.55;
       world.fx.gore(this.x, cy, g.blood, hit.big ? 9 : 4, world.groundY);
@@ -209,7 +255,7 @@
     }
 
     physics(dt, world) {
-      if (this.d.behavior === 'flyer' || this.d.behavior === 'dragon') {
+      if (FLYING.has(this.d.behavior)) {
         this.x += this.vx * dt;
         this.y += this.vy * dt;
         return;
@@ -225,7 +271,7 @@
     }
 
     contact(world, player, mult = 1) {
-      if (this.cool > 0 || player.state === 'ko') return;
+      if (this.cool > 0 || player.state === 'ko' || this.burrowed) return;
       if (U.overlap(this.box, player.box)) {
         player.takeHit({
           dmg: this.d.dmg * mult, kbx: Math.sign(player.x - this.x || 1) * 320, kby: -260,
@@ -244,6 +290,25 @@
         this.vx = dist < 520 ? dir * d.speed : 0;
         if (d.bouncy && this.y >= world.groundY - 1 && Math.random() < dt * 1.5) this.vy = -380;
         this.contact(world, player);
+      } else if (d.behavior === 'dangler') {
+        // ceiling spider: drops when you walk underneath, then climbs back up
+        this.vx *= Math.pow(0.02, dt);
+        const low = world.groundY - 30;
+        if (this.state === 'drop') {
+          this.vy = 900;
+          if (this.y >= low) { this.y = low; this.vy = 0; this.state = 'bite'; this.stateT = 0; }
+          this.contact(world, player, 1);
+        } else if (this.state === 'bite') {
+          this.vy = 0;
+          this.contact(world, player, 1);
+          if (this.stateT > 0.8) { this.state = 'climb'; this.stateT = 0; }
+        } else if (this.state === 'climb') {
+          this.vy = -180;
+          if (this.y <= this.homeY) { this.y = this.homeY; this.vy = 0; this.state = 'idle'; this.cool = U.rand(1.2, 2); }
+        } else {
+          this.vy = 0;
+          if (dist < 70 && this.cool <= 0) { this.state = 'drop'; this.stateT = 0; SS.Audio.whiff(); }
+        }
       } else if (d.behavior === 'hopper') {
         // boxing kangaroo: bounces toward you, punches when close
         const onGround = this.y >= world.groundY - 1;
@@ -399,6 +464,34 @@
           }
         }
         if (this.stateT > 1.4) this.endBossMove(enraged);
+      } else if (this.state === 'burrow') {
+        // dig underground (can't be hit), chase you, then burst up underneath
+        if (this.stateT < 0.3) {
+          this.vx = 0;
+          if (!this.burrowed && this.stateT > 0.15) {
+            this.burrowed = true;
+            world.fx.burst(this.x, world.groundY - 10, '#7f5539', 16, 260);
+            world.fx.text(this.x, this.y - 140, 'DIG DIG DIG!', '#ffd23f', 24);
+            SS.Audio.crate();
+          }
+        } else if (this.stateT < 2.4) {
+          this.vx = dir * d.speed * 2.2;
+          if (Math.random() < dt * 25) world.fx.burst(this.x, world.groundY - 4, '#7f5539', 2, 120);
+          if (Math.abs(dx) < 20) this.stateT = 2.4;
+        } else if (!this.popped) {
+          this.popped = true;
+          this.burrowed = false;
+          this.vx = 0;
+          this.vy = -760;
+          SS.Audio.bigSlap();
+          world.fx.shake(14);
+          world.fx.burst(this.x, world.groundY - 10, '#7f5539', 24, 380);
+          world.fx.text(this.x, this.y - 170, 'SURPRISE!', '#ff4d6d', 30);
+          if (player.onGround && Math.abs(player.x - this.x) < 120) {
+            player.takeHit({ dmg: d.dmg + 4, kbx: dir * 480, kby: -560, stun: 0.6, from: this }, world);
+          }
+        }
+        if (this.stateT > 3.4) this.endBossMove(enraged);
       } else if (this.state === 'charge') {
         this.vx = this.stateT < 0.5 ? 0 : this.chargeDir * d.speed * 3.2;
         this.contact(world, player, 1.2);
@@ -466,7 +559,8 @@
 
     visualFlags() {
       return (this.punchT > 0 ? 1 : 0) | (this.state === 'charge' || this.state === 'windup' ? 2 : 0) |
-        (this.d.art === 'ufo' && (this.state === 'drop' || this.state === 'swoop') ? 4 : 0);
+        (this.d.art === 'ufo' && (this.state === 'drop' || this.state === 'swoop') ? 4 : 0) |
+        (this.burrowed ? 8 : 0) | (this.frozenT > 0 && this.hurt > 0 ? 16 : 0);
     }
 
     endBossMove(enraged) {
@@ -474,6 +568,8 @@
       this.stateT = 0;
       this.shots = 0;
       this.slammed = false;
+      this.burrowed = false;
+      this.popped = false;
       this.cool = enraged ? U.rand(0.7, 1.2) : U.rand(1.4, 2.2);
     }
 
@@ -491,7 +587,7 @@
       const o = Object.assign({
         t: this.t, facing: this.facing, flash: this.flash > 0, scale: d.scale || 1,
         crown: d.crown, throwing: this.throwing,
-        punch: vf & 1, charging: vf & 2, beam: vf & 4, air: this.y < world.groundY - 2,
+        punch: vf & 1, charging: vf & 2, beam: vf & 4, burrowed: !!(vf & 8), air: this.y < world.groundY - 2,
       }, d.colors || {});
       if (d.art === 'dragon') {
         o.trail = this.alive ? this.trail : [];
@@ -499,7 +595,17 @@
       } else {
         SS.Art[d.art](ctx, this.x, this.y, o);
       }
-      if (this.alive && this.hurt > 0.8) {
+      if (this.alive && (vf & 16)) {
+        // frozen in an ice block
+        const b = this.box;
+        ctx.fillStyle = 'rgba(155,246,255,0.45)';
+        ctx.strokeStyle = 'rgba(230,250,255,0.9)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(b.x - 8, b.y - 8, b.w + 16, b.h + 12, 8);
+        ctx.fill();
+        ctx.stroke();
+      } else if (this.alive && this.hurt > 0.8) {
         SS.UI.outlineText(ctx, 'Zzz', this.x + 10, this.y - d.h - 10 - Math.sin(this.t * 4) * 5, 20, '#bde0fe', 'center');
       }
       ctx.restore();

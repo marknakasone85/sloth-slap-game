@@ -190,6 +190,13 @@
           [1400, 1000, 700].forEach((f, i) => this.tone(f, 0.08, 'square', 0.1, null, i * 0.09));
           this.wobble(260, 0.35, 'sawtooth', 0.1, 40, 50, 60, 0.27);
           break;
+        case 'honk':
+          this.tone(330, 0.12, 'square', 0.16, 280);
+          this.tone(300, 0.2, 'square', 0.16, 240, 0.15);
+          break;
+        case 'groan':
+          this.wobble(130, 0.8, 'sawtooth', 0.14, 5, 18, 70);
+          break;
         case 'boss':
           this.tone(1200, 0.9, 'sine', 0.3, 120); // slide whistle down...
           this.noise(0.5, 1, 300, 0.5, 0.8);      // ...KABOOM
@@ -255,6 +262,21 @@
         bpm: 120,
         bass: [41, null, 41, null, 44, null, 44, null, 39, null, 39, null, 46, null, 44, null],
         lead: [77, 80, 84, 80, 77, 80, 84, 87, 75, 79, 82, 79, 74, 77, 82, 86],
+      },
+      egypt: {
+        bpm: 116,
+        bass: [40, null, 41, null, 44, null, 41, null, 40, null, 47, null, 45, null, 44, null],
+        lead: [64, 65, 68, 69, 71, null, 69, 68, 65, 64, null, 65, 68, null, 64, null],
+      },
+      cave: {
+        bpm: 84,
+        bass: [33, null, null, null, 40, null, null, null, 36, null, null, null, 38, null, null, null],
+        lead: [69, null, 72, null, null, 76, null, null, 74, null, null, 72, null, null, null, null],
+      },
+      nyc: {
+        bpm: 132,
+        bass: [36, 40, 43, 45, 46, 45, 43, 40, 41, 45, 48, 50, 48, 46, 45, 43],
+        lead: [72, null, 75, 76, null, 79, null, null, 77, null, 76, 72, null, 70, null, null],
       },
       duel: {
         bpm: 138,

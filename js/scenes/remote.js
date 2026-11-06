@@ -220,6 +220,11 @@
       }
       this.fx.draw(ctx);
       ctx.restore();
+      if (SS.Art.isDark(this.L.theme)) {
+        const lights = Object.values(this.players).map((p) => ({ x: p.x - this.camX, y: p.y - 62, r: 230 }))
+          .concat(this.proj.map((p) => ({ x: p.x - this.camX, y: p.y, r: 60 })));
+        SS.Art.darkness(ctx, lights, SS.Art.darkAlpha(this.L.theme));
+      }
 
       const me = s.pl.find((p) => p.id === SS.Net.id);
       const alive = s.pl.filter((p) => p.st !== 'ko');

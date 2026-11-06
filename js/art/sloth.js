@@ -195,6 +195,52 @@ SS.Art = SS.Art || {};
       ctx.closePath();
       ctx.fill();
       ellipse(ctx, 14, -115, 4, 4);
+    } else if (acc === 'army') {
+      // soldier helmet with a net and a little badge
+      ctx.fillStyle = C('#556b2f');
+      ctx.beginPath(); ctx.arc(8, -98, 29, Math.PI, Math.PI * 2); ctx.fill();
+      ctx.fillRect(-24, -100, 64, 6);
+      ctx.strokeStyle = C('#3c4a22');
+      ctx.lineWidth = 1.5;
+      for (let i = -18; i <= 30; i += 8) { ctx.beginPath(); ctx.moveTo(i, -122); ctx.lineTo(i + 6, -100); ctx.stroke(); }
+      ctx.fillStyle = C('#ffd23f');
+      SS.FX.star(ctx, 8, -110, 5);
+    } else if (acc === 'wizard') {
+      // long white beard + tall starry hat
+      ctx.fillStyle = C('#f8f8f8');
+      ctx.beginPath(); ctx.moveTo(-2, -80); ctx.quadraticCurveTo(14, -40, 30, -80); ctx.quadraticCurveTo(14, -70, -2, -80); ctx.fill();
+      ctx.fillStyle = C(ac);
+      ctx.beginPath(); ctx.moveTo(-18, -108); ctx.lineTo(4, -176); ctx.quadraticCurveTo(14, -150, 36, -108); ctx.closePath(); ctx.fill();
+      ctx.fillRect(-24, -112, 66, 7);
+      ctx.fillStyle = C('#ffd23f');
+      SS.FX.star(ctx, 6, -134, 6);
+      SS.FX.star(ctx, 18, -118, 4);
+      ctx.beginPath(); ctx.arc(2, -152, 3, 0, Math.PI * 2); ctx.fill();
+    } else if (acc === 'pirate') {
+      // eye patch + tricorn hat
+      ctx.fillStyle = C('#111');
+      ctx.beginPath(); ctx.arc(5, -91, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = C('#111');
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-14, -98); ctx.lineTo(32, -86); ctx.stroke();
+      ctx.fillStyle = C('#1d1d24');
+      ctx.beginPath(); ctx.moveTo(-26, -106); ctx.quadraticCurveTo(8, -150, 42, -106); ctx.quadraticCurveTo(8, -118, -26, -106); ctx.fill();
+      ctx.fillStyle = C(ac);
+      ctx.fillRect(-10, -116, 36, 4);
+      ctx.fillStyle = C('#ffffff');
+      ctx.beginPath(); ctx.arc(8, -128, 4, 0, Math.PI * 2); ctx.fill();
+    } else if (acc === 'beanie') {
+      // knit beanie with pom-pom + scarf
+      ctx.fillStyle = C(ac);
+      ctx.beginPath(); ctx.arc(8, -100, 27, Math.PI, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = C('#ffffff');
+      ctx.fillRect(-20, -104, 56, 8);
+      ctx.beginPath(); ctx.arc(8, -130, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = C(ac);
+      ctx.beginPath(); ctx.roundRect(-10, -72, 44, 10, 5); ctx.fill();
+      ctx.fillRect(-6, -66, 9, 24);
+      ctx.fillStyle = C('#ffffff');
+      ctx.fillRect(-6, -50, 9, 3);
     } else if (acc === 'helmet') {
       ctx.fillStyle = C(ac);
       ctx.beginPath();

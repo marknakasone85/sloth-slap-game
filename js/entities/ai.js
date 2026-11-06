@@ -75,6 +75,10 @@
         case 'bellyflop': return dist < 220;
         case 'lullaby': return dist > 120;
         case 'coconuts': return true;
+        case 'barrage': return dist > 140 && dist < 460;
+        case 'missiles': return true;
+        case 'cannon': return dist < 520;
+        case 'freeze': return dist > 110;
         default: return dist < 120;
       }
     }

@@ -18,7 +18,13 @@ A comical cartoon slap-'em-up starring a crew of sloths.
   | 10 | Castle Kerfuffle (castle) | bats, knight monkeys with cannonballs, boxing kangaroos; boss: **King Kanga** |
   | 11 | Lava Lagoon (inside the volcano) | fire beetles, bouncing lava blobs, fire bats, kangaroos |
   | 12 | Jurassic Jog (time machine) | charging raptors, pterodactyls, rock-throwing cave monkeys; boss: **Tiny-Arms Rex** |
-  | 13 | Space Station Zzz (low gravity!) | alien blobs, astronaut monkeys, astro-kangaroos, mini UFOs; final boss: **The Big UFO** |
+  | 13 | Space Station Zzz (low gravity!) | alien blobs, astronaut monkeys, astro-kangaroos, mini UFOs; boss: **The Big UFO** |
+  | 14 | Capitol Capers (Washington DC) | acorn-throwing squirrels, charging geese, pigeons; boss: **The Mega Goose** |
+  | 15 | Pyramid Panic (Egypt) | mummies, scorpions, spitting camels, vultures; boss: **The Mummy King** |
+  | 16 | Crystal Caverns (dark cave: light only around your sloths) | dropping spiders, bats, crystal crabs; boss: **The Giant Mole** (burrows and pops up under you) |
+  | 17 | Big Apple Bash (New York City) | pizza rats, speeding taxis, hot-dog monkeys, pigeons; final boss: **Mega Pizza Rat** |
+
+  Flying enemies (birds, bats, drones, UFOs) go down with one slap or one shot.
 
   **Health & power-ups:** a heart (+50 HP) waits just past every gate and before each boss. Enemies sometimes drop leaf snacks (+10) or hearts. Each map has two glowing power-up bubbles, and crates sometimes hold one:
   🛡️ Bubble Shield (no damage), 👊 Super Slap (double damage), 🔫 Rapid Fire (unlimited ammo), ☕ Coffee (super speed): each lasts 12 seconds.
@@ -34,7 +40,7 @@ A comical cartoon slap-'em-up starring a crew of sloths.
   - **vs CPU** (Sleepy / Grumpy / Savage) or **2 Players** on one keyboard.
   - **Wi-Fi Battle, 2 to 4 sloths:** free-for-all, and the last sloth standing wins the round (if time runs out, the most health left wins). The host can add **CPU sloths** in the lobby (C = add, X = remove) to fill empty spots. Late arrivals jump in at the next round. After a match: **Rematch** or **Back to Lobby** (same join code, nobody has to rejoin).
 
-There are five sloths, each with their own stats and special move:
+There are nine sloths, each with their own stats and special move:
 
 | Sloth | Style | Special |
 |---|---|---|
@@ -43,6 +49,10 @@ There are five sloths, each with their own stats and special move:
 | Big Chonk | Slow, heavy hitter | Mega Belly Flop (shockwave) |
 | DJ Snooze | Zoner | Lullaby Bass Drop (puts the target to sleep) |
 | Queen Napoleona | All-rounder | Coconut Decree (coconuts rain down) |
+| Sergeant Snooze | Soldier, tough | Banana Barrage (three exploding banana bombs) |
+| Wizzy the Wise | Wizard | Magic Snooze Missiles (three homing missiles) |
+| Captain Clawbeard | Pirate, heavy hitter | Belly Cannon (a huge cannonball) |
+| Frosty Flo | Ice, quick | Brain Freeze Blast (freezes the target solid) |
 
 ## Play it
 
