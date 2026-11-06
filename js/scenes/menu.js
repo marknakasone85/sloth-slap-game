@@ -11,7 +11,7 @@
       this.slapT = 1.5;
       this.slapper = 0;
       this.menu = new SS.MenuList([
-        { label: 'Campaign', go: () => new SS.SelectScene({ mode: 'campaign' }) },
+        { label: 'Campaign', go: () => new SS.CampaignModeScene() },
         { label: 'Slapdown Duel  (vs CPU)', go: () => new SS.SelectScene({ mode: 'duel', vsCpu: true }) },
         { label: 'Slapdown Duel  (2 Players)', go: () => new SS.SelectScene({ mode: 'duel', vsCpu: false }) },
         { label: 'How to Play', help: true },

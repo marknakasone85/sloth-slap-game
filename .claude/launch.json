@@ -4,7 +4,7 @@
     {
       "name": "sloth-slap-web",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8770", "--bind", "127.0.0.1"],
+      "runtimeArgs": ["tools/share_server.py", "--local", "--port", "8770", "--hours", "2"],
       "port": 8770
     }
   ]

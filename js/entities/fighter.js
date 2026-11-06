@@ -439,7 +439,9 @@
       return m.kind === 'flurry' || m.kind === 'dash';
     }
 
-    draw(ctx, world) {
+    // Everything needed to draw this sloth, as a small plain object.
+    // The host draws from it directly, and sends it to Wi-Fi co-op players.
+    renderState() {
       const pose = this.state === 'ko' ? 'ko'
         : this.state === 'win' ? 'win'
         : this.state === 'sleep' ? 'sleep'
@@ -448,50 +450,77 @@
         : !this.onGround ? 'jump'
         : Math.abs(this.vx) > 20 && this.state !== 'attack' ? 'walk'
         : 'idle';
-      const floor = world.floorBelow ? world.floorBelow(this.x, this.y) : world.groundY;
-      SS.Art.shadow(ctx, this.x, floor, 34 * this.def.scale * Math.max(0.4, 1 - (floor - this.y) / 400));
-      if (this.invuln > 0.1 && Math.floor(this.t * 20) % 2 === 0) return;
-      if (this.powers.superslap) {
-        // angry red aura
-        ctx.fillStyle = `rgba(255,77,109,${0.18 + Math.sin(this.t * 10) * 0.08})`;
+      const busy = ['hurt', 'ko', 'sleep', 'block', 'win'].includes(this.state);
+      const arm = this.armAngle();
+      const r2 = (v) => Math.round(v * 100) / 100;
+      return {
+        cid: this.def.id, x: Math.round(this.x * 10) / 10, y: Math.round(this.y * 10) / 10, f: this.facing,
+        pose, t: r2(this.t), walk: r2(this.walk), arm: arm === undefined ? null : r2(arm),
+        sl: this.isSwinging() ? 1 : 0,
+        mo: this.state === 'attack' ? 'open' : this.state === 'hurt' ? 'ouch' : 0,
+        fl: this.flash > 0 ? 1 : 0,
+        sq: this.move && this.move.kind === 'bellyflop' && this.move.phase === 'impact' ? 0.25 : 0,
+        gun: !busy && (this.move ? this.move.kind === 'shoot' : this.gunT > 0) ? 1 : 0,
+        mz: this.muzzleT > 0 ? 1 : 0,
+        hide: this.invuln > 0.1 && Math.floor(this.t * 20) % 2 === 0 ? 1 : 0,
+        ps: r2(this.powers.shield || 0), ss: this.powers.superslap ? 1 : 0, co: this.powers.coffee ? 1 : 0,
+        vx: Math.round(this.vx), mk: this.move ? this.move.kind : 0, st: this.state, og: this.onGround ? 1 : 0,
+        tag: this.tag || 0, tc: this.tagColor || 0,
+      };
+    }
+
+    draw(ctx, world) { SS.Fighter.drawState(ctx, this.renderState(), world); }
+
+    static drawState(ctx, s, world) {
+      const def = SS.charById(s.cid);
+      const h = 112 * def.scale, w = 52 * def.scale;
+      const floor = world.floorBelow ? world.floorBelow(s.x, s.y) : world.groundY;
+      SS.Art.shadow(ctx, s.x, floor, 34 * def.scale * Math.max(0.4, 1 - (floor - s.y) / 400));
+      if (s.tag && s.pose !== 'ko') {
+        // co-op marker: who is who
+        const ty = s.y - 158 * def.scale - 10 + Math.sin(s.t * 4) * 3; // above hats and crowns
+        ctx.fillStyle = s.tc;
         ctx.beginPath();
-        ctx.ellipse(this.x, this.y - this.h * 0.5, this.w * 0.95, this.h * 0.62, 0, 0, Math.PI * 2);
+        ctx.moveTo(s.x - 7, ty + 8); ctx.lineTo(s.x + 7, ty + 8); ctx.lineTo(s.x, ty + 16);
+        ctx.fill();
+        SS.UI.outlineText(ctx, s.tag, s.x, ty - 2, 15, s.tc, 'center');
+      }
+      if (s.hide) return;
+      if (s.ss) {
+        // angry red aura
+        ctx.fillStyle = `rgba(255,77,109,${0.18 + Math.sin(s.t * 10) * 0.08})`;
+        ctx.beginPath();
+        ctx.ellipse(s.x, s.y - h * 0.5, w * 0.95, h * 0.62, 0, 0, Math.PI * 2);
         ctx.fill();
       }
-      if (this.powers.coffee && Math.abs(this.vx) > 40) {
+      if (s.co && Math.abs(s.vx) > 40) {
         ctx.strokeStyle = 'rgba(255,255,255,0.7)';
         ctx.lineWidth = 3;
         for (let i = 0; i < 3; i++) {
-          const ly = this.y - this.h * (0.25 + i * 0.25);
-          const lx = this.x - Math.sign(this.vx) * (this.w * 0.6 + i * 6);
-          ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - Math.sign(this.vx) * 26, ly); ctx.stroke();
+          const ly = s.y - h * (0.25 + i * 0.25);
+          const lx = s.x - Math.sign(s.vx) * (w * 0.6 + i * 6);
+          ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - Math.sign(s.vx) * 26, ly); ctx.stroke();
         }
       }
-      const busy = ['hurt', 'ko', 'sleep', 'block', 'win'].includes(this.state);
-      const holdingGun = !busy && (this.move ? this.move.kind === 'shoot' : this.gunT > 0);
       SS.Art.sloth(ctx, {
-        gun: holdingGun, muzzle: this.muzzleT > 0,
-        x: this.x + (this.powers.coffee ? SS.U.rand(-1.2, 1.2) : 0), y: this.y,
-        facing: this.facing, scale: this.def.scale, look: this.def.look,
-        t: this.t, pose, walk: this.walk, arm: this.armAngle(),
-        slapping: this.isSwinging(),
-        mouth: this.state === 'attack' ? 'open' : this.state === 'hurt' ? 'ouch' : undefined,
-        flash: this.flash > 0,
-        squash: this.move && this.move.kind === 'bellyflop' && this.move.phase === 'impact' ? 0.25 : 0,
+        gun: !!s.gun, muzzle: !!s.mz,
+        x: s.x + (s.co ? SS.U.rand(-1.2, 1.2) : 0), y: s.y,
+        facing: s.f, scale: def.scale, look: def.look,
+        t: s.t, pose: s.pose, walk: s.walk, arm: s.arm === null ? undefined : s.arm,
+        slapping: !!s.sl, mouth: s.mo || undefined, flash: !!s.fl, squash: s.sq,
       });
-      const sh = this.powers.shield;
-      if (sh && (sh > 2 || Math.floor(this.t * 8) % 2 === 0)) {
-        const r = this.h * 0.62 + Math.sin(this.t * 6) * 3;
+      if (s.ps && (s.ps > 2 || Math.floor(s.t * 8) % 2 === 0)) {
+        const r = h * 0.62 + Math.sin(s.t * 6) * 3;
         ctx.fillStyle = 'rgba(76,201,240,0.18)';
         ctx.strokeStyle = 'rgba(155,246,255,0.85)';
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(this.x, this.y - this.h * 0.5, r, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y - h * 0.5, r, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.beginPath();
-        ctx.ellipse(this.x - r * 0.4, this.y - this.h * 0.5 - r * 0.5, r * 0.18, r * 0.1, -0.6, 0, Math.PI * 2);
+        ctx.ellipse(s.x - r * 0.4, s.y - h * 0.5 - r * 0.5, r * 0.18, r * 0.1, -0.6, 0, Math.PI * 2);
         ctx.fill();
       }
     }

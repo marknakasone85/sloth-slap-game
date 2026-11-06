@@ -20,6 +20,11 @@ A comical cartoon slap-'em-up starring a crew of sloths.
   🍌 Lucky Banana: an extra life. If you get snoozed you pop right back up.
 
   Secret: type **S L O T H** on the map-select screen to unlock every map.
+
+- **Co-op campaign** (Campaign → choose how to play):
+  - **2 Players (this computer):** P1 uses WASD + F/G/H/R and P2 uses the arrow keys + , . / ;
+  - **Wi-Fi co-op, 2 to 4 players** on different computers on the same Wi-Fi (see *Playing together on Wi-Fi* below).
+  - Everyone shares one screen. If you get snoozed while a teammate is still up, you pop back in next to them after 5 seconds. Checkpoints are only needed if the whole team goes down. Enemies get tougher the more sloths there are.
 - **Slapdown Duel**: a 1v1 fighting mode, best of 3 rounds. Play against a friend on one keyboard, or against the CPU at three difficulty levels (Sleepy / Grumpy / Savage).
 
 There are five sloths, each with their own stats and special move:
@@ -58,6 +63,16 @@ npm run dist:win     # build dist/*.exe   (best run on Windows)
 - Sharing stops by itself after 3 hours.
 - Only use it on your own home Wi-Fi, not on public Wi-Fi.
 - The first time, macOS may ask whether Python can accept incoming network connections. Click **Allow**, or nobody else can connect.
+
+## Playing together on Wi-Fi (2-4 players)
+
+1. **Host** (the computer that runs the game): double-click `share-on-network.command`, then open **http://localhost:8000** in a browser on that same computer. Choose **Campaign → Host Wi-Fi Game**, pick your sloth, and the lobby shows a **4-digit join code**.
+2. **Everyone else:** open the address shown in the host's sharing window (like `http://192.168.1.23:8000`), choose **Campaign → Join Wi-Fi Game**, type the code, pick a sloth and press **Enter** when ready.
+3. The host picks a map and presses **Enter** to start. Late arrivals can still join and drop in next to the team.
+
+How it works: the host's computer runs the real game. The others send their button presses and draw what the host sends back (about 30 updates a second, roughly 1.5 KB each). The host's game keeps running even if its window is hidden.
+
+Security: only the host's own computer can start a game, joining needs the code, a device that types too many wrong codes is locked out for a minute, every player gets a secret token, messages are small and never saved, other websites can't talk to it, and it's still home-network only and turns off by itself after 3 hours.
 
 ## Backups
 

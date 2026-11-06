@@ -35,7 +35,8 @@
 
     enter() { SS.Audio.playMusic('menu'); }
 
-    get twoPlayerPick() { return this.mode === 'duel' && !this.vsCpu && this.phase === 'char'; }
+    get twoPlayerPick() { return ((this.mode === 'duel' && !this.vsCpu) || this.mode === 'coop') && this.phase === 'char'; }
+    get bothShown() { return this.mode === 'duel' || this.mode === 'coop'; }
 
     cardRect(i) { return { x: START_X + i * (CARD_W + GAP), y: CARD_Y, w: CARD_W, h: CARD_H }; }
 
@@ -76,8 +77,14 @@
           const p = !this.locked[0] ? 0 : !this.locked[1] ? 1 : -1;
           if (p >= 0) { this.cur[p] = c; this.locked[p] = true; SS.Audio.confirm(); }
         }
-        if (I.anyHit(['Escape', 'Backspace'])) { SS.Engine.setScene(new SS.MenuScene()); return; }
-        if (this.locked[0] && this.locked[1]) this.openStageMenu();
+        if (I.anyHit(['Escape', 'Backspace'])) {
+          SS.Engine.setScene(this.mode === 'coop' ? new SS.CampaignModeScene() : new SS.MenuScene());
+          return;
+        }
+        if (this.locked[0] && this.locked[1]) {
+          if (this.mode === 'coop') this.openLevelMenu();
+          else this.openStageMenu();
+        }
         return;
       }
 
@@ -92,6 +99,10 @@
         SS.Audio.confirm();
         this.locked[p] = true;
         if (this.mode === 'campaign') this.openLevelMenu();
+        else if (this.mode === 'host') {
+          this.savePicks();
+          SS.Engine.setScene(new SS.LobbyScene({ cid: SS.CHARACTERS[this.cur[0]].id }));
+        }
         else if (this.phase === 'char') this.phase = 'cpuChar';
         else this.openDifficultyMenu();
       }
@@ -107,7 +118,7 @@
         return;
       }
       if (this.phase === 'cpuChar') { this.phase = 'char'; this.locked[0] = false; return; }
-      SS.Engine.setScene(new SS.MenuScene());
+      SS.Engine.setScene(this.mode === 'duel' ? new SS.MenuScene() : new SS.CampaignModeScene());
     }
 
     savePicks() { SS.Save.set('lastPicks', this.cur); }
@@ -137,7 +148,10 @@
         act: () => {
           if (i >= unlocked) { SS.Audio.hurt(); return; }
           this.savePicks();
-          SS.Engine.setScene(new SS.CampaignScene({ charId: SS.CHARACTERS[this.cur[0]].id, level: i }));
+          const cid = (k) => SS.CHARACTERS[this.cur[k]].id;
+          SS.Engine.setScene(new SS.CampaignScene(this.mode === 'coop'
+            ? { level: i, mode: 'coop', players: [{ id: 0, cid: cid(0), local: 'P1' }, { id: 1, cid: cid(1), local: 'P2' }] }
+            : { charId: cid(0), level: i }));
         },
       })), W / 2, 152, { w: 480, h: 38, gap: 7 });
     }
@@ -188,13 +202,14 @@
         return;
       }
 
-      const title = this.mode === 'campaign' ? 'CHOOSE YOUR SLOTH'
+      const title = this.mode === 'campaign' || this.mode === 'host' ? 'CHOOSE YOUR SLOTH'
+        : this.mode === 'coop' ? 'CHOOSE YOUR SLOTHS'
         : this.phase === 'cpuChar' ? 'CHOOSE YOUR OPPONENT' : 'CHOOSE YOUR FIGHTERS';
       UI.outlineText(ctx, title, W / 2, 50, 40, '#ffd23f', 'center');
 
       SS.CHARACTERS.forEach((c, i) => this.drawCard(ctx, c, i));
 
-      const showP2 = this.mode === 'duel' && (this.phase === 'cpuChar' || this.twoPlayerPick);
+      const showP2 = this.bothShown && (this.phase === 'cpuChar' || this.twoPlayerPick);
       this.drawDetails(ctx, SS.CHARACTERS[this.cur[0]], showP2 && this.phase !== 'cpuChar' ? 160 : W / 2, '#ffd23f', 'P1');
       if (this.twoPlayerPick) this.drawDetails(ctx, SS.CHARACTERS[this.cur[1]], W - 160, '#00f5d4', 'P2');
       if (this.phase === 'cpuChar') {
@@ -255,7 +270,7 @@
     drawPickedSloths(ctx) {
       const a = SS.CHARACTERS[this.cur[0]];
       SS.Art.sloth(ctx, { x: 120, y: 470, look: a.look, scale: 1.2 * a.scale, t: this.t, pose: 'idle' });
-      if (this.mode === 'duel') {
+      if (this.bothShown) {
         const b = SS.CHARACTERS[this.cur[1]];
         SS.Art.sloth(ctx, { x: W - 120, y: 470, facing: -1, look: b.look, scale: 1.2 * b.scale, t: this.t + 2, pose: 'idle' });
       }

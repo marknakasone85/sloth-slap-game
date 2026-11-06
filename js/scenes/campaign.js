@@ -1,17 +1,25 @@
 // Campaign: side-scrolling slap-'em-up through a map, ending at the nap hammock.
+// Supports 1 player, 2 players on one computer, and Wi-Fi co-op (this computer hosts, up to 4).
 (function () {
-  const UI = SS.UI;
   const U = SS.U;
-  const W = SS.W, H = SS.H;
+  const W = SS.W;
+  const RESPAWN_TIME = 5;     // seconds before a snoozed co-op player pops back in
+  const SNAP_RATE = 1 / 30;   // Wi-Fi updates per second sent to guests
+  const PRESS_KEYS = ['jumpP', 'slapP', 'heavyP', 'specialP', 'shootP'];
 
   SS.CampaignScene = class {
+    // opts: { level, charId }                         solo
+    //       { level, players: [{ id, cid, local }] }   local co-op / Wi-Fi host
+    //         local = 'SOLO' | 'P1' | 'P2' (keys on this computer) or null (a Wi-Fi player)
+    //       net: true when this computer is hosting a Wi-Fi game
     constructor(opts) {
       this.opts = opts;
       this.levelIndex = opts.level;
       this.L = SS.LEVELS[opts.level];
-      this.def = SS.charById(opts.charId);
+      this.net = !!opts.net;
       this.groundY = SS.GROUND_Y;
       this.fx = new SS.FX();
+      if (this.net) { SS.Sync.wrapFX(this.fx); SS.Sync.installAudioHook(); }
       this.platforms = this.L.platforms || [];
       this.t = 0;
       this.camX = 0;
@@ -22,9 +30,14 @@
       this.menu = null;
       this.showControls = false;
       this.showStrip = SS.Save.get('keyStrip', true);
+      this.syncT = 0;
+      this.uid = 0;
 
-      this.player = new SS.Fighter(this.def, 120, { team: 'player', mercy: 0.8 });
-      this.enemies = this.L.enemies.map((e) => new SS.Enemy(e.type, e.x, e.y));
+      this.slots = [];
+      const players = opts.players || [{ id: 0, cid: opts.charId, local: 'SOLO' }];
+      players.forEach((pl, i) => this.addSlot(pl, 120 + i * 45));
+
+      this.enemies = this.L.enemies.map((e) => this.tagEnemy(new SS.Enemy(e.type, e.x, e.y)));
       this.crates = this.L.crates.map((c) => new SS.Crate(c.x, c.loot));
       this.gongs = (this.L.gongs || []).map((g) => new SS.Gong(g.id, g.x));
       this.gates = (this.L.gates || []).map((g) => ({ id: g.id, x: g.x, opened: false, lift: 0 }));
@@ -33,13 +46,78 @@
       this.goalX = this.L.length - 160;
       this.boss = null;
       if (this.L.boss) {
-        this.boss = new SS.Enemy(this.L.boss.type, this.L.boss.x, this.L.boss.y);
+        this.boss = this.tagEnemy(new SS.Enemy(this.L.boss.type, this.L.boss.x, this.L.boss.y));
         this.enemies.push(this.boss);
         this.arenaX = this.L.boss.x - 380;
       }
       this.bossAwake = false;
       this.placeHelpers();
+      // More sloths = tougher enemies, so co-op stays a challenge.
+      const n = players.length;
+      if (n > 1) {
+        for (const e of this.enemies) {
+          const k = e.isBoss ? 1 + 0.5 * (n - 1) : 1 + 0.35 * (n - 1);
+          e.hp = e.maxHp = Math.round(e.maxHp * k);
+        }
+      }
     }
+
+    // ---------------- players ----------------
+    get coop() { return this.slots.length > 1; }
+    get fighters() { return this.slots.map((s) => s.f); }
+    get player() { return this.slots[0].f; }
+    aliveFighters() { return this.fighters.filter((f) => f.state !== 'ko'); }
+    leader() {
+      const alive = this.aliveFighters();
+      const list = alive.length ? alive : this.fighters;
+      return list.reduce((a, b) => (b.x > a.x ? b : a));
+    }
+    nearestFighter(x) {
+      const alive = this.aliveFighters();
+      const list = alive.length ? alive : this.fighters;
+      return list.reduce((a, b) => (Math.abs(b.x - x) < Math.abs(a.x - x) ? b : a));
+    }
+    currentPlayers() { return this.slots.map((s) => ({ id: s.id, cid: s.cid, local: s.local })); }
+
+    addSlot(pl, x) {
+      const slot = {
+        id: pl.id, cid: pl.cid, def: SS.charById(pl.cid), local: pl.local || null,
+        respawnT: 0, waiting: false, held: {}, presses: {}, inSeq: 0,
+      };
+      this.slots.push(slot);
+      this.spawnFighter(slot, x);
+      return slot;
+    }
+
+    spawnFighter(slot, x, hpFrac = 1) {
+      const f = new SS.Fighter(slot.def, x, { team: 'player', mercy: 0.8 });
+      f.hp = f.maxHp * hpFrac;
+      f.tagColor = SS.PLAYER_COLORS[slot.id % 4];
+      slot.f = f;
+      slot.respawnT = 0;
+      slot.waiting = false;
+      return f;
+    }
+
+    controlsFor(slot) {
+      if (slot.local) return SS.readControls(SS.Controls[slot.local]);
+      const c = Object.assign({ left: false, right: false, down: false }, slot.held, slot.presses);
+      slot.presses = {};
+      return c;
+    }
+
+    // A Wi-Fi player's buttons: held keys from the newest message, every press counts.
+    netInput(id, m) {
+      const slot = this.slots.find((s) => s.id === id);
+      if (!slot) return;
+      if (m.n > slot.inSeq) {
+        slot.inSeq = m.n;
+        slot.held = { left: !!m.l, right: !!m.r, down: !!m.d };
+      }
+      for (const k of m.p || []) if (PRESS_KEYS.includes(k)) slot.presses[k] = true;
+    }
+
+    tagEnemy(e) { e.uid = ++this.uid; return e; }
 
     // Hearts right after every gate (where you respawn) and before the boss,
     // plus two power-up bubbles per map (a different pair on each map).
@@ -55,7 +133,37 @@
       });
     }
 
-    enter() { SS.Audio.playMusic(this.L.music); }
+    enter() {
+      SS.Audio.playMusic(this.L.music);
+      if (this.net) SS.Net.onMessage = (m, from) => this.onNet(m, from);
+    }
+
+    // ---------------- Wi-Fi messages (host side) ----------------
+    onNet(m, from) {
+      if (!m) return;
+      if (from === 'server') {
+        if (m.t === 'joined') {
+          SS.Net.send({ t: 'welcome', inGame: true, level: this.levelIndex }, m.id, true);
+          this.fx.text(this.leader().x, 200, `P${m.id + 1} is joining...`, SS.PLAYER_COLORS[m.id % 4], 22);
+        } else if (m.t === 'left') {
+          const slot = this.slots.find((s) => s.id === m.id);
+          if (slot) {
+            this.slots = this.slots.filter((s) => s !== slot);
+            this.fx.text(slot.f.x, slot.f.y - 140, `P${m.id + 1} left the game`, '#cccccc', 22);
+          }
+        }
+        return;
+      }
+      if (m.t === 'in') this.netInput(from, m);
+      else if (m.t === 'pick' && m.ready && !this.slots.some((s) => s.id === from) && this.slots.length < 4) {
+        // drop-in: appear next to the group
+        const lead = this.leader();
+        const slot = this.addSlot({ id: from, cid: m.cid, local: null }, lead.x - 50);
+        slot.f.invuln = 2;
+        this.fx.text(slot.f.x, slot.f.y - 150, `P${from + 1} JOINED!`, SS.PLAYER_COLORS[from % 4], 28);
+        SS.Audio.powerUp();
+      }
+    }
 
     // ---------------- world interface used by fighters/enemies ----------------
     limitsFor(x) {
@@ -70,12 +178,17 @@
     bounds(f) {
       const b = this.limitsFor(f.x);
       b.min = Math.max(b.min, this.camX - 10);
+      if (this.coop) {
+        // everyone shares one screen
+        b.min = Math.max(b.min, this.camX + 15);
+        b.max = Math.min(b.max, this.camX + W - 15);
+      }
       if (this.bossAwake && this.boss.alive) b.min = Math.max(b.min, this.arenaX);
       return b;
     }
     enemyBounds(e) { const b = this.limitsFor(e.x); return { min: b.min + 20, max: b.max - 20 }; }
     targets(team) {
-      if (team === 'enemy') return [this.player];
+      if (team === 'enemy') return this.aliveFighters();
       return this.enemies.filter((e) => e.alive).concat(this.crates.filter((c) => c.alive), this.gongs);
     }
     spawn(p) { this.projectiles.push(p); }
@@ -96,7 +209,7 @@
       return best;
     }
     onHit(attacker, target, hit, result) {
-      if (result === 'hit' && attacker === this.player && !target.isProp) this.score += 10;
+      if (result === 'hit' && !target.isProp && this.fighters.includes(attacker)) this.score += 10;
     }
     onEnemyKilled(e) {
       this.score += e.d.score;
@@ -120,7 +233,22 @@
       this.t += dt;
       this.stateT += dt;
       this.fx.update(dt);
+      if (this.net) SS.Sync.capturing = true;
+      try {
+        this.step(dt);
+      } finally {
+        if (this.net) SS.Sync.capturing = false;
+      }
+      if (this.net && SS.Engine.scene === this) {
+        this.syncT += dt;
+        if (this.syncT >= SNAP_RATE) {
+          this.syncT = 0;
+          SS.Net.send(SS.Sync.snapshot(this));
+        }
+      }
+    }
 
+    step(dt) {
       if (this.showControls) {
         if (SS.Input.anyPressed()) { this.showControls = false; SS.Audio.select(); }
         return;
@@ -130,7 +258,7 @@
         // Short delay so mashing slap doesn't instantly pick a menu item.
         if (this.state !== 'won' || this.stateT > 1.0) {
           const item = this.menu.update(dt);
-          if (item) item.act();
+          if (item) { item.act(); if (SS.Engine.scene !== this) return; }
         }
         if (this.state === 'paused') return;
       } else if (this.state === 'play' && SS.Menu.pause()) {
@@ -138,15 +266,17 @@
         return;
       }
 
-      const p = this.player;
-      const ctrl = this.state === 'play' ? SS.readControls(SS.Controls.SOLO) : {};
-      p.update(dt, ctrl, this);
-      if (this.state === 'play') p.meter = Math.min(100, p.meter + dt * 3);
+      for (const slot of this.slots) {
+        const ctrl = this.state === 'play' ? this.controlsFor(slot) : {};
+        slot.f.update(dt, ctrl, this);
+        if (this.state === 'play') slot.f.meter = Math.min(100, slot.f.meter + dt * 3);
+      }
+      this.updateRevives(dt);
 
       for (const e of this.enemies) {
         if (e.alive && (e.x < this.camX - 300 || e.x > this.camX + W + 300)) continue;
         if (e === this.boss && !this.bossAwake) continue;
-        e.update(dt, this, p);
+        e.update(dt, this, this.nearestFighter(e.x));
       }
       this.enemies = this.enemies.filter((e) => e.alive || e.dying > 0);
       for (const c of this.crates) c.update(dt);
@@ -155,82 +285,118 @@
       for (const pr of this.projectiles) pr.update(dt, this);
       this.projectiles = this.projectiles.filter((pr) => !pr.dead);
 
+      const alive = this.aliveFighters();
       for (const pk of this.pickups) {
         pk.update(dt);
-        if (!pk.taken && U.overlap(pk.box, p.box) && p.state !== 'ko') {
-          pk.taken = true;
-          if (pk.type === 'heart') {
-            p.heal(50);
-            SS.Audio.heal();
-            this.fx.text(pk.x, pk.y - 50, '+50 HP', '#ff4d6d', 24);
-          } else if (pk.type === 'leaf') {
-            p.heal(10);
-            SS.Audio.pickup();
-            this.fx.text(pk.x, pk.y - 40, 'leafy snack +10', '#52e07a', 18);
-          } else if (SS.POWER_TYPES.includes(pk.type)) {
-            p.powerUp(pk.type);
-            SS.Audio.powerUp();
-            this.fx.burst(pk.x, pk.y - 24, SS.Art.POWER_COLORS[pk.type], 20, 300);
-            this.fx.text(pk.x, pk.y - 70, SS.POWER_NAMES[pk.type], SS.Art.POWER_COLORS[pk.type], 26);
-          } else if (pk.type === 'ammo') {
-            p.ammo = p.maxAmmo;
-            SS.Audio.ammo();
-            this.fx.text(pk.x, pk.y - 40, 'AMMO FULL!', '#ffb703', 20);
-          } else if (pk.type === 'banana') {
-            this.bananas++;
-            this.score += 50;
-            SS.Audio.pickup();
-            this.fx.text(pk.x, pk.y - 40, '+50', '#ffe14d', 20);
-          } else {
-            p.heal(30);
-            SS.Audio.heal();
-            this.fx.text(pk.x, pk.y - 40, '+30 HP', '#ff4d8d', 22);
-          }
-        }
+        if (pk.taken) continue;
+        const f = alive.find((a) => U.overlap(pk.box, a.box));
+        if (f) this.collect(pk, f);
       }
       this.pickups = this.pickups.filter((pk) => !pk.taken);
 
       // Boss arena
-      if (this.boss && !this.bossAwake && p.x > this.arenaX + 100) {
+      if (this.boss && !this.bossAwake && this.leader().x > this.arenaX + 100) {
         this.bossAwake = true;
         this.fx.text(this.boss.x - 100, 200, `${this.boss.d.name} APPEARS!`, '#ff4d6d', 34);
         SS.Audio.gong();
         SS.Audio.playMusic('duel');
+        for (const f of this.fighters) if (f.x < this.arenaX + 20) f.x = this.arenaX + 60; // bring stragglers along
       }
 
-      // Camera
-      let target = p.x - W * 0.38;
+      // Camera: follow the player (solo) or the middle of the group (co-op)
+      let target;
+      if (this.coop) {
+        const list = alive.length ? alive : this.fighters;
+        target = list.reduce((s, f) => s + f.x, 0) / list.length - W / 2;
+      } else {
+        target = this.player.x - W * 0.38;
+      }
       if (this.bossAwake && this.boss.alive) target = Math.max(target, this.arenaX);
       target = U.clamp(target, 0, this.L.length - W);
       this.camX = U.lerp(this.camX, target, 1 - Math.pow(0.001, dt));
 
       // Win / lose
       const goalOpen = !this.boss || !this.boss.alive;
-      if (this.state === 'play' && goalOpen && p.x > this.goalX - 40) this.win();
-      if (this.state === 'play' && p.state === 'ko') {
+      if (this.state === 'play' && goalOpen && alive.some((f) => f.x > this.goalX - 40)) this.win();
+      if (this.state === 'play' && alive.length === 0) {
         this.state = 'dead';
         this.stateT = 0;
       }
       if (this.state === 'dead' && this.stateT > 1.8 && !this.menu) {
         const items = [];
         if (this.checkpoint) items.push({ label: 'Continue from Checkpoint', act: () => this.respawn() });
-        items.push(
-          { label: 'Restart Map', act: () => this.restart() },
-          { label: 'Choose Map', act: () => this.toSelect() },
-          { label: 'Main Menu', act: () => SS.Engine.setScene(new SS.MenuScene()) },
-        );
+        items.push({ label: 'Restart Map', act: () => this.restart() });
+        if (!this.net) items.push({ label: 'Choose Map', act: () => this.toSelect() });
+        items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
         this.menu = new SS.MenuList(items, W / 2, 270, { w: 340, h: 46, gap: 10 });
+      }
+    }
+
+    // Co-op: a snoozed sloth pops back in next to a teammate after a few seconds.
+    updateRevives(dt) {
+      if (!this.coop || this.state !== 'play') return;
+      const alive = this.aliveFighters();
+      if (!alive.length) return;
+      for (const slot of this.slots) {
+        if (slot.f.state !== 'ko') continue;
+        if (!slot.waiting) {
+          slot.waiting = true;
+          slot.respawnT = RESPAWN_TIME;
+          this.fx.text(slot.f.x, slot.f.y - 120, `P${slot.id + 1} snoozed! Back in ${RESPAWN_TIME}...`, '#bde0fe', 20);
+          continue;
+        }
+        slot.respawnT -= dt;
+        if (slot.respawnT <= 0) {
+          const mate = alive[Math.floor(Math.random() * alive.length)];
+          const f = this.spawnFighter(slot, mate.x - 50 * mate.facing, 0.5);
+          f.y = mate.y - 60;
+          f.vy = -300;
+          f.onGround = false;
+          f.invuln = 2;
+          this.fx.text(f.x, f.y - 140, `P${slot.id + 1} IS BACK!`, SS.PLAYER_COLORS[slot.id % 4], 26);
+          SS.Audio.powerUp();
+        }
+      }
+    }
+
+    collect(pk, f) {
+      pk.taken = true;
+      if (pk.type === 'heart') {
+        f.heal(50);
+        SS.Audio.heal();
+        this.fx.text(pk.x, pk.y - 50, '+50 HP', '#ff4d6d', 24);
+      } else if (pk.type === 'leaf') {
+        f.heal(10);
+        SS.Audio.pickup();
+        this.fx.text(pk.x, pk.y - 40, 'leafy snack +10', '#52e07a', 18);
+      } else if (SS.POWER_TYPES.includes(pk.type)) {
+        f.powerUp(pk.type);
+        SS.Audio.powerUp();
+        this.fx.burst(pk.x, pk.y - 24, SS.Art.POWER_COLORS[pk.type], 20, 300);
+        this.fx.text(pk.x, pk.y - 70, SS.POWER_NAMES[pk.type], SS.Art.POWER_COLORS[pk.type], 26);
+      } else if (pk.type === 'ammo') {
+        f.ammo = f.maxAmmo;
+        SS.Audio.ammo();
+        this.fx.text(pk.x, pk.y - 40, 'AMMO FULL!', '#ffb703', 20);
+      } else if (pk.type === 'banana') {
+        this.bananas++;
+        this.score += 50;
+        SS.Audio.pickup();
+        this.fx.text(pk.x, pk.y - 40, '+50', '#ffe14d', 20);
+      } else {
+        f.heal(30);
+        SS.Audio.heal();
+        this.fx.text(pk.x, pk.y - 40, '+30 HP', '#ff4d8d', 22);
       }
     }
 
     win() {
       this.state = 'won';
       this.stateT = 0;
-      const p = this.player;
-      p.state = 'win';
-      p.vx = 0;
+      const fs = this.fighters;
+      for (const f of fs) { f.state = 'win'; f.vx = 0; }
       SS.Audio.win();
-      this.hpBonus = Math.round(p.hp / p.maxHp * 500);
+      this.hpBonus = Math.round((fs.reduce((s, f) => s + Math.max(0, f.hp) / f.maxHp, 0) / fs.length) * 500);
       this.score += this.hpBonus;
       const unlocked = SS.Save.get('unlocked', 1);
       SS.Save.set('unlocked', Math.max(unlocked, Math.min(SS.LEVELS.length, this.levelIndex + 2)));
@@ -241,13 +407,9 @@
         this.newBest = true;
       }
       const items = [];
-      if (this.levelIndex + 1 < SS.LEVELS.length) {
-        items.push({
-          label: 'Next Map', act: () => SS.Engine.setScene(new SS.CampaignScene({ charId: this.def.id, level: this.levelIndex + 1 })),
-        });
-      }
+      if (this.levelIndex + 1 < SS.LEVELS.length) items.push({ label: 'Next Map', act: () => this.goLevel(this.levelIndex + 1) });
       items.push({ label: 'Play Again', act: () => this.restart() });
-      items.push({ label: 'Main Menu', act: () => SS.Engine.setScene(new SS.MenuScene()) });
+      items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
       this.menu = new SS.MenuList(items, W / 2, 300, { w: 300, h: 46, gap: 10 });
     }
 
@@ -263,40 +425,85 @@
         { label: () => 'Blood: ' + (SS.Settings.blood ? 'ON' : 'OFF (confetti)'), act: () => SS.toggleBlood() },
         { label: 'Restart Map', act: () => this.restart() },
         { label: () => 'Sound: ' + (SS.Audio.muted ? 'OFF' : 'ON'), act: () => SS.Audio.toggleMute() },
-        { label: 'Quit to Menu', act: () => SS.Engine.setScene(new SS.MenuScene()) },
+        { label: this.net ? 'End Wi-Fi Game' : 'Quit to Menu', act: () => this.quit() },
       ], W / 2, 184, { w: 340, h: 38, gap: 6 });
     }
     resume() { this.state = 'play'; this.menu = null; }
 
-    // Come back at the last opened gate with full health (costs some score).
+    // Everyone comes back at the last opened gate with full health (costs some score).
     respawn() {
-      const p = new SS.Fighter(this.def, this.checkpoint, { team: 'player', mercy: 0.8 });
-      p.invuln = 1.5;
-      p.meter = 50;
-      this.player = p;
+      this.slots.forEach((slot, i) => {
+        const f = this.spawnFighter(slot, this.checkpoint + i * 45);
+        f.invuln = 1.5;
+        f.meter = 50;
+      });
       this.projectiles = [];
       this.score = Math.max(0, this.score - 300);
-      this.camX = U.clamp(p.x - W * 0.38, 0, this.L.length - W);
+      const lead = this.leader();
+      this.camX = U.clamp(lead.x - (this.coop ? W / 2 : W * 0.38), 0, this.L.length - W);
       this.state = 'play';
       this.menu = null;
-      this.fx.text(p.x, p.y - 160, 'BACK FROM THE NAP!', '#ffd23f', 28);
+      this.fx.text(lead.x, lead.y - 160, 'BACK FROM THE NAP!', '#ffd23f', 28);
     }
-    restart() { SS.Engine.setScene(new SS.CampaignScene(this.opts)); }
+    goLevel(i) {
+      SS.Engine.setScene(new SS.CampaignScene(Object.assign({}, this.opts, { level: i, players: this.currentPlayers() })));
+    }
+    restart() { this.goLevel(this.levelIndex); }
+    quit() {
+      if (this.net) SS.Net.leave();
+      SS.Engine.setScene(new SS.MenuScene());
+    }
     toSelect() {
-      const s = new SS.SelectScene({ mode: 'campaign' });
+      const coop = this.slots.length > 1;
+      const s = new SS.SelectScene({ mode: coop ? 'coop' : 'campaign' });
+      const idx = (cid) => SS.CHARACTERS.findIndex((c) => c.id === cid);
+      s.cur = [idx(this.slots[0].cid), coop ? idx(this.slots[1].cid) : s.cur[1]];
       SS.Engine.setScene(s);
       s.openLevelMenu();
     }
 
     // ---------------- draw ----------------
+    hudModel() {
+      const lead = this.leader();
+      const players = this.slots.map((s) => {
+        const f = s.f;
+        return {
+          tag: `P${s.id + 1}`, color: SS.PLAYER_COLORS[s.id % 4], name: s.def.name,
+          hp: f.hp, mhp: f.maxHp, meter: f.meter, canSpecial: f.canSpecial, ammo: f.ammo, maxAmmo: f.maxAmmo,
+          ammoT: f.ammoT, ammoRegen: f.ammoRegen, powers: f.powers, lucky: f.lucky,
+          respawnT: s.respawnT, ko: f.state === 'ko', combo: f.combo,
+        };
+      });
+      const strips = [];
+      if (this.showStrip && this.state === 'play') {
+        const locals = this.slots.filter((s) => s.local);
+        if (locals.length === 1) strips.push({ fighter: locals[0].f, opts: {} });
+        else {
+          locals.forEach((s, i) => strips.push({
+            fighter: s.f,
+            opts: {
+              layout: s.local === 'P2' ? 'p2' : 'p1', compact: true, x: i === 0 ? 16 : W - 16,
+              align: i === 0 ? 'left' : 'right', tag: `P${s.id + 1}`, tagColor: SS.PLAYER_COLORS[s.id % 4],
+            },
+          }));
+        }
+      }
+      return {
+        t: this.t, coop: this.coop, players, score: this.score, bananas: this.bananas,
+        progress: lead.x / this.goalX,
+        boss: this.bossAwake && this.boss.alive ? { name: this.boss.d.name, frac: this.boss.hp / this.boss.maxHp } : null,
+        gateHint: !!this.gates.find((gt) => !gt.opened && gt.x > lead.x && gt.x - lead.x < 160),
+        strips,
+      };
+    }
+
     draw(ctx) {
       const sh = this.fx.offset();
       SS.Art.background(ctx, this.L.theme, this.camX, this.t, this.groundY);
 
       ctx.save();
       ctx.translate(-Math.round(this.camX) + sh.x, sh.y);
-
-      for (const pl of this.platforms) this.drawPlatform(ctx, pl);
+      for (const pl of this.platforms) SS.drawPlatform(ctx, pl);
       this.fx.drawDecals(ctx);
       if (!this.boss || !this.boss.alive) SS.Art.hammock(ctx, this.goalX + 60, this.groundY, this.t);
       for (const g of this.gongs) g.draw(ctx);
@@ -304,93 +511,40 @@
       for (const c of this.crates) c.draw(ctx);
       for (const pk of this.pickups) pk.draw(ctx);
       for (const e of this.enemies) e.draw(ctx, this);
-      this.player.draw(ctx, this);
+      // snoozed sloths underneath, everyone else on top; co-op shows P1..P4 markers
+      const order = this.slots.slice().sort((a, b) => (a.f.state === 'ko') - (b.f.state === 'ko')).reverse();
+      for (const s of order) {
+        s.f.tag = this.coop ? `P${s.id + 1}` : null;
+        s.f.draw(ctx, this);
+      }
       for (const pr of this.projectiles) pr.draw(ctx);
       this.fx.draw(ctx);
       ctx.restore();
 
-      this.drawHUD(ctx);
-
-      if (this.t < 2.6) this.drawIntro(ctx);
-      if (this.state === 'paused') {
-        UI.fade(ctx, 0.55);
-        if (this.showControls) { UI.controlsPanel(ctx); return; }
-        UI.outlineText(ctx, 'PAUSED', W / 2, 128, 54, '#ffd23f', 'center');
-        UI.text(ctx, 'The sloth appreciates the break.', W / 2, 166, 16, '#ddd', 'center');
-      } else if (this.state === 'dead') {
-        UI.fade(ctx, Math.min(0.6, this.stateT * 0.5));
-        UI.outlineText(ctx, 'SNOOZED OUT!', W / 2, 180, 60, '#ff4d6d', 'center');
-        UI.text(ctx, 'Even sloths need a nap sometimes.', W / 2, 228, 18, '#ffffff', 'center');
-      } else if (this.state === 'won') {
-        UI.fade(ctx, Math.min(0.55, this.stateT * 0.5));
-        UI.outlineText(ctx, 'NAP ACHIEVED!', W / 2, 120, 60, '#ffd23f', 'center');
-        UI.text(ctx, `Score ${this.score}    Bananas ${this.bananas}    Health bonus +${this.hpBonus}`, W / 2, 180, 20, '#fff', 'center');
-        if (this.newBest) UI.outlineText(ctx, 'NEW BEST!', W / 2, 220, 26, '#00f5d4', 'center');
-        if (this.levelIndex === SS.LEVELS.length - 1) {
-          UI.text(ctx, 'You beat the campaign! The comfiest hammock is yours.', W / 2, 260, 18, '#ffd23f', 'center');
-        }
+      SS.CampaignHUD.draw(ctx, this.hudModel());
+      SS.CampaignHUD.overlays(ctx, {
+        state: this.state, stateT: this.stateT, t: this.t, levelIndex: this.levelIndex, L: this.L,
+        score: this.score, bananas: this.bananas, hpBonus: this.hpBonus, newBest: this.newBest,
+        coop: this.coop, guest: false, showControls: this.showControls,
+      });
+      if (this.menu && !this.showControls) this.menu.draw(ctx);
+      if (this.net && this.state === 'play' && this.t < 6) {
+        SS.UI.outlineText(ctx, `Wi-Fi game - join code ${SS.Net.code}`, W / 2, 136, 14, '#9bf6ff', 'center');
       }
-      if (this.menu) this.menu.draw(ctx);
     }
+  };
 
-    drawPlatform(ctx, p) {
-      ctx.fillStyle = '#6b4226';
+  // Wooden branch platform (shared with the Wi-Fi guest view)
+  SS.drawPlatform = function (ctx, p) {
+    ctx.fillStyle = '#6b4226';
+    ctx.beginPath();
+    ctx.roundRect(p.x, p.y, p.w, 16, 8);
+    ctx.fill();
+    ctx.fillStyle = '#52b788';
+    for (let x = p.x + 10; x < p.x + p.w; x += 34) {
       ctx.beginPath();
-      ctx.roundRect(p.x, p.y, p.w, 16, 8);
+      ctx.ellipse(x, p.y + 2, 14, 6, -0.3, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#52b788';
-      for (let x = p.x + 10; x < p.x + p.w; x += 34) {
-        ctx.beginPath();
-        ctx.ellipse(x, p.y + 2, 14, 6, -0.3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    drawIntro(ctx) {
-      const a = this.t < 2 ? 1 : 1 - (this.t - 2) / 0.6;
-      ctx.globalAlpha = Math.max(0, a);
-      UI.panel(ctx, W / 2 - 300, 150, 600, 110);
-      UI.outlineText(ctx, `MAP ${this.levelIndex + 1}: ${this.L.name.toUpperCase()}`, W / 2, 188, 34, '#ffd23f', 'center');
-      UI.text(ctx, this.L.blurb, W / 2, 230, 17, '#ffffff', 'center');
-      ctx.globalAlpha = 1;
-    }
-
-    drawHUD(ctx) {
-      const p = this.player;
-      UI.panel(ctx, 12, 10, 330, 96);
-      UI.outlineText(ctx, this.def.name, 26, 28, 18, '#ffd23f');
-      UI.bar(ctx, 26, 44, 220, 14, p.hp / p.maxHp, p.hp / p.maxHp > 0.3 ? '#52e07a' : '#ff4d6d');
-      const full = p.canSpecial;
-      UI.bar(ctx, 26, 66, 220, 9, p.meter / 100, full ? (Math.floor(this.t * 6) % 2 ? '#00f5d4' : '#ffffff') : '#00b4d8');
-      UI.text(ctx, full ? 'SPECIAL! (H / L)' : 'special', 256, 70, 11, full ? '#00f5d4' : '#aaa');
-      UI.text(ctx, `${Math.ceil(p.hp)}`, 256, 51, 14, '#fff');
-      UI.ammo(ctx, 26, 90, p);
-      UI.powers(ctx, 356, 30, p, this.t);
-
-      UI.panel(ctx, W - 232, 10, 220, 58);
-      UI.outlineText(ctx, `SCORE ${this.score}`, W - 122, 28, 18, '#ffffff', 'center');
-      SS.Art.banana(ctx, W - 180, 62, 0);
-      UI.text(ctx, `x ${this.bananas}`, W - 160, 50, 16, '#ffe14d');
-      // progress toward the hammock
-      const prog = U.clamp(p.x / this.goalX, 0, 1);
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.fillRect(W - 110, 48, 86, 5);
-      ctx.fillStyle = '#ffd23f';
-      ctx.fillRect(W - 110, 48, 86 * prog, 5);
-
-      if (p.combo >= 3) {
-        UI.outlineText(ctx, `${p.combo} SLAP COMBO!`, 26, 130, 22 + Math.min(14, p.combo), '#ff4d6d');
-      }
-
-      if (this.bossAwake && this.boss.alive) {
-        UI.outlineText(ctx, this.boss.d.name, W / 2, 104, 20, '#ff4d6d', 'center');
-        UI.bar(ctx, W / 2 - 200, 118, 400, 14, this.boss.hp / this.boss.maxHp, '#ff4d6d');
-      }
-
-      // Hint the player when a gate blocks the path
-      const g = this.gates.find((gt) => !gt.opened && gt.x > p.x && gt.x - p.x < 160);
-      if (g) UI.outlineText(ctx, 'Gate closed! Slap the GONG to open it.', W / 2, H - 62, 18, '#ffd23f', 'center');
-      if (this.showStrip && this.state === 'play') UI.keyStrip(ctx, p, this.t);
     }
   };
 })();
