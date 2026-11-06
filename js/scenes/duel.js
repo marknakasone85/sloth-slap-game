@@ -15,8 +15,13 @@
   // side = { tag, color, name, hp, mhp, ghost, meter, canSpecial, ammo, maxAmmo, ammoT, ammoRegen, wins, ko }
   SS.DuelHUD = {
     draw(ctx, m) {
+      const top = m.net ? 22 : 0;
+      ctx.save();
+      ctx.translate(0, top);
       if (m.sides.length === 2) this.classic(ctx, m);
       else this.compact(ctx, m);
+      ctx.restore();
+      if (m.net) UI.netStrip(ctx, m.net);
     },
 
     classic(ctx, m) {
@@ -225,6 +230,10 @@
       this.fx.update(dt);
       if (this.net) SS.Sync.capturing = true;
       try { this.step(dt); } finally { if (this.net) SS.Sync.capturing = false; }
+      if (this.net) SS.Net.maintain(dt, () => {
+        this.slots = this.slots.filter((s) => s.local || s.cpu);
+        this.fx.text(W / 2, 190, `Wi-Fi is back! Friends jump in next round (code ${SS.Net.code})`, '#9bf6ff', 20);
+      });
       if (this.net && SS.Engine.scene === this) {
         this.syncT += dt;
         if (this.syncT >= SNAP_RATE) { this.syncT = 0; SS.Net.send(SS.Sync.duelSnapshot(this)); }
@@ -389,7 +398,7 @@
     // ---------------- draw ----------------
     hudModel() {
       return {
-        t: this.t, timer: this.timer,
+        t: this.t, timer: this.timer, net: this.net ? SS.Net.hudInfo() : null,
         sides: this.slots.map((s) => {
           const f = s.f;
           return {
@@ -434,9 +443,6 @@
       SS.DuelHUD.draw(ctx, this.hudModel());
       if (this.showStrip && ['intro', 'fight', 'roundEnd'].includes(this.state)) this.drawKeyStrips(ctx);
       SS.DuelHUD.banner(ctx, this.banner, this.bannerAge());
-      if (this.net && this.state === 'intro' && this.round === 1) {
-        UI.outlineText(ctx, `Wi-Fi battle - join code ${SS.Net.code}`, W / 2, 150, 15, '#9bf6ff', 'center');
-      }
 
       if (this.state === 'matchEnd') {
         SS.DuelHUD.matchEnd(ctx, this.matchTitle(), `${this.matchWinner.def.name} is the Supreme Slapper.`, this.stateT);

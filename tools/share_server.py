@@ -38,7 +38,8 @@ MAX_BODY = 256 * 1024       # biggest message accepted (bytes)
 MAX_PLAYERS = 4             # host + 3 guests
 WRONG_CODE_LIMIT = 8        # wrong join codes before a lockout
 LOCKOUT_SECONDS = 60
-GONE_AFTER = 8              # seconds without a connection before a player counts as gone
+GONE_AFTER = 20             # seconds without a connection before a player counts as gone
+HOST_GONE_AFTER = 30        # ...and before the host's game is closed
 
 LOCK = threading.Lock()
 ROOM = None                 # the one co-op game this computer can host
@@ -73,8 +74,8 @@ class Client:
 
 
 class Room:
-    def __init__(self):
-        self.code = f"{secrets.randbelow(10000):04d}"
+    def __init__(self, code=None):
+        self.code = code or f"{secrets.randbelow(10000):04d}"
         self.host = Client(0, "127.0.0.1")
         self.guests = {}  # id -> Client
 
@@ -96,13 +97,14 @@ def pack(sender, m):
     return json.dumps({"from": sender, "m": m}, separators=(",", ":"))
 
 
-def close_room_locked(reason):
+def close_room_locked(reason, rehost=False):
     global ROOM
     if not ROOM:
         return
     for c in ROOM.everyone():
         if c is not ROOM.host:
-            c.deliver(pack("server", {"t": "hostLeft", "reason": reason}))
+            # rehost = the host is reconnecting with the same code: players rejoin automatically
+            c.deliver(pack("server", {"t": "hostLeft", "reason": reason, "rehost": rehost}))
         c.gone = True
         c.cond.notify_all()
     ROOM = None
@@ -129,7 +131,7 @@ def janitor():
                 if g.streams == 0 and now - g.last_seen > GONE_AFTER:
                     remove_guest_locked(g)
             h = ROOM.host
-            if h.streams == 0 and now - h.last_seen > GONE_AFTER + 4:
+            if h.streams == 0 and now - h.last_seen > HOST_GONE_AFTER:
                 close_room_locked("The host closed the game.")
 
 
@@ -218,11 +220,16 @@ class GameOnlyHandler(http.server.SimpleHTTPRequestHandler):
         global ROOM
         if self.client_address[0] not in ("127.0.0.1", "::1"):
             return self.json_reply(403, {"error": "Only the computer running the game can host."})
+        # The host may ask for its previous code back (after a lost connection or a
+        # restarted sharing window) so everyone can rejoin without a new code.
+        want = str(data.get("code", ""))
+        reuse = want if len(want) == 4 and want.isdigit() else None
         with LOCK:
-            close_room_locked("The host started a new game.")
-            ROOM = Room()
+            rehost = bool(reuse and ROOM and ROOM.code == reuse)
+            close_room_locked("The host is reconnecting..." if rehost else "The host started a new game.", rehost)
+            ROOM = Room(reuse)
             room = ROOM
-        print(f"  Wi-Fi co-op game started. Join code: {room.code}")
+        print(f"  Wi-Fi game {'re-opened' if rehost else 'started'}. Join code: {room.code}")
         sys.stdout.flush()
         return self.json_reply(200, {"id": 0, "token": room.host.token, "code": room.code, "address": ADDRESS})
 

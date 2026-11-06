@@ -55,7 +55,11 @@
     // ---------------- messages from the host ----------------
     onNet(m) {
       if (!m) return;
-      if (m.t === 'hostLeft') { this.end(m.reason || 'The host ended the game.'); return; }
+      if (m.t === 'hostLeft') {
+        if (m.rehost) { SS.Net.status = 'closed'; return; } // host is reconnecting: we rejoin automatically
+        this.end(m.reason || 'The host ended the game.');
+        return;
+      }
       if (m.t === 'toLobby') { SS.Engine.setScene(new SS.JoinScene({ rejoin: true })); return; }
       if (m.t === 'snap' && m.k === 'duel') { // host switched to a battle
         const scene = new SS.RemoteDuelScene();
@@ -68,6 +72,8 @@
       if (m.lv !== this.levelIndex) this.setLevel(m.lv);
       this.snap = m;
       this.snapAt = performance.now();
+      const mine = m.pl.find((p) => p.id === SS.Net.id);
+      if (mine) SS.Net.myCid = mine.cid;
 
       const seen = new Set();
       for (const p of m.pl) {
@@ -139,7 +145,12 @@
         if (item) item.act();
         return;
       }
-      if (SS.Net.silence() > 25) { this.end('Lost the connection to the host.'); return; }
+      // lost the connection? rejoin automatically with the same code and sloth
+      SS.Net.maintain(dt, () => {
+        if (SS.Net.myCid) SS.Net.send({ t: 'pick', cid: SS.Net.myCid, ready: true }, 'host', true);
+      });
+      this.lostT = SS.Net.lost ? (this.lostT || 0) + dt : 0;
+      if (this.lostT > 90) { this.end('Could not reconnect to the host.'); return; }
 
       if (this.showControls) {
         if (SS.Input.anyPressed()) { this.showControls = false; SS.Audio.select(); }
@@ -238,6 +249,7 @@
       }
       SS.CampaignHUD.draw(ctx, {
         t: this.t, coop: s.pl.length > 1, score: s.sc, bananas: s.ba, progress: leadX / this.goalX,
+        net: SS.Net.hudInfo(),
         boss: s.bo && s.bo[2] && s.bo[3] && this.L.boss ? { name: SS.ENEMY_TYPES[this.L.boss.type].name, frac: s.bo[0] / s.bo[1] } : null,
         gateHint: this.gates.some((g) => !g.opened && g.x > leadX && g.x - leadX < 160),
         players: s.pl.map((p) => ({
@@ -253,7 +265,11 @@
       });
       if (!me && !this.ended) UI.outlineText(ctx, 'Joining the team...', W / 2, 200, 26, '#ffffff', 'center');
       if (me && this.t < 6) UI.outlineText(ctx, `You are P${me.id + 1}`, W / 2, 200, 28, SS.PLAYER_COLORS[me.id % 4], 'center');
-      if (SS.Net.silence() > 6 && !this.ended) UI.outlineText(ctx, 'Reconnecting to the host...', W / 2, 250, 24, '#ff4d6d', 'center');
+      if (SS.Net.lost && !this.ended) {
+        UI.panel(ctx, W / 2 - 230, 230, 460, 64);
+        UI.outlineText(ctx, 'Connection lost - rejoining...', W / 2, 254, 22, '#ff4d6d', 'center');
+        UI.text(ctx, `Reconnecting automatically to code ${SS.Net.code}`, W / 2, 278, 13, '#ffffff', 'center');
+      }
 
       if (this.showControls) { UI.fade(ctx, 0.55); UI.controlsPanel(ctx); return; }
       if (this.menu) {

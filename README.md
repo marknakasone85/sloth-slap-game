@@ -30,7 +30,7 @@ A comical cartoon slap-'em-up starring a crew of sloths.
   🛡️ Bubble Shield (no damage), 👊 Super Slap (double damage), 🔫 Rapid Fire (unlimited ammo), ☕ Coffee (super speed): each lasts 12 seconds.
   🍌 Lucky Banana: an extra life. If you get snoozed you pop right back up.
 
-  Secret: type **S L O T H** on the map-select screen to unlock every map.
+  **Every map can be chosen any time** (solo, 2 players, or in the Wi-Fi lobby: ←/→, or click the map name / press M for the full list). Beaten maps get a ✓ and your best score.
 
 - **Co-op campaign** (Campaign → choose how to play):
   - **2 Players (this computer):** P1 uses WASD + F/G/H/R and P2 uses the arrow keys + , . / ;
@@ -99,6 +99,8 @@ Phones and tablets play in the web browser. On the computer, double-click `share
    - Pick your sloth and the lobby shows a **4-digit join code**.
 2. **Everyone else** (computers or phones): open the address shown in the host's sharing window (like `http://192.168.1.23:8000`), choose **Join Wi-Fi Game** or **Join Wi-Fi Battle**, type the code, pick a sloth and press **Enter** (or tap) when ready.
 3. The host picks a map or stage with ←/→ (battles: C adds a CPU sloth) and presses **Enter** to start. Late arrivals can still join.
+
+**If someone's connection drops** (Wi-Fi hiccup, phone screen locked, app switched), the game rejoins automatically with the same code and sloth; they drop back in next to the team (in battles, at the next round). Short drops (under 20 seconds) don't even kick anyone out. If the host's connection breaks or the sharing window is restarted, the host re-opens the game **with the same join code** and everyone rejoins by themselves. The join code and address are always shown in a bar at the top of the screen during Wi-Fi games.
 
 How it works: the host's computer runs the real game. The others send their button presses and draw what the host sends back (about 30 updates a second, roughly 1.5 KB each). The host's game keeps running even if its window is hidden, covered or in a background tab.
 

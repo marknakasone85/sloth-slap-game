@@ -28,7 +28,11 @@
 
     onNet(m) {
       if (!m) return;
-      if (m.t === 'hostLeft') { this.end(m.reason || 'The host ended the battle.'); return; }
+      if (m.t === 'hostLeft') {
+        if (m.rehost) { SS.Net.status = 'closed'; return; } // host is reconnecting: we rejoin automatically
+        this.end(m.reason || 'The host ended the battle.');
+        return;
+      }
       if (m.t === 'toLobby') { SS.Engine.setScene(new SS.JoinScene({ rejoin: true })); return; }
       if (m.t !== 'snap') return;
       if (m.k !== 'duel') { // host switched to a campaign map
@@ -41,6 +45,8 @@
       this.lastSeq = m.n;
       this.snap = m;
       this.snapAt = performance.now();
+      const mine = m.pl.find((p) => p.id === SS.Net.id);
+      if (mine) SS.Net.myCid = mine.cid;
       const seen = new Set();
       for (const p of m.pl) {
         seen.add(p.id);
@@ -90,7 +96,11 @@
         if (item) item.act();
         return;
       }
-      if (SS.Net.silence() > 25) { this.end('Lost the connection to the host.'); return; }
+      SS.Net.maintain(dt, () => {
+        if (SS.Net.myCid) SS.Net.send({ t: 'pick', cid: SS.Net.myCid, ready: true }, 'host', true);
+      });
+      this.lostT = SS.Net.lost ? (this.lostT || 0) + dt : 0;
+      if (this.lostT > 90) { this.end('Could not reconnect to the host.'); return; }
       if (this.showControls) {
         if (SS.Input.anyPressed()) { this.showControls = false; SS.Audio.select(); }
         return;
@@ -135,7 +145,7 @@
       }
 
       SS.DuelHUD.draw(ctx, {
-        t: this.t, timer: s.timer,
+        t: this.t, timer: s.timer, net: SS.Net.hudInfo(),
         sides: s.pl.map((p) => ({
           tag: p.tag, color: p.tc, name: SS.charById(p.cid).name, hp: p.hp, mhp: p.mhp, ghost: p.gh,
           meter: p.me, canSpecial: !!p.cs, ammo: p.am, maxAmmo: p.mam, ammoT: p.amt, ammoRegen: p.amr,
@@ -150,7 +160,11 @@
       SS.DuelHUD.banner(ctx, s.bn, s.ba);
       if (!me && !this.ended) UI.outlineText(ctx, 'You will jump in next round!', W / 2, 170, 24, '#9bf6ff', 'center');
       if (me && this.t < 5 && s.st === 'intro') UI.outlineText(ctx, `You are ${me.tag}`, W / 2, 160, 26, me.tc, 'center');
-      if (SS.Net.silence() > 6 && !this.ended) UI.outlineText(ctx, 'Reconnecting to the host...', W / 2, 300, 24, '#ff4d6d', 'center');
+      if (SS.Net.lost && !this.ended) {
+        UI.panel(ctx, W / 2 - 230, 230, 460, 64);
+        UI.outlineText(ctx, 'Connection lost - rejoining...', W / 2, 254, 22, '#ff4d6d', 'center');
+        UI.text(ctx, `Reconnecting automatically to code ${SS.Net.code}`, W / 2, 278, 13, '#ffffff', 'center');
+      }
 
       if (s.st === 'matchEnd') {
         SS.DuelHUD.matchEnd(ctx, s.ttl, s.sub, s.stT);

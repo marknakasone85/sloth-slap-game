@@ -48,6 +48,7 @@ window.SS = window.SS || {};
     time: 0,
     hitstop: 0,
     last: 0,
+    lastFrameAt: 0, // when a frame last ran (the Wi-Fi host ticker steps in if frames stop or never start)
 
     init() {
       this.canvas = document.getElementById('game');

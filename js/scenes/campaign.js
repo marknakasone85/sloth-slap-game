@@ -140,6 +140,12 @@
       if (this.net) SS.Net.onMessage = (m, from) => this.onNet(m, from);
     }
 
+    // The Wi-Fi connection came back with the same code: friends rejoin and drop in again.
+    onRehosted() {
+      this.slots = this.slots.filter((s) => s.local);
+      this.fx.text(this.leader().x, 200, `Wi-Fi is back! Friends rejoin automatically (code ${SS.Net.code})`, '#9bf6ff', 20);
+    }
+
     // ---------------- Wi-Fi messages (host side) ----------------
     onNet(m, from) {
       if (!m) return;
@@ -241,6 +247,7 @@
       } finally {
         if (this.net) SS.Sync.capturing = false;
       }
+      if (this.net) SS.Net.maintain(dt, () => this.onRehosted());
       if (this.net && SS.Engine.scene === this) {
         this.syncT += dt;
         if (this.syncT >= SNAP_RATE) {
@@ -502,6 +509,7 @@
       }
       return {
         t: this.t, coop: this.coop, players, score: this.score, bananas: this.bananas,
+        net: this.net ? SS.Net.hudInfo() : null,
         progress: lead.x / this.goalX,
         boss: this.bossAwake && this.boss.alive ? { name: this.boss.d.name, frac: this.boss.hp / this.boss.maxHp } : null,
         gateHint: !!this.gates.find((gt) => !gt.opened && gt.x > lead.x && gt.x - lead.x < 160),
@@ -547,9 +555,6 @@
         coop: this.coop, guest: false, showControls: this.showControls,
       });
       if (this.menu && !this.showControls) this.menu.draw(ctx);
-      if (this.net && this.state === 'play' && this.t < 6) {
-        SS.UI.outlineText(ctx, `Wi-Fi game - join code ${SS.Net.code}`, W / 2, 136, 14, '#9bf6ff', 'center');
-      }
     }
   };
 

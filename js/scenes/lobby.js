@@ -115,9 +115,9 @@
       this.t = 0;
       this.players = opts.resume ? opts.players.map((p) => Object.assign({}, p)) : [{ id: 0, cid: opts.cid, ready: true }];
       if (opts.resume) for (const p of this.players) if (p.id !== 0 && p.cpu === undefined) p.ready = false;
-      const unlocked = SS.Save.get('unlocked', 1);
-      this.maxLevel = Math.min(unlocked, SS.LEVELS.length) - 1;
+      this.maxLevel = SS.LEVELS.length - 1; // every map can be chosen
       this.level = Math.min(opts.level || 0, this.maxLevel);
+      this.picker = null;
       this.stage = opts.stage || 0;
       this.resume = !!opts.resume;
       this.error = null;
@@ -173,6 +173,20 @@
       if (idx >= 0) { this.players.splice(idx, 1); SS.Audio.select(); this.broadcast(); }
     }
 
+    // Full list of maps (co-op) or stages (battle) to pick from.
+    openPicker() {
+      SS.Audio.select();
+      const best = SS.Save.get('best', {});
+      const items = this.battle
+        ? SS.STAGES.map((st, i) => ({ label: st.name, act: () => { this.stage = i; this.picker = null; this.broadcast(); } }))
+        : SS.LEVELS.map((lv, i) => ({
+          label: `${i + 1}. ${lv.name}${best[i] ? '  \u2713' : ''}`,
+          act: () => { this.level = i; this.picker = null; this.broadcast(); },
+        }));
+      this.picker = new SS.MenuList(items, W / 2, 112, { w: 290, h: 40, gap: 8, cols: 3, gapX: 12, fontSize: 15 });
+      this.picker.sel = this.battle ? this.stage : this.level;
+    }
+
     broadcast() {
       if (!this.ready) return;
       SS.Net.send({
@@ -210,6 +224,16 @@
         return;
       }
       if (this.error || !this.ready) return;
+      if (this.picker) {
+        if (SS.Menu.back() || I.hit('KeyM')) { this.picker = null; return; }
+        const item = this.picker.update(dt);
+        if (item) item.act();
+        return;
+      }
+      SS.Net.maintain(dt, () => {
+        this.players = this.players.filter((p) => p.id === 0 || p.cpu !== undefined);
+        this.broadcast();
+      });
       const count = this.battle ? SS.STAGES.length : this.maxLevel + 1;
       const change = (d) => {
         if (this.battle) this.stage = (this.stage + d + count) % count;
@@ -219,6 +243,14 @@
       };
       if (SS.Menu.left()) change(-1);
       if (SS.Menu.right()) change(1);
+      if (I.hit('KeyM')) { this.openPicker(); return; }
+      // click / tap: the arrows change the map, the name opens the full list
+      const p = I.pointer;
+      if (p.pressed && p.y > 450 && p.y < 492) {
+        if (p.x < W / 2 - 190) change(-1);
+        else if (p.x > W / 2 + 190) change(1);
+        else { this.openPicker(); return; }
+      }
       if (I.hit('KeyC')) this.addCpu();
       if (I.hit('KeyX')) this.removeCpu();
       if (I.anyHit(['Enter', 'Pad0Start', 'Pad0A'])) { SS.Audio.confirm(); this.start(); return; }
@@ -257,12 +289,24 @@
         if (p && p.id === 0) UI.text(ctx, 'you (host)', x, 432, 12, '#ffd23f', 'center');
       }
       const place = this.battle ? `STAGE: ${st.name}` : `MAP ${this.level + 1}: ${SS.LEVELS[this.level].name}`;
-      UI.outlineText(ctx, `◀  ${place}  ▶`, W / 2, 470, 22, '#ffffff', 'center');
+      ctx.fillStyle = 'rgba(43,25,61,0.85)';
+      ctx.beginPath(); ctx.roundRect(W / 2 - 300, 452, 600, 38, 12); ctx.fill();
+      ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 2; ctx.stroke();
+      UI.outlineText(ctx, '◀', W / 2 - 280, 471, 22, '#ffd23f', 'center');
+      UI.outlineText(ctx, '▶', W / 2 + 280, 471, 22, '#ffd23f', 'center');
+      UI.outlineText(ctx, place, W / 2, 471, 21, '#ffffff', 'center');
+      if (this.picker) {
+        UI.fade(ctx, 0.92);
+        UI.outlineText(ctx, this.battle ? 'CHOOSE A STAGE' : 'CHOOSE A MAP', W / 2, 80, 34, '#ffd23f', 'center');
+        this.picker.draw(ctx);
+        UI.text(ctx, 'Enter / click to choose    Esc = close', W / 2, H - 22, 14, '#9bf6ff', 'center');
+        return;
+      }
       if (this.warnT > 0) UI.outlineText(ctx, this.warn, W / 2, 500, 15, '#ff4d6d', 'center');
       const waiting = this.players.some((p) => p.id !== 0 && p.cpu === undefined && !p.ready);
-      const extra = this.battle ? '   C = add CPU, X = remove CPU' : '';
-      UI.text(ctx, (waiting ? 'Enter = start now (anyone still choosing can jump in later)' : 'Press Enter to start!') + extra + '   Esc = cancel',
-        W / 2, H - 22, 14, '#9bf6ff', 'center');
+      const extra = this.battle ? '   C/X = add/remove CPU' : '';
+      UI.text(ctx, (waiting ? 'Enter = start now (others can jump in later)' : 'Press Enter to start!') +
+        `   \u2190/\u2192 or M = choose ${this.battle ? 'stage' : 'map'}` + extra + '   Esc = cancel', W / 2, H - 22, 13, '#9bf6ff', 'center');
     }
   };
 
@@ -294,7 +338,11 @@
 
     onNet(m) {
       if (!m) return;
-      if (m.t === 'hostLeft') { this.fail(m.reason || 'The host closed the game.'); return; }
+      if (m.t === 'hostLeft') {
+        if (m.rehost && this.phase === 'pick') { SS.Net.status = 'closed'; return; } // host reconnecting: rejoin
+        this.fail(m.reason || 'The host closed the game.');
+        return;
+      }
       if (m.t === 'welcome') { this.inGame = !!m.inGame; this.mode = m.mode || this.mode; this.phase = 'pick'; this.sendPick(false); }
       else if (m.t === 'lobby') { this.lobby = m; this.mode = m.mode; }
       else if (m.t === 'start') this.toGame(m.mode, m.level);
@@ -316,7 +364,8 @@
 
     sendPick(ready) {
       this.isReady = ready;
-      SS.Net.send({ t: 'pick', cid: SS.CHARACTERS[this.cur].id, ready }, 'host', true);
+      SS.Net.myCid = SS.CHARACTERS[this.cur].id; // remembered for automatic rejoins
+      SS.Net.send({ t: 'pick', cid: SS.Net.myCid, ready }, 'host', true);
     }
 
     tryJoin() {
@@ -367,7 +416,11 @@
           this.sendPick(!this.isReady);
         }
       }
-      if (SS.Net.active && SS.Net.silence() > 25) this.fail('Lost the connection to the host.');
+      if (this.phase === 'pick') {
+        SS.Net.maintain(dt, () => this.sendPick(this.isReady));
+        this.lostT = SS.Net.lost ? (this.lostT || 0) + dt : 0;
+        if (this.lostT > 90) this.fail('Could not reconnect to the host.');
+      }
     }
 
     draw(ctx) {
@@ -415,6 +468,7 @@
       if (this.lobby) {
         UI.text(ctx, `Players: ${this.lobby.players.length}/4     ${this.lobby.place || ''}`, W / 2, 474, 15, '#ffffff', 'center');
       }
+      if (SS.Net.lost) UI.outlineText(ctx, 'Connection lost - rejoining automatically...', W / 2, 496, 16, '#ff4d6d', 'center');
       UI.text(ctx, '←/→ (or tap the sides) choose sloth    Enter = ready    Esc = leave', W / 2, H - 18, 13, '#dddddd', 'center');
       UI.backButton(ctx);
     }

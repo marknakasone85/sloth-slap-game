@@ -45,6 +45,10 @@
 
   SS.CampaignHUD = {
     draw(ctx, hud) {
+      // Wi-Fi games: the join code bar sits at the very top, everything else moves down a bit
+      const top = hud.net ? 22 : 0;
+      ctx.save();
+      ctx.translate(0, top);
       if (hud.coop) hud.players.forEach((p, i) => coopPanel(ctx, hud, p, i));
       else if (hud.players[0]) soloPanel(ctx, hud, hud.players[0]);
 
@@ -52,11 +56,11 @@
       const prog = Math.max(0, Math.min(1, hud.progress));
       if (hud.coop) {
         // slim line on the ground strip so it never covers the sloths
-        UI.outlineText(ctx, `TEAM SCORE ${hud.score}      BANANAS ${hud.bananas}`, W / 2, 482, 15, '#ffffff', 'center');
+        UI.outlineText(ctx, `TEAM SCORE ${hud.score}      BANANAS ${hud.bananas}`, W / 2, 482 - top, 15, '#ffffff', 'center');
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.fillRect(W / 2 - 120, 494, 240, 4);
+        ctx.fillRect(W / 2 - 120, 494 - top, 240, 4);
         ctx.fillStyle = '#ffd23f';
-        ctx.fillRect(W / 2 - 120, 494, 240 * prog, 4);
+        ctx.fillRect(W / 2 - 120, 494 - top, 240 * prog, 4);
       } else {
         const sx = W - 232, sy = 10;
         UI.panel(ctx, sx, sy, 220, 58);
@@ -75,8 +79,10 @@
         UI.bar(ctx, W / 2 - 200, by + 14, 400, 14, hud.boss.frac, '#ff4d6d');
       }
       if (hud.gateHint) {
-        UI.outlineText(ctx, 'Gate closed! Slap the GONG to open it.', W / 2, hud.coop ? 170 : H - 62, 18, '#ffd23f', 'center');
+        UI.outlineText(ctx, 'Gate closed! Slap the GONG to open it.', W / 2, hud.coop ? 170 : H - 62 - top, 18, '#ffd23f', 'center');
       }
+      ctx.restore();
+      if (hud.net) UI.netStrip(ctx, hud.net);
       for (const s of hud.strips) UI.keyStrip(ctx, s.fighter, hud.t, s.opts);
     },
 

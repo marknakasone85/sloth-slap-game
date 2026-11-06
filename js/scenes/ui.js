@@ -212,6 +212,25 @@
       return SS.Touch.enabled && p.pressed && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
     },
 
+    // Wi-Fi games: join code + address at the top of the screen (so anyone can rejoin any time).
+    // net = { code, address, lost }
+    netStrip(ctx, net) {
+      const parts = [['WI-FI GAME', '#ffffff'], ['   JOIN CODE: ', '#9bf6ff'], [String(net.code), '#ffd23f'], [`   ${net.address}`, '#9bf6ff']];
+      if (net.lost) parts.push(['   reconnecting...', '#ff4d6d']);
+      ctx.font = `bold 13px ${FONT}`;
+      const widths = parts.map(([txt]) => ctx.measureText(txt).width);
+      const total = widths.reduce((a, b) => a + b, 0);
+      let x = (SS.W - total) / 2;
+      ctx.fillStyle = 'rgba(20,10,30,0.85)';
+      ctx.beginPath();
+      ctx.roundRect(x - 14, 2, total + 28, 20, 10);
+      ctx.fill();
+      parts.forEach(([txt, color], i) => {
+        UI.text(ctx, txt, x, 12, 13, color);
+        x += widths[i];
+      });
+    },
+
     // Fade overlay helper
     fade(ctx, a) {
       if (a <= 0) return;

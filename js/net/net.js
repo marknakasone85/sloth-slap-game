@@ -48,7 +48,8 @@
       this.lastHeard = performance.now();
       const es = (this.es = new EventSource('/net/events?token=' + encodeURIComponent(this.token)));
       es.onopen = () => { this.status = 'connected'; this.lastHeard = performance.now(); };
-      es.onerror = () => { this.status = 'reconnecting'; };
+      // CLOSED = the server no longer knows us (we were away too long, or the server restarted)
+      es.onerror = () => { this.status = es.readyState === 2 ? 'closed' : 'reconnecting'; };
       es.onmessage = (e) => {
         this.lastHeard = performance.now();
         let msg;
@@ -67,8 +68,50 @@
       this.inflight++;
       fetch('/net/send?token=' + encodeURIComponent(this.token), {
         method: 'POST', headers: HEADERS, body: JSON.stringify({ to, m }),
-      }).catch(() => {}).finally(() => { this.inflight--; });
+      }).then((r) => { if (r.status === 403) this.status = 'closed'; })
+        .catch(() => {}).finally(() => { this.inflight--; });
       return true;
+    },
+
+    // Host: open the game again with the SAME join code (after a lost connection / restarted window).
+    async rehost() {
+      const d = await this.api('/net/host', { code: this.code });
+      Object.assign(this, { token: d.token, code: d.code, address: d.address || this.address });
+      this.open();
+    },
+
+    // Player: join again with the remembered code (gets a fresh connection).
+    async rejoin() {
+      const d = await this.api('/net/join', { code: this.code });
+      Object.assign(this, { id: d.id, token: d.token });
+      this.open();
+    },
+
+    get lost() { return this.status === 'closed' || this.silence() > 12; },
+
+    // What the join-code bar at the top shows (null when not in a Wi-Fi game).
+    hudInfo() {
+      if (!this.role || !this.code) return null;
+      const address = this.role === 'host' ? (this.address || '').replace(/^https?:\/\//, '') : location.host;
+      return { code: this.code, address, lost: this.lost || this.busy };
+    },
+
+    // Call every frame from Wi-Fi screens: quietly reconnects if the connection broke.
+    // onBack(role) runs after a host re-opened its game or a player rejoined.
+    maintain(dt, onBack) {
+      if (!this.role || this.status === 'off') return; // never connected: nothing to repair
+      this.retryT = (this.retryT || 0) - dt;
+      if (this.busy || this.retryT > 0) return;
+      if (this.status === 'closed') {
+        this.busy = true;
+        this.retryT = 3;
+        (this.role === 'host' ? this.rehost() : this.rejoin())
+          .then(() => { this.busy = false; this.lostFor = 0; if (onBack) onBack(this.role); })
+          .catch(() => { this.busy = false; });
+      } else if (this.silence() > 14) {
+        this.retryT = 5;
+        this.open(); // try the same connection again first
+      }
     },
 
     leave() {

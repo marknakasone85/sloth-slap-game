@@ -163,14 +163,11 @@
 
     openLevelMenu() {
       this.phase = 'level';
-      const unlocked = SS.Save.get('unlocked', 1);
+      // every map can be chosen; beaten maps show a check mark and the best score
       const best = SS.Save.get('best', {});
       this.menu = new SS.MenuList(SS.LEVELS.map((lv, i) => ({
-        label: i < unlocked
-          ? `${i + 1}. ${lv.name}${best[i] ? '   (best ' + best[i] + ')' : ''}`
-          : `${i + 1}. ???  (locked)`,
+        label: `${i + 1}. ${lv.name}${best[i] ? '  \u2713 ' + best[i] : ''}`,
         act: () => {
-          if (i >= unlocked) { SS.Audio.hurt(); return; }
           this.savePicks();
           const cid = (k) => SS.CHARACTERS[this.cur[k]].id;
           SS.Engine.setScene(new SS.CampaignScene(this.mode === 'coop'
