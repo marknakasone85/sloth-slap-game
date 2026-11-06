@@ -45,6 +45,20 @@ npm run dist:mac     # build dist/*.dmg   (run on a Mac)
 npm run dist:win     # build dist/*.exe   (best run on Windows)
 ```
 
+## Sharing
+
+**Another Mac:** in Finder, right-click the `Sloth-Slap-Game` folder, choose **Share → AirDrop**, and pick the other Mac. Or copy the folder over with a USB stick. On the other Mac, double-click `index.html`.
+
+**Your home network:** double-click **`share-on-network.command`**. A window opens with an address like `http://192.168.1.23:8000`. Anyone on the same Wi-Fi can type that into their web browser to play. Keep the window open while people play; close it to stop sharing.
+- Only the game files are shared, read-only. Hidden files, the backup history and settings are never served, and folders can't be browsed (see `tools/share_server.py`).
+- Sharing stops by itself after 3 hours.
+- Only use it on your own home Wi-Fi, not on public Wi-Fi.
+- The first time, macOS may ask whether Python can accept incoming network connections. Click **Allow**, or nobody else can connect.
+
+## Backups
+
+The folder is a git repository, so every saved version of the game can be restored. Ask Claude to "save a backup" after changes, or to "go back to the version from before X".
+
 ## Controls
 
 | Action | Player 1 | Player 2 |
