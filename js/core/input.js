@@ -50,6 +50,9 @@
         this.pointer.down = false;
       });
       if (SS.Touch) SS.Touch.init(canvas);
+      // iPhone/iPad only allow sound to start on a finished tap or click
+      window.addEventListener('touchend', () => SS.Audio.unlock(), { passive: true });
+      window.addEventListener('click', () => SS.Audio.unlock());
     },
 
     // Read gamepads (first two) and the touch buttons into virtual keys.

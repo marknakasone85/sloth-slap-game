@@ -23,6 +23,15 @@
           if (this._wantSong) this.playMusic(this._wantSong);
         }
         if (this.ctx.state === 'suspended') this.ctx.resume();
+        if (!this.warmed) {
+          // play one silent sample: some iPhones only enable sound after the first real playback
+          this.warmed = true;
+          const b = this.ctx.createBuffer(1, 1, 22050);
+          const src = this.ctx.createBufferSource();
+          src.buffer = b;
+          src.connect(this.ctx.destination);
+          src.start(0);
+        }
       } catch (e) { /* audio unsupported */ }
     },
 

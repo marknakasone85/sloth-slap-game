@@ -126,5 +126,15 @@
     },
   });
 
-  window.addEventListener('pagehide', () => { if (N.token) N.leave(); });
+  // Only really leave when the page is closed/reloaded. Phones also fire 'pagehide' when the
+  // browser goes to the background (persisted = it may come back) - then we stay in the game.
+  window.addEventListener('pagehide', (e) => { if (N.token && !e.persisted) N.leave(); });
+  // Back from the lock screen / another app: reconnect right away instead of waiting.
+  const comeBack = () => {
+    if (!N.role || N.status === 'off') return;
+    N.lastHeard = performance.now();
+    if (N.status !== 'closed') N.open();
+  };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) comeBack(); });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) comeBack(); });
 })();

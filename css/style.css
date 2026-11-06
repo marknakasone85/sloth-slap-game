@@ -16,6 +16,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: fixed;          /* no page bounce / pull-to-refresh on phones */
+  inset: 0;
+  overscroll-behavior: none;
+}
+
+/* touch buttons for phones and tablets, drawn over the whole screen; taps pass through */
+#touchLayer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 10;
 }
 
 canvas#game {

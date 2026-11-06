@@ -122,9 +122,7 @@ window.SS = window.SS || {};
       if (this.scene) {
         if (!frozen && !upright) this.scene.update(dt);
         this.scene.draw(ctx);
-        if (SS.Touch && SS.Touch.enabled) {
-          SS.Touch.draw(ctx, this.scene.touchPlayer ? this.scene.touchPlayer() : null);
-        }
+        if (SS.Touch) SS.Touch.draw(ctx, this.scene.touchPlayer ? this.scene.touchPlayer() : null);
       }
 
       if (!frozen) SS.Input.endFrame();

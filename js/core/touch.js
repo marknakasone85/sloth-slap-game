@@ -1,48 +1,60 @@
 // On-screen touch buttons for phones and tablets.
-// They turn on by themselves the first time the screen is touched, and only show
-// during play (menus are already tap-friendly). Each button acts like a key
-// ("TouchSlap", "TouchLeft"...), so every mode understands them without changes.
+//  * They turn on by themselves the first time the screen is touched and show only
+//    during play (menus are tap-friendly already).
+//  * They are drawn on a separate full-screen layer, anchored to the screen corners and
+//    sized for thumbs, so on wide phones they sit mostly in the black bars beside the game.
+//  * Each button acts like a key ("TouchSlap", "TouchLeft"...), so every mode understands them.
 (function () {
   const I = SS.Input;
   const W = SS.W, H = SS.H;
 
-  // x, y, r in game coordinates (960 x 540). Left thumb: move/block. Right thumb: actions.
+  // Button sizes/positions are in "u" (thumb units, ~11% of the screen height), measured
+  // from the bottom-left / bottom-right / top-right corner of the screen.
   const BUTTONS = [
-    { id: 'Left', x: 78, y: 455, r: 50, icon: 'left' },
-    { id: 'Right', x: 196, y: 455, r: 50, icon: 'right' },
-    { id: 'Down', x: 137, y: 352, r: 36, icon: 'block', label: 'BLOCK' },
-    { id: 'Slap', x: 868, y: 448, r: 56, label: 'SLAP', color: '#ffd23f' },
-    { id: 'Jump', x: 748, y: 478, r: 42, label: 'JUMP', color: '#9bf6ff' },
-    { id: 'Heavy', x: 902, y: 330, r: 40, label: 'BIG', color: '#ff4d6d' },
-    { id: 'Shoot', x: 782, y: 356, r: 38, label: 'SHOOT', color: '#ffb703' },
-    { id: 'Special', x: 652, y: 492, r: 34, label: 'SUPER', color: '#00f5d4' },
-    { id: 'Pause', x: W / 2, y: H - 22, r: 18, icon: 'pause' },
+    { id: 'Left', corner: 'bl', dx: 1.1, dy: 1.1, r: 1.1, icon: 'left' },
+    { id: 'Right', corner: 'bl', dx: 3.5, dy: 1.1, r: 1.1, icon: 'right' },
+    { id: 'Down', corner: 'bl', dx: 2.3, dy: 3.3, r: 0.8, icon: 'block', label: 'BLOCK' },
+    { id: 'Slap', corner: 'br', dx: 1.3, dy: 1.3, r: 1.3, label: 'SLAP', color: '#ffd23f' },
+    { id: 'Jump', corner: 'br', dx: 3.9, dy: 0.95, r: 0.95, label: 'JUMP', color: '#9bf6ff' },
+    { id: 'Heavy', corner: 'br', dx: 1.1, dy: 3.9, r: 0.9, label: 'BIG', color: '#ff4d6d' },
+    { id: 'Shoot', corner: 'br', dx: 3.3, dy: 3.1, r: 0.85, label: 'SHOOT', color: '#ffb703' },
+    { id: 'Special', corner: 'br', dx: 5.9, dy: 0.8, r: 0.75, label: 'SUPER', color: '#00f5d4' },
+    { id: 'Pause', corner: 'tr', dx: 0.6, dy: 0.6, r: 0.55, icon: 'pause' },
   ];
 
   const T = (SS.Touch = {
     enabled: false,
-    points: new Map(), // pointerId -> { x, y }
+    userOff: false,          // switched off from the pause menu (this visit only)
+    points: new Map(),       // pointerId -> { x, y } in screen (CSS) pixels
     buttons: BUTTONS,
+    layer: null,
+    isTouchDevice: typeof window !== 'undefined' && (('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0),
 
     init(canvas) {
-      const toLocal = (e) => {
-        const r = canvas.getBoundingClientRect();
-        return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
+      this.canvas = canvas;
+      // full-screen layer for the buttons; taps pass straight through to the game (menus)
+      if (document.createElement) {
+        const layer = document.createElement('canvas');
+        layer.id = 'touchLayer';
+        document.body.appendChild(layer);
+        this.layer = layer;
+      }
+      const down = (e) => {
+        if (e.pointerType !== 'touch') return;
+        if (!this.enabled && !this.userOff) this.enabled = true;
+        this.points.set(e.pointerId, { x: e.clientX, y: e.clientY });
       };
-      canvas.addEventListener('pointerdown', (e) => {
-        if (e.pointerType === 'touch') {
-          if (!this.enabled && SS.Save.get('touchPref', 'auto') !== 'off') this.enabled = true;
-          this.points.set(e.pointerId, toLocal(e));
-        }
-      });
-      canvas.addEventListener('pointermove', (e) => {
-        if (this.points.has(e.pointerId)) this.points.set(e.pointerId, toLocal(e));
+      window.addEventListener('pointerdown', down);
+      window.addEventListener('pointermove', (e) => {
+        if (this.points.has(e.pointerId)) this.points.set(e.pointerId, { x: e.clientX, y: e.clientY });
       });
       const up = (e) => this.points.delete(e.pointerId);
       window.addEventListener('pointerup', up);
       window.addEventListener('pointercancel', up);
       window.addEventListener('blur', () => this.points.clear());
-      // stop long-press menus / text selection on phones
+      // iPhone/iPad: no pinch-zoom, double-tap zoom or long-press menus while playing
+      document.addEventListener('gesturestart', (e) => e.preventDefault());
+      document.addEventListener('dblclick', (e) => e.preventDefault());
       canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     },
 
@@ -54,10 +66,23 @@
 
     portrait() { return window.innerHeight > window.innerWidth * 1.05; },
 
+    // Button circles in screen pixels for the current screen size.
+    layout() {
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const u = Math.max(24, Math.min(vh * 0.11, vw * 0.075, 62));
+      const pad = 10;
+      return BUTTONS.map((b) => {
+        const x = b.corner === 'bl' ? pad + b.dx * u : vw - pad - b.dx * u;
+        const y = b.corner === 'tr' ? pad + b.dy * u : vh - pad - b.dy * u;
+        return Object.assign({}, b, { x, y, r: b.r * u });
+      });
+    },
+
     held(b) {
+      const reach = b.r * 1.25;
       for (const p of this.points.values()) {
         const dx = p.x - b.x, dy = p.y - b.y;
-        if (dx * dx + dy * dy < (b.r * 1.3) * (b.r * 1.3)) return true;
+        if (dx * dx + dy * dy < reach * reach) return true;
       }
       return false;
     },
@@ -65,7 +90,8 @@
     // Called every frame by SS.Input.poll(): turns finger positions into virtual keys.
     poll() {
       const show = this.visible();
-      for (const b of BUTTONS) {
+      const buttons = show ? this.layout() : BUTTONS;
+      for (const b of buttons) {
         const code = 'Touch' + b.id;
         const now = show && this.held(b);
         if (now && !I.keys[code]) {
@@ -76,45 +102,66 @@
       }
     },
 
+    // Draw the buttons on their own layer (and the "turn sideways" hint on the game).
     // player = fighter-like object ({ canSpecial, ammo }) to light up SUPER / dim SHOOT
     draw(ctx, player) {
-      if (this.enabled && this.portrait()) return this.drawRotate(ctx);
-      if (!this.visible()) return;
+      if (this.enabled && this.portrait()) this.drawRotate(ctx);
+      const layer = this.layer;
+      if (!layer) return;
+      const show = this.visible();
+      if (!show) {
+        if (this.drawn) { layer.getContext('2d').clearRect(0, 0, layer.width, layer.height); this.drawn = false; }
+        return;
+      }
+      const dpr = window.devicePixelRatio || 1;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      if (layer.width !== Math.round(vw * dpr) || layer.height !== Math.round(vh * dpr)) {
+        layer.width = Math.round(vw * dpr);
+        layer.height = Math.round(vh * dpr);
+        layer.style.width = vw + 'px';
+        layer.style.height = vh + 'px';
+      }
+      const c = layer.getContext('2d');
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.clearRect(0, 0, vw, vh);
+      this.drawn = true;
       const t = SS.Engine.time;
-      for (const b of BUTTONS) {
+      for (const b of this.layout()) {
         const down = !!I.keys['Touch' + b.id];
-        let alpha = down ? 0.75 : 0.38;
+        let alpha = down ? 0.8 : 0.42;
         if (b.id === 'Shoot' && player && player.ammo <= 0) alpha *= 0.5;
         const ready = b.id === 'Special' && player && player.canSpecial;
-        ctx.save();
-        ctx.translate(b.x, b.y);
+        c.save();
+        c.translate(b.x, b.y);
         const s = down ? 0.92 : 1;
-        ctx.scale(s, s);
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = 'rgba(20,10,30,0.9)';
-        ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = Math.min(1, alpha + 0.35);
-        ctx.lineWidth = ready ? 5 : 3;
-        ctx.strokeStyle = ready && Math.floor(t * 4) % 2 === 0 ? '#ffffff' : (b.color || '#ffffff');
-        ctx.beginPath(); ctx.arc(0, 0, b.r - 2, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = '#ffffff';
+        c.scale(s, s);
+        c.globalAlpha = alpha;
+        c.fillStyle = 'rgba(20,10,30,0.9)';
+        c.beginPath(); c.arc(0, 0, b.r, 0, Math.PI * 2); c.fill();
+        c.globalAlpha = Math.min(1, alpha + 0.35);
+        c.lineWidth = ready ? 5 : 3;
+        c.strokeStyle = ready && Math.floor(t * 4) % 2 === 0 ? '#ffffff' : (b.color || '#ffffff');
+        c.beginPath(); c.arc(0, 0, b.r - 2, 0, Math.PI * 2); c.stroke();
+        c.fillStyle = '#ffffff';
+        const k = b.r / 50; // icon scale
         if (b.icon === 'left' || b.icon === 'right') {
           const d = b.icon === 'left' ? -1 : 1;
-          ctx.beginPath();
-          ctx.moveTo(d * 20, 0); ctx.lineTo(-d * 12, -20); ctx.lineTo(-d * 12, 20);
-          ctx.closePath(); ctx.fill();
+          c.beginPath();
+          c.moveTo(d * 20 * k, 0); c.lineTo(-d * 12 * k, -20 * k); c.lineTo(-d * 12 * k, 20 * k);
+          c.closePath(); c.fill();
         } else if (b.icon === 'pause') {
-          ctx.fillRect(-6, -8, 4, 16);
-          ctx.fillRect(2, -8, 4, 16);
+          c.fillRect(-6 * k * 1.6, -8 * k * 1.6, 4 * k * 1.6, 16 * k * 1.6);
+          c.fillRect(2 * k * 1.6, -8 * k * 1.6, 4 * k * 1.6, 16 * k * 1.6);
         } else if (b.icon === 'block') {
-          SS.Art.powerIcon(ctx, 'shield', 0, -6, 16);
-          SS.UI.text(ctx, b.label, 0, 18, 11, '#ffffff', 'center');
+          SS.Art.powerIcon(c, 'shield', 0, -b.r * 0.15, b.r * 0.42);
+          SS.UI.text(c, b.label, 0, b.r * 0.5, Math.max(9, b.r * 0.3), '#ffffff', 'center');
         } else {
-          SS.UI.outlineText(ctx, b.label, 0, 1, b.r > 50 ? 20 : b.label.length > 4 ? 13 : 15, '#ffffff', 'center');
+          const fs = Math.max(10, b.r * (b.label.length > 4 ? 0.36 : 0.42));
+          SS.UI.outlineText(c, b.label, 0, 1, fs, '#ffffff', 'center');
         }
-        ctx.restore();
+        c.restore();
       }
-      ctx.globalAlpha = 1;
+      c.globalAlpha = 1;
     },
 
     drawRotate(ctx) {
@@ -134,18 +181,27 @@
     },
   });
 
-  // On-screen controls setting shared by all game screens: key hints -> touch buttons -> off
-  SS.onscreenLabel = (scene) => 'On-screen controls: ' + (T.enabled ? 'TOUCH BUTTONS' : scene.showStrip ? 'KEY HINTS' : 'OFF');
+  // Pause-menu option. Phones/tablets: touch buttons ON/OFF (this visit only, never stuck off).
+  // Computers: key hints -> touch buttons -> nothing.
+  SS.onscreenLabel = (scene) => {
+    if (T.isTouchDevice) return 'Touch buttons: ' + (T.enabled ? 'ON' : 'OFF');
+    return 'On-screen controls: ' + (T.enabled ? 'TOUCH BUTTONS' : scene.showStrip ? 'KEY HINTS' : 'OFF');
+  };
   SS.cycleOnscreen = (scene) => {
+    if (T.isTouchDevice) {
+      T.enabled = !T.enabled;
+      T.userOff = !T.enabled;
+      return;
+    }
     if (T.enabled) {
       T.enabled = false;
+      T.userOff = true;
       scene.showStrip = false;
-      SS.Save.set('touchPref', 'off');
     } else if (!scene.showStrip) {
       scene.showStrip = true;
     } else {
       T.enabled = true;
-      SS.Save.set('touchPref', 'auto');
+      T.userOff = false;
     }
     SS.Save.set('keyStrip', scene.showStrip);
   };

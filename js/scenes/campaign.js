@@ -2,6 +2,7 @@
 // Supports 1 player, 2 players on one computer, and Wi-Fi co-op (this computer hosts, up to 4).
 (function () {
   const U = SS.U;
+  const UI = SS.UI;
   const W = SS.W;
   const RESPAWN_TIME = 5;     // seconds before a snoozed co-op player pops back in
   const SNAP_RATE = 1 / 30;   // Wi-Fi updates per second sent to guests
@@ -262,6 +263,12 @@
         if (SS.Input.anyPressed()) { this.showControls = false; SS.Audio.select(); }
         return;
       }
+      if (this.mapPicker) {
+        if (SS.Menu.back()) { this.mapPicker = null; SS.Audio.select(); return; }
+        const item = this.mapPicker.update(dt);
+        if (item) item.act();
+        return;
+      }
       if (this.menu) {
         if (this.state === 'paused' && SS.Menu.pause()) { this.resume(); return; }
         // Short delay so mashing slap doesn't instantly pick a menu item.
@@ -335,10 +342,10 @@
         const items = [];
         if (this.checkpoint) items.push({ label: 'Continue from Checkpoint', act: () => this.respawn() });
         items.push({ label: 'Restart Map', act: () => this.restart() });
-        if (!this.net) items.push({ label: 'Choose Map', act: () => this.toSelect() });
+        items.push({ label: 'Choose Another Map', act: () => this.openMapPicker() });
         if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
         items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
-        this.menu = new SS.MenuList(items, W / 2, 270, { w: 340, h: 46, gap: 10 });
+        this.menu = new SS.MenuList(items, W / 2, 262, { w: 340, h: 42, gap: 8 });
       }
     }
 
@@ -418,25 +425,38 @@
       }
       const items = [];
       if (this.levelIndex + 1 < SS.LEVELS.length) items.push({ label: 'Next Map', act: () => this.goLevel(this.levelIndex + 1) });
+      items.push({ label: 'Choose Another Map', act: () => this.openMapPicker() });
       items.push({ label: 'Play Again', act: () => this.restart() });
       if (this.net) items.push({ label: 'Back to Lobby', act: () => this.backToLobby() });
       items.push({ label: this.net ? 'End Wi-Fi Game' : 'Main Menu', act: () => this.quit() });
-      this.menu = new SS.MenuList(items, W / 2, 300, { w: 300, h: 46, gap: 10 });
+      this.menu = new SS.MenuList(items, W / 2, 290, { w: 320, h: 40, gap: 7 });
     }
 
     pause() {
       this.state = 'paused';
       this.menu = new SS.MenuList([
         { label: 'Resume', act: () => this.resume() },
+        { label: 'Choose Another Map', act: () => this.openMapPicker() },
         { label: 'Controls', act: () => { this.showControls = true; } },
         { label: () => SS.onscreenLabel(this), act: () => SS.cycleOnscreen(this) },
         { label: () => 'Blood: ' + (SS.Settings.blood ? 'ON' : 'OFF (confetti)'), act: () => SS.toggleBlood() },
         { label: 'Restart Map', act: () => this.restart() },
         { label: () => 'Sound: ' + (SS.Audio.muted ? 'OFF' : 'ON'), act: () => SS.Audio.toggleMute() },
         { label: this.net ? 'End Wi-Fi Game' : 'Quit to Menu', act: () => this.quit() },
-      ], W / 2, 184, { w: 340, h: 38, gap: 6 });
+      ], W / 2, 182, { w: 340, h: 34, gap: 5 });
     }
     resume() { this.state = 'play'; this.menu = null; }
+
+    // Full list of all maps; picking one starts it with the same players (Wi-Fi guests follow).
+    openMapPicker() {
+      SS.Audio.select();
+      const best = SS.Save.get('best', {});
+      this.mapPicker = new SS.MenuList(SS.LEVELS.map((lv, i) => ({
+        label: `${i + 1}. ${lv.name}${best[i] ? '  \u2713' : ''}`,
+        act: () => this.goLevel(i),
+      })), W / 2, 112, { w: 290, h: 40, gap: 8, cols: 3, gapX: 12, fontSize: 15 });
+      this.mapPicker.sel = this.levelIndex;
+    }
 
     // Everyone comes back at the last opened gate with full health (costs some score).
     respawn() {
@@ -554,7 +574,14 @@
         score: this.score, bananas: this.bananas, hpBonus: this.hpBonus, newBest: this.newBest,
         coop: this.coop, guest: false, showControls: this.showControls,
       });
-      if (this.menu && !this.showControls) this.menu.draw(ctx);
+      if (this.menu && !this.showControls && !this.mapPicker) this.menu.draw(ctx);
+      if (this.mapPicker) {
+        UI.fade(ctx, 0.92);
+        UI.outlineText(ctx, 'CHOOSE A MAP', W / 2, 74, 36, '#ffd23f', 'center');
+        this.mapPicker.draw(ctx);
+        UI.text(ctx, (this.net ? 'Everyone in the Wi-Fi game moves to the map you pick.   ' : '') +
+          'Arrow keys + Enter, or click / tap a map.   Esc = back', W / 2, SS.H - 24, 14, '#9bf6ff', 'center');
+      }
     }
   };
 

@@ -30,7 +30,9 @@ A comical cartoon slap-'em-up starring a crew of sloths.
   🛡️ Bubble Shield (no damage), 👊 Super Slap (double damage), 🔫 Rapid Fire (unlimited ammo), ☕ Coffee (super speed): each lasts 12 seconds.
   🍌 Lucky Banana: an extra life. If you get snoozed you pop right back up.
 
-  **Every map can be chosen any time** (solo, 2 players, or in the Wi-Fi lobby: ←/→, or click the map name / press M for the full list). Beaten maps get a ✓ and your best score.
+  **Every map can be chosen any time.** Beaten maps get a ✓ and your best score.
+  - Before playing: pick your sloth and the list of all maps appears (Wi-Fi lobby: ←/→, or click the map name / press M).
+  - During a map: **Pause → Choose Another Map**. It's also on the "Nap achieved!" and "Snoozed out!" screens. In Wi-Fi games the host picks and everyone moves to the new map together.
 
 - **Co-op campaign** (Campaign → choose how to play):
   - **2 Players (this computer):** P1 uses WASD + F/G/H/R and P2 uses the arrow keys + , . / ;
@@ -85,12 +87,12 @@ npm run dist:win     # build dist/*.exe   (best run on Windows)
 
 Phones and tablets play in the web browser. On the computer, double-click `share-on-network.command`, then on the phone (on the same Wi-Fi) open the address it shows, like `http://192.168.1.23:8000`. Phones can't open the `index.html` file directly.
 
-- **Touch buttons** appear the first time you touch the screen. On the left: ◀ ▶ to move and BLOCK. On the right: SLAP (big), JUMP, BIG, SHOOT and SUPER (glows when your special is ready). Pause is at the bottom middle. Use several fingers at once to run and slap together.
+- **Touch buttons** appear the first time you touch the screen, sized for thumbs and anchored to the screen corners (on wide phones they sit mostly in the black bars beside the game). Left: ◀ ▶ to move and BLOCK. Right: SLAP (big), JUMP, BIG, SHOOT and SUPER (glows when your special is ready). Pause is in the top-right corner. Use several fingers at once to run and slap together.
 - Hold the phone **sideways**. If you hold it upright, the game waits and asks you to turn it.
 - Menus work by tapping, and screens that use Esc have a **◀ Back** button.
 - Works for the solo campaign, Slapdown Duel vs the CPU, and **joining a Wi-Fi co-op game from a phone**.
 - Tip: on iPhone/iPad, *Share → Add to Home Screen* makes it open full-screen like an app.
-- Pause → **On-screen controls** switches between touch buttons, key hints, or nothing.
+- On a phone or tablet, Pause → **Touch buttons: ON/OFF** hides them for this visit only; they always come back next time.
 
 ## Playing together on Wi-Fi (2-4 players)
 
