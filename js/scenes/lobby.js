@@ -121,6 +121,7 @@
       this.stage = opts.stage || 0;
       this.resume = !!opts.resume;
       this.error = null;
+      this.stopped = opts.stopped || null; // this window stopped hosting (another window took over)
       this.ready = false;
       this.syncT = 0;
     }
@@ -129,6 +130,7 @@
 
     enter() {
       SS.Audio.playMusic('menu');
+      if (this.stopped) { this.error = this.stopped; return; }
       SS.Net.onMessage = (m, from) => this.onNet(m, from);
       if (this.resume && SS.Net.role === 'host') { this.ready = true; this.broadcast(); return; }
       SS.Net.host().then(() => { this.ready = true; this.broadcast(); })
@@ -264,9 +266,9 @@
       UI.outlineText(ctx, this.battle ? 'WI-FI BATTLE LOBBY' : 'WI-FI CO-OP LOBBY', W / 2, 44, 38, '#ffd23f', 'center');
       if (this.error) {
         UI.panel(ctx, 120, 160, W - 240, 160);
-        UI.outlineText(ctx, 'Could not start the Wi-Fi game', W / 2, 200, 24, '#ff4d6d', 'center');
+        UI.outlineText(ctx, this.stopped ? 'This window stopped hosting' : 'Could not start the Wi-Fi game', W / 2, 200, 24, '#ff4d6d', 'center');
         UI.text(ctx, this.error, W / 2, 245, 16, '#ffffff', 'center');
-        UI.text(ctx, 'Is the share-on-network window still open?  Esc = back', W / 2, 285, 14, '#cccccc', 'center');
+        UI.text(ctx, this.stopped ? 'Only one window can host. Play in the newest one.  Esc = back' : 'Is the share-on-network window still open?  Esc = back', W / 2, 285, 14, '#cccccc', 'center');
         return;
       }
       if (!this.ready) {

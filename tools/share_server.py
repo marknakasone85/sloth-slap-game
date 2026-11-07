@@ -225,10 +225,19 @@ class GameOnlyHandler(http.server.SimpleHTTPRequestHandler):
         # restarted sharing window) so everyone can rejoin without a new code.
         want = str(data.get("code", ""))
         reuse = want if len(want) == 4 and want.isdigit() else None
+        automatic = bool(data.get("rehost"))
         with LOCK:
+            if automatic and ROOM and ROOM.code != reuse:
+                # A window reconnecting by itself must never take over a game that another
+                # window started since. (Two host windows used to keep stealing the game from
+                # each other, which kicked everyone out every few seconds.)
+                return self.json_reply(409, {"error": "Another window on this computer is hosting the Wi-Fi game now.", "taken": True})
             rehost = bool(reuse and ROOM and ROOM.code == reuse)
-            close_room_locked("The host is reconnecting..." if rehost else "The host started a new game.", rehost)
-            ROOM = Room(reuse)
+            if ROOM and not rehost:
+                # Someone pressed host in a new window: the old window is told to stop.
+                ROOM.host.deliver(pack("server", {"t": "replaced"}))
+            close_room_locked("The host is reconnecting..." if rehost else "The host started a new game. Ask for the new code.", rehost)
+            ROOM = Room(reuse if automatic else None)
             room = ROOM
         print(f"  Wi-Fi game {'re-opened' if rehost else 'started'}. Join code: {room.code}")
         sys.stdout.flush()

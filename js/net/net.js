@@ -23,7 +23,11 @@
       const r = await fetch(path, { method: 'POST', headers: HEADERS, body: JSON.stringify(body || {}) });
       let data = {};
       try { data = await r.json(); } catch (e) { /* empty reply */ }
-      if (!r.ok) throw new Error(data.error || 'Could not reach the host (error ' + r.status + ').');
+      if (!r.ok) {
+        const err = new Error(data.error || 'Could not reach the host (error ' + r.status + ').');
+        err.taken = !!data.taken; // another window on this computer is hosting now
+        throw err;
+      }
       return data;
     },
 
@@ -55,6 +59,7 @@
         let msg;
         try { msg = JSON.parse(e.data); } catch (err) { return; }
         if (msg.from === 'server' && msg.m && msg.m.t === 'ping') return; // keep-alive: only resets the silence timer
+        if (msg.from === 'server' && msg.m && msg.m.t === 'replaced') { this.giveUp(); return; }
         if (this.onMessage) this.onMessage(msg.m, msg.from);
       };
     },
@@ -76,7 +81,7 @@
 
     // Host: open the game again with the SAME join code (after a lost connection / restarted window).
     async rehost() {
-      const d = await this.api('/net/host', { code: this.code });
+      const d = await this.api('/net/host', { code: this.code, rehost: true });
       Object.assign(this, { token: d.token, code: d.code, address: d.address || this.address });
       this.open();
     },
@@ -108,11 +113,19 @@
         this.retryT = 3;
         (this.role === 'host' ? this.rehost() : this.rejoin())
           .then(() => { this.busy = false; this.lostFor = 0; if (onBack) onBack(this.role); })
-          .catch(() => { this.busy = false; });
+          .catch((e) => { this.busy = false; if (e.taken) this.giveUp(); });
       } else if (this.silence() > 14) {
         this.retryT = 5;
         this.open(); // try the same connection again first
       }
+    },
+
+    // Only one window can host. When another window on this computer starts hosting, this one
+    // stops for good (it used to take the game back, and the two windows kicked everyone out).
+    giveUp() {
+      if (this.role !== 'host') return;
+      this.leave();
+      SS.Engine.setScene(new SS.LobbyScene({ stopped: 'Another window on this computer started hosting, so this window stopped.' }));
     },
 
     leave() {
