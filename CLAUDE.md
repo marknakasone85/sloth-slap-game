@@ -23,6 +23,7 @@ Current content: 17 campaign maps (4 boss-less), 11 sloths (FAST / POWER / BALAN
 - Published at https://claude.ai/artifact/RvdTuR5M1uRDoi4seWEj4d (private until the owner shares it). The page is `artifact.html`, which is the same game as `index.html` with inline CSS. It sets `window.SS_WEB_ONLY = true`, so `SS.Net.available()` is false and the Wi-Fi menu items show a "needs the home version" message (there is no relay server there).
 - To update it after changing the game, publish `artifact.html` to that URL with the Artifact tool. Pass a `files` map with every `js/...` path mapped to itself, using the same list as the `<script>` tags. When a feature is finished, offer to update the web version.
 - `artifact.html` must list the same scripts as `index.html` (`test_menus.js` checks this). Add new script files to both.
+- **Public web:** GitHub Pages serves the repo's `main` branch at https://marknakasone85.github.io/sloth-slap-game/ and updates about a minute after each push. `SS.Net.webOnly()` is true on any address that isn't a home address (not localhost, an IP or `*.local`), so Wi-Fi play switches itself off there. Keep that list in step with `host_ok()` in `share_server.py`.
 
 ## Code map (script order lives in `index.html` - plain `<script>` tags so `file://` works; no ES modules)
 | Area | Files |

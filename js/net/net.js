@@ -16,8 +16,21 @@
     lastHeard: 0,
     inflight: 0,
 
-    // false in the web version (artifact.html sets SS_WEB_ONLY): it has no relay server
-    available() { return !window.SS_WEB_ONLY && (location.protocol === 'http:' || location.protocol === 'https:'); },
+    // Wi-Fi play needs tools/share_server.py, which is reached only by a home address
+    // (localhost, an IP address or a home-network name - the same names the server accepts).
+    homeAddress(h) {
+      h = String(h || '').toLowerCase();
+      return h === 'localhost' || /\.(localhost|local|lan|home|home\.arpa)$/.test(h)
+        || /^\d{1,3}(\.\d{1,3}){3}$/.test(h) || h.charAt(0) === '[';
+    },
+    // true for the web versions: the claude.ai artifact (sets SS_WEB_ONLY) and public web hosts
+    // such as GitHub Pages or itch.io. They have no relay server, so Wi-Fi play is off there.
+    webOnly() {
+      if (window.SS_WEB_ONLY) return true;
+      const web = location.protocol === 'http:' || location.protocol === 'https:';
+      return web && !this.homeAddress(location.hostname);
+    },
+    available() { return (location.protocol === 'http:' || location.protocol === 'https:') && !this.webOnly(); },
     get active() { return !!this.role; },
 
     async api(path, body) {

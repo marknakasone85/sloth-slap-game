@@ -56,5 +56,11 @@ check(!SS.Net.available(), 'web version: Wi-Fi is switched off');
 var wm = new SS.CampaignModeScene({ kind: 'duel' }); SS.Engine.setScene(wm); frames(2);
 wm.tryHost('hostBattle'); var hostInfo = wm.info; wm.info = null; wm.tryJoin();
 check(sceneName() === 'Mode(duel)' && hostInfo && /web version/.test(wm.info[1]), 'web version: Host/Join Wi-Fi show a message');
-window.SS_WEB_ONLY = false; location.protocol = 'file:';
+window.SS_WEB_ONLY = false;
+// public web hosts (GitHub Pages) count as the web version; home addresses keep Wi-Fi
+function wifiAt(host) { location.hostname = host; return SS.Net.available(); }
+check(!wifiAt('marknakasone85.github.io') && SS.Net.webOnly(), 'GitHub Pages: Wi-Fi is switched off');
+check(wifiAt('localhost') && wifiAt('192.168.0.5') && wifiAt('my-mac.local') && wifiAt('[::1]'), 'home addresses keep Wi-Fi on');
+location.hostname = ''; location.protocol = 'file:';
+check(!SS.Net.available() && !SS.Net.webOnly(), 'double-clicked index.html: Wi-Fi shows the sharing instructions');
 done('menus');

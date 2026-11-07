@@ -65,10 +65,13 @@ with a slower wind-up, but every slap sends enemies flying. The select screen sh
 
 ## Play it
 
-### Web browser (any OS)
+### Play online (computers, phones and tablets)
+**https://marknakasone85.github.io/sloth-slap-game/**: open it in any web browser and play. There's nothing to install, and on phones the touch buttons appear. The campaign, Slapdown Duel vs CPU and 2 players on one keyboard all work online. Wi-Fi games for 2-4 players need the home version (see *Playing together on Wi-Fi*).
+
+### Web browser from the game folder (any OS)
 Double-click `index.html`. That's all: there are no dependencies, no build step, and every graphic and sound is generated in code.
 
-To host it online, upload the folder as-is to any static host (itch.io as an HTML5 game, GitHub Pages, Netlify).
+The online version is this same folder served by GitHub Pages. Any static host works the same way (itch.io as an HTML5 game, Netlify), and Wi-Fi play switches itself off on public web addresses.
 
 ### Native macOS / Windows app
 This needs [Node.js](https://nodejs.org) (LTS) installed once.
@@ -92,7 +95,7 @@ npm run dist:win     # build dist/*.exe   (best run on Windows)
 
 ## Playing on phones and tablets
 
-Phones and tablets play in the web browser. On the computer, double-click `share-on-network.command`, then on the phone (on the same Wi-Fi) open the address it shows, like `http://<wifi-network-address>:8000`. Phones can't open the `index.html` file directly.
+Phones and tablets play in the web browser. On the computer, double-click `share-on-network.command`, then on the phone (on the same Wi-Fi) open the address it shows, like `http://<wifi-network-address>:8000`. Phones can't open the `index.html` file directly. Or just open the online version: https://marknakasone85.github.io/sloth-slap-game/
 
 - **Touch buttons** appear the first time you touch the screen, sized for thumbs and anchored to the screen corners (on wide phones they sit mostly in the black bars beside the game). Left: ◀ ▶ to move and BLOCK. Right: SLAP (big), JUMP, BIG, SHOOT and SUPER (glows when your special is ready). Pause is in the top-right corner. Use several fingers at once to run and slap together.
 - Hold the phone **sideways**. If you hold it upright, the game waits and asks you to turn it.
@@ -168,6 +171,7 @@ tools/                home-network share server + Wi-Fi relay, automated tests
 The game collects no personal information. It has no accounts, ads, analytics or tracking, and it never sends anything over the internet.
 - Progress and best scores are saved only in your own web browser (local storage) and never leave your device.
 - Wi-Fi games stay on your home network. Button presses and game updates go between the players' devices through the host computer, are kept in memory only, and are gone when sharing stops.
+- The online version is hosted by GitHub Pages. Like any website host, GitHub sees ordinary visit information (such as IP addresses); see GitHub's privacy statement. The game itself adds nothing to that.
 
 ## Content
 
