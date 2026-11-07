@@ -79,6 +79,8 @@
         case 'missiles': return true;
         case 'cannon': return dist < 520;
         case 'freeze': return dist > 110;
+        case 'quake': return dist < 380;
+        case 'sprint': return dist < 420;
         default: return dist < 120;
       }
     }

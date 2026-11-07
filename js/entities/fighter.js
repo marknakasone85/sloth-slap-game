@@ -20,10 +20,23 @@
   };
 
   const approach = (v, target, amt) => (v < target ? Math.min(target, v + amt) : Math.max(target, v - amt));
+  const ARMOR_MAX = 12; // super armor shrugs off hits weaker than this (that aren't big slaps)
+
+  // Slap timings for one sloth: fast sloths (atk > 1) wind up and recover quicker.
+  function movesFor(def) {
+    const k = def.atk || 1;
+    const out = {};
+    for (const [name, m] of Object.entries(MOVES)) {
+      out[name] = Object.assign({}, m, { startup: m.startup / k, active: m.active / k, recover: m.recover / k });
+    }
+    return out;
+  }
 
   SS.Fighter = class {
     constructor(def, x, opts = {}) {
       this.def = def;
+      this.moves = movesFor(def);
+      this.airJumps = def.airJumps || 0;
       this.x = x;
       this.y = opts.y !== undefined ? opts.y : SS.GROUND_Y;
       this.vx = 0;
@@ -124,7 +137,8 @@
           this.vx = approach(this.vx, 0, 2500 * dt);
         } else {
           this.state = 'idle';
-          const accel = this.onGround ? 2600 : 1400;
+          // fast sloths also get going (and stop) quicker
+          const accel = (this.onGround ? 2600 : 1400) * U.clamp(this.def.speed / 200, 0.8, 2);
           const speed = this.def.speed * (this.powers.coffee ? 1.6 : 1);
           this.vx = approach(this.vx, dir * speed, accel * (this.powers.coffee ? 1.6 : 1) * dt);
           if (dir && !this.autoFace) this.facing = dir;
@@ -133,6 +147,12 @@
           this.vy = -this.def.jump * (this.powers.coffee ? 1.12 : 1);
           this.onGround = false;
           SS.Audio.jump();
+        } else if (ctrl.jumpP && !this.onGround && this.airJumps > 0) {
+          // double jump (athlete sloth)
+          this.airJumps--;
+          this.vy = -this.def.jump * 0.85 * (this.powers.coffee ? 1.12 : 1);
+          SS.Audio.jump();
+          world.fx.burst(this.x, this.y, '#ffffff', 8, 160);
         }
         if (ctrl.slapP) this.startMove('slap');
         else if (ctrl.heavyP) this.startMove('heavy');
@@ -178,6 +198,7 @@
     }
 
     onLand(world) {
+      this.airJumps = this.def.airJumps || 0;
       if (this.move && this.move.kind === 'bellyflop' && this.move.phase === 'air') {
         this.move.phase = 'impact';
         this.move.t = 0;
@@ -194,7 +215,7 @@
     // ------------------------------------------------------------------
     startMove(name) {
       this.state = 'attack';
-      this.move = { kind: name, def: MOVES[name], t: 0 };
+      this.move = { kind: name, def: this.moves[name], t: 0 };
       this.hitList.clear();
       if (this.onGround) this.vx *= 0.3;
     }
@@ -253,8 +274,9 @@
         const dir = omni ? (target.x >= this.x ? 1 : -1) : this.facing;
         const sup = this.powers.superslap ? 1 : 0;
         const dmg = h.dmg * this.def.power * (sup ? 2 : 1);
+        const kb = Math.sqrt(this.def.power); // strong sloths send things flying further
         const hit = {
-          dmg, kbx: h.kbx * dir * (sup ? 1.5 : 1), kby: h.kby * (sup ? 1.3 : 1), stun: h.stun, sleep: h.sleep || 0,
+          dmg, kbx: h.kbx * dir * kb * (sup ? 1.5 : 1), kby: h.kby * Math.sqrt(kb) * (sup ? 1.3 : 1), stun: h.stun, sleep: h.sleep || 0,
           big: !!h.big, from: this, dir,
         };
         const result = target.takeHit(hit, world);
@@ -280,7 +302,7 @@
     updateMove(dt, ctrl, world) {
       const m = this.move;
       m.t += dt;
-      if (this.onGround && m.kind !== 'dash') this.vx = approach(this.vx, 0, 1800 * dt);
+      if (this.onGround && m.kind !== 'dash' && m.kind !== 'sprint') this.vx = approach(this.vx, 0, 1800 * dt);
 
       const finish = () => { this.state = 'idle'; this.move = null; };
 
@@ -379,6 +401,60 @@
           SS.Audio.tone(1400, 0.3, 'sine', 0.2, 2400);
         }
         if (m.t > 0.5) finish();
+      } else if (m.kind === 'quake') {
+        // gorilla: pound the chest (can't be stopped), then smash the ground -
+        // shockwaves roll out both ways along the floor
+        if (m.phase === 'start') {
+          this.invuln = Math.max(this.invuln, 0.05);
+          const beat = Math.floor(m.t / 0.12);
+          if (beat !== m.beat && beat < 4) {
+            m.beat = beat;
+            SS.Audio.tone(beat % 2 ? 140 : 110, 0.1, 'square', 0.25, 70);
+            world.fx.text(this.x + (beat % 2 ? 26 : -26), this.y - this.h - 16 - beat * 10, beat % 2 ? 'OOH!' : 'OOH OOH!', '#ffd23f', 20);
+            world.fx.shake(3);
+          }
+          if (m.t > 0.5) { m.phase = 'smash'; m.t = 0; }
+        } else {
+          m.airT = (m.airT || 0) + dt;
+          if (!this.onGround && m.airT < 1) { this.vy = Math.max(this.vy, 900); m.t = 0; } // slam down first
+          else if (!m.fired && m.t > 0.06) {
+            m.fired = true;
+            SS.Audio.bigSlap();
+            world.fx.shake(18);
+            world.fx.burst(this.x, this.y, '#b08968', 30, 420);
+            world.fx.text(this.x, this.y - this.h - 30, 'GROUND POUND!', '#ff4d6d', 34);
+            this.hitList.clear();
+            this.doHits(world, { x: this.x - 110, y: this.y - 90, w: 220, h: 100 },
+              { dmg: 10, kbx: 300, kby: -520, stun: 0.6, big: true }, true);
+            for (const d of [-1, 1]) {
+              world.spawn(new SS.Projectile('quake', this.x + d * 50, this.y - 14, d * 560, 0, this.team,
+                { dmg: 12, stun: 0.6, kbx: 260, kby: -520, big: true, pierce: true, props: true, life: 0.9 }));
+            }
+          }
+          if (m.t > 0.4) finish();
+        }
+      } else if (m.kind === 'sprint') {
+        // athlete: zoom forward, skid and turn, zoom back - hits everyone on the way, twice
+        const leg = m.t < 0.08 ? 0 : m.t < 0.36 ? 1 : m.t < 0.46 ? 'skid' : m.t < 0.74 ? 2 : 'stop';
+        if (leg === 0) this.vx = 0;
+        else if (leg === 1 || leg === 2) {
+          if (m.leg !== leg) { m.leg = leg; this.hitList.clear(); SS.Audio.whiff(); }
+          this.vx = this.facing * 1150;
+          this.invuln = 0.05;
+          if (Math.random() < 0.7) world.fx.burst(this.x - this.facing * 30, this.y - 10, '#ffffff', 1, 80);
+          this.doHits(world, this.reachBox(40), { dmg: 12, kbx: 380, kby: -420, stun: 0.55, big: true });
+        } else if (leg === 'skid') {
+          this.vx = approach(this.vx, 0, 12000 * dt);
+          if (!m.turned) {
+            m.turned = true;
+            this.facing = -this.facing;
+            world.fx.text(this.x, this.y - this.h - 20, 'ZOOM!', '#9ef01a', 26);
+            world.fx.burst(this.x, this.y, '#d4a373', 10, 200);
+          }
+        } else {
+          this.vx = approach(this.vx, 0, 4000 * dt);
+          if (m.t > 0.85) finish();
+        }
       } else if (m.kind === 'coconuts') {
         if (!m.fired && m.t > 0.3) {
           m.fired = true;
@@ -413,6 +489,18 @@
         world.fx.text(this.x, this.y - this.h - 10, 'BLOCKED', '#9bf6ff', 18);
         if (this.hp <= 0) this.knockOut(world);
         return 'blocked';
+      }
+      if (this.def.armor && !hit.big && !hit.sleep && hit.dmg < ARMOR_MAX) {
+        // super armor: it hurts, but it doesn't stop this sloth
+        this.hp -= hit.dmg;
+        this.vx += hit.kbx * 0.15 / this.def.weight;
+        this.flash = 0.1;
+        this.meter = Math.min(SPECIAL_COST, this.meter + 6);
+        SS.Audio.hurt();
+        if (Math.random() < 0.35) world.fx.text(this.x, this.y - this.h - 10, U.choice(['*shrug*', 'TICKLES!', 'IS THAT ALL?']), '#ffd23f', 18);
+        if (this.mercy) this.invuln = this.mercy;
+        if (this.hp <= 0) this.knockOut(world);
+        return 'hit';
       }
       this.hp -= hit.dmg;
       this.vx = hit.kbx / this.def.weight;
@@ -474,8 +562,12 @@
       }
       if (m.kind === 'shoot') return -0.05 - Math.max(0, 1 - Math.abs(m.t - 0.06) / 0.08) * 0.35; // recoil kick
       if (m.kind === 'flurry') return -1.0 + Math.sin(m.t * 45) * 1.3;
-      if (m.kind === 'dash') return 0.05;
+      if (m.kind === 'dash' || m.kind === 'sprint') return 0.05;
       if (m.kind === 'bellyflop') return -2.4;
+      if (m.kind === 'quake') {
+        if (m.phase === 'start') return Math.floor(m.t / 0.12) % 2 ? 1.9 : 0.9; // pounding the chest
+        return m.fired ? 1.35 : -2.5; // fist up, then SMASH
+      }
       return -1.6 + Math.sin(m.t * 20) * 0.4;
     }
 
@@ -483,7 +575,7 @@
       const m = this.move;
       if (!m) return false;
       if (m.def) return m.t >= m.def.startup && m.t < m.def.startup + m.def.active + 0.05;
-      return m.kind === 'flurry' || m.kind === 'dash';
+      return m.kind === 'flurry' || m.kind === 'dash' || m.kind === 'sprint';
     }
 
     // Everything needed to draw this sloth, as a small plain object.
@@ -541,7 +633,17 @@
         ctx.ellipse(s.x, s.y - h * 0.5, w * 0.95, h * 0.62, 0, 0, Math.PI * 2);
         ctx.fill();
       }
-      if (s.co && Math.abs(s.vx) > 40) {
+      if (s.mk === 'sprint' && Math.abs(s.vx) > 500) {
+        // athlete special: blurry after-images
+        ctx.save();
+        for (let i = 3; i >= 1; i--) {
+          ctx.globalAlpha = 0.12 * (4 - i);
+          SS.Art.sloth(ctx, { x: s.x - Math.sign(s.vx) * i * 30, y: s.y, facing: s.f, scale: def.scale, look: def.look, t: s.t, pose: 'walk', walk: s.walk + i });
+        }
+        ctx.restore();
+      }
+      const zoom = Math.abs(s.vx) > 260 && (s.st === 'idle' || s.st === 'attack');
+      if ((s.co && Math.abs(s.vx) > 40) || zoom) {
         ctx.strokeStyle = 'rgba(255,255,255,0.7)';
         ctx.lineWidth = 3;
         for (let i = 0; i < 3; i++) {
@@ -587,7 +689,7 @@
   };
 
   // ---------- Projectiles (DJ notes, coconuts, monkey throws) ----------
-  const PROJ_WORD = { bullet: 'POW!', note: 'LULLABY!', magic: 'ZAP!', ice: 'FROZEN!', cannonball: 'KABOOM!', bananaBomb: 'KA-SPLAT!', pizza: 'SPLAT!', pie: 'SPLAT!', balloon: 'SPLOOSH!', bubble: 'POP!', peach: 'BONK!', lantern: 'FWUMP!' };
+  const PROJ_WORD = { quake: 'RUMBLE!', bullet: 'POW!', note: 'LULLABY!', magic: 'ZAP!', ice: 'FROZEN!', cannonball: 'KABOOM!', bananaBomb: 'KA-SPLAT!', pizza: 'SPLAT!', pie: 'SPLAT!', balloon: 'SPLOOSH!', bubble: 'POP!', peach: 'BONK!', lantern: 'FWUMP!' };
   const PROJ_COLOR = { bullet: '#ffd23f', pizza: '#f4c542', pie: '#fff8e7', balloon: '#4cc9f0', bubble: '#bde0fe', peach: '#ffab91', lantern: '#e63946' };
   SS.Projectile = class {
     constructor(kind, x, y, vx, vy, team, hit) {
@@ -628,7 +730,7 @@
       this.y += this.vy * dt;
       if (this.life <= 0) this.dead = true;
       if (this.kind === 'magic' || this.kind === 'ice') this.y = Math.min(this.y, world.groundY - 12);
-      if (this.y >= world.groundY - 8 && !['note', 'magic', 'ice'].includes(this.kind)) {
+      if (this.y >= world.groundY - 8 && !['note', 'magic', 'ice', 'quake'].includes(this.kind)) {
         this.dead = true;
         if (this.hit.explode) {
           // banana bomb: splash everyone nearby
@@ -664,6 +766,7 @@
           world.fx.text(this.x, this.y - 30, PROJ_WORD[this.kind] || 'BONK!', '#fff', 26);
           SS.Audio.slap();
           world.fx.shake(this.kind === 'bullet' ? 3 : 6);
+          if (h.pierce) continue; // shockwaves roll on through everyone
           this.dead = true;
           break;
         }

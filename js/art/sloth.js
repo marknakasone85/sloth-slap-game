@@ -40,7 +40,10 @@ SS.Art = SS.Art || {};
     }
   }
 
-  function drawArm(ctx, sx, sy, angle, fur, dark, claw, len, slapping, gun) {
+  // style: { buff: true, band: color } for the muscly gorilla sloth
+  function drawArm(ctx, sx, sy, angle, fur, dark, claw, len, slapping, gun, style) {
+    const buff = style && style.buff;
+    const k = buff ? 1.6 : 1; // arm thickness
     ctx.save();
     ctx.translate(sx, sy);
     ctx.rotate(angle);
@@ -56,18 +59,32 @@ SS.Art = SS.Art || {};
     }
     ctx.fillStyle = fur;
     ctx.beginPath();
-    ctx.roundRect(-4, -7, len, 14, 7);
+    ctx.roundRect(-4, -7 * k, len, 14 * k, 7 * k);
     ctx.fill();
+    if (buff) {
+      // huge bicep + forearm bulges
+      ellipse(ctx, len * 0.3, -3, 15, 14);
+      ellipse(ctx, len * 0.72, 1, 11, 11);
+      ctx.strokeStyle = dark;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(len * 0.3, -1, 9, -2.4, -0.7);
+      ctx.stroke();
+      if (style.band) {
+        ctx.fillStyle = style.band; // gold wristband
+        ctx.fillRect(len - 14, -10, 6, 20);
+      }
+    }
     ctx.fillStyle = dark;
-    ellipse(ctx, len - 2, 0, 9, 8);
+    ellipse(ctx, len - 2, 0, 9 * k * 0.9, 8 * k * 0.9);
     // three long goofy claws
     ctx.strokeStyle = claw;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = buff ? 4 : 3;
     ctx.lineCap = 'round';
     for (let i = -1; i <= 1; i++) {
       ctx.beginPath();
-      ctx.moveTo(len + 4, i * 4.5);
-      ctx.quadraticCurveTo(len + 14, i * 5 + 2, len + 13, i * 5 + 9);
+      ctx.moveTo(len + 4, i * 4.5 * k);
+      ctx.quadraticCurveTo(len + 14, i * 5 * k + 2, len + 13, i * 5 * k + 9);
       ctx.stroke();
     }
     if (gun) drawGun(ctx, len, gun);
@@ -107,7 +124,7 @@ SS.Art = SS.Art || {};
   }
 
   function mouth(ctx, o, C) {
-    const m = o.mouth || (o.pose === 'win' ? 'grin' : 'smile');
+    const m = o.mouth || (o.pose === 'win' || o.look.build === 'buff' ? 'grin' : 'smile');
     ctx.strokeStyle = C('#3a2015');
     ctx.fillStyle = C('#3a2015');
     ctx.lineWidth = 2.5;
@@ -241,6 +258,53 @@ SS.Art = SS.Art || {};
       ctx.fillRect(-6, -66, 9, 24);
       ctx.fillStyle = C('#ffffff');
       ctx.fillRect(-6, -50, 9, 3);
+    } else if (acc === 'gorilla') {
+      // grumpy unibrow, a throbbing forehead vein and a gold chain with a banana
+      ctx.fillStyle = C('#1a1418');
+      ctx.beginPath();
+      ctx.moveTo(-4, -102); ctx.lineTo(14, -95); ctx.lineTo(31, -102);
+      ctx.lineTo(31, -97); ctx.lineTo(14, -90); ctx.lineTo(-4, -97);
+      ctx.closePath();
+      ctx.fill();
+      const pulse = 1 + Math.sin((o.t || 0) * 9) * 0.15;
+      ctx.strokeStyle = C('#ff4d6d');
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 4; i++) {
+        const a = i * Math.PI / 2 + 0.785;
+        const vx = 26 + Math.cos(a) * 5 * pulse, vy = -110 + Math.sin(a) * 5 * pulse;
+        ctx.beginPath();
+        ctx.arc(vx, vy, 3 * pulse, a + 1.9, a + 4.4);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = C(ac);
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(8, -78, 24, 0.35, Math.PI - 0.35);
+      ctx.stroke();
+      ctx.fillStyle = C(ac);
+      ctx.beginPath();
+      ctx.moveTo(4, -52); ctx.quadraticCurveTo(10, -44, 18, -52); ctx.quadraticCurveTo(10, -48, 4, -52);
+      ctx.fill();
+    } else if (acc === 'athlete') {
+      // sweatband + racing bib with a big number 1
+      ctx.fillStyle = C('#ffffff');
+      ctx.beginPath(); ctx.roundRect(-18, -109, 52, 9, 3); ctx.fill();
+      ctx.fillStyle = C(ac);
+      ctx.fillRect(-18, -106, 52, 3);
+      const flap = Math.sin((o.t || 0) * 12) * 3;
+      ctx.fillStyle = C('#ffffff');
+      ctx.beginPath(); ctx.moveTo(-16, -106); ctx.lineTo(-30, -110 + flap); ctx.lineTo(-28, -101 + flap); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = C('#ffffff');
+      ctx.beginPath(); ctx.roundRect(-3, -60, 22, 20, 3); ctx.fill();
+      ctx.strokeStyle = C(ac);
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = C('#1a1a1a');
+      ctx.font = 'bold 15px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('1', 8, -49);
     } else if (acc === 'helmet') {
       ctx.fillStyle = C(ac);
       ctx.beginPath();
@@ -279,12 +343,16 @@ SS.Art = SS.Art || {};
     const lift1 = pose === 'walk' ? Math.max(0, Math.sin(walk)) * 7 : 0;
     const lift2 = pose === 'walk' ? Math.max(0, -Math.sin(walk)) * 7 : 0;
     const bodyBob = pose === 'walk' ? Math.abs(Math.sin(walk)) * -3 : 0;
+    const buff = L.build === 'buff';
+    const slim = L.build === 'slim';
+    const armStyle = buff ? { buff: true, band: C(L.accent || '#ffd23f') } : null;
 
     // Back arm
     let back = o.backArm !== undefined ? o.backArm : REST + 0.25 + Math.sin(t * 2) * 0.05;
     if (pose === 'block') back = -0.9;
     if (pose === 'win') back = -2.2 + Math.sin(t * 8) * 0.3;
-    drawArm(ctx, -8, -62 + bodyBob, back, C(L.furDark), C(L.furDark), C('#f4e7c5'), 40, false);
+    drawArm(ctx, buff ? -14 : -8, -62 + bodyBob, back, C(L.furDark), C(L.furDark), C('#f4e7c5'), 40, false, null,
+      armStyle && { buff: true });
 
     // Legs
     ctx.fillStyle = C(L.furDark);
@@ -299,14 +367,44 @@ SS.Art = SS.Art || {};
       ctx.moveTo(lx - 3, ly - 1); ctx.lineTo(lx + 3, ly + 2);
       ctx.stroke();
     }
+    if (L.shoes) {
+      // running shoes
+      for (const [lx, ly] of [[-12, -lift1], [12, -lift2]]) {
+        ctx.fillStyle = C(L.shoes);
+        ctx.beginPath(); ctx.roundRect(lx - 9, ly - 9, 22, 10, 5); ctx.fill();
+        ctx.fillStyle = C('#ffffff');
+        ctx.fillRect(lx - 9, ly - 2, 22, 3);
+        ctx.fillRect(lx - 2, ly - 8, 2, 5);
+        ctx.fillRect(lx + 3, ly - 8, 2, 5);
+      }
+    }
 
     ctx.translate(0, bodyBob);
 
     // Body
     ctx.fillStyle = C(L.fur);
-    ellipse(ctx, 0, -45, 32, 40);
-    ctx.fillStyle = C(L.belly);
-    ellipse(ctx, 7, -40, 20, 27);
+    if (buff) {
+      // sloth on steroids: massive chest and shoulders, little waist
+      ellipse(ctx, 0, -28, 26, 26);
+      ellipse(ctx, 2, -60, 42, 30);
+      ctx.fillStyle = C(L.furDark);
+      ellipse(ctx, -24, -62, 14, 20, 0.3); // silver-back shading
+      ctx.fillStyle = C(L.belly);
+      ellipse(ctx, 0, -62, 14, 11, 0.15); // pecs
+      ellipse(ctx, 22, -62, 14, 11, -0.15);
+      ctx.fillStyle = C(L.belly);
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 2; c++) {
+          ctx.beginPath();
+          ctx.roundRect(1 + c * 11, -46 + r * 11, 9, 9, 3);
+          ctx.fill();
+        }
+      }
+    } else {
+      ellipse(ctx, 0, -45, slim ? 27 : 32, 40);
+      ctx.fillStyle = C(L.belly);
+      ellipse(ctx, 7, -40, slim ? 16 : 20, 27);
+    }
     // shaggy fur strokes
     ctx.strokeStyle = C(L.furDark);
     ctx.lineWidth = 2;
@@ -352,7 +450,7 @@ SS.Art = SS.Art || {};
     if (pose === 'jump' && o.arm === undefined) arm = -0.6;
     const gun = o.gun ? { color: L.accent || '#e63946', flash: o.muzzle, C } : null;
     if (gun) arm = o.arm !== undefined ? o.arm : -0.05;
-    drawArm(ctx, 12, -62, arm, C(L.fur), C(L.furDark), C('#f4e7c5'), 44, o.slapping, gun);
+    drawArm(ctx, buff ? 20 : 12, -62, arm, C(L.fur), C(L.furDark), C('#f4e7c5'), 44, o.slapping, gun, armStyle);
 
     ctx.restore();
   };

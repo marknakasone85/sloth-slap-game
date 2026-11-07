@@ -64,7 +64,7 @@
       const rows = [
         ['', 'Player 1', 'Player 2', 'Gamepad'],
         ['Move', 'A / D', '← / →', 'D-pad / stick'],
-        ['Jump', 'W', '↑', 'A'],
+        ['Jump (Zane: 2x)', 'W', '↑', 'A'],
         ['Block (hold)', 'S', '↓', 'Down / LB'],
         ['Slap', 'F', ', (comma)', 'X'],
         ['Big Slap', 'G', '. (period)', 'Y'],

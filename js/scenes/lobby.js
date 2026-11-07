@@ -425,6 +425,25 @@
       }
     }
 
+    // Side panel next to the sloth card: FAST/POWER/BALANCED, stat bars and the sloth's trait.
+    drawStats(ctx, c, x, y) {
+      const w = 236;
+      UI.panel(ctx, x, y, w, 270);
+      if (UI.roleChip) UI.roleChip(ctx, c.role, x + 12, y + 12);
+      (SS.STAT_BARS || []).forEach(([label, f], i) => {
+        const sy = y + 50 + i * 38;
+        UI.text(ctx, label, x + 14, sy, 13, '#ffd23f');
+        UI.bar(ctx, x + 14, sy + 10, w - 28, 10, Math.max(0.06, Math.min(1, f(c))), SS.ROLE_COLORS[c.role] || '#ffd23f');
+      });
+      // trait, wrapped onto short lines
+      const lines = [];
+      for (const word of (c.trait || '').split(' ')) {
+        if (lines.length && (lines[lines.length - 1] + ' ' + word).length <= 30) lines[lines.length - 1] += ' ' + word;
+        else lines.push(word);
+      }
+      lines.slice(0, 3).forEach((ln, i) => UI.text(ctx, ln, x + w / 2, y + 210 + i * 17, 13, '#9bf6ff', 'center'));
+    }
+
     draw(ctx) {
       bg(ctx, this.t);
       UI.outlineText(ctx, 'JOIN A WI-FI GAME', W / 2, 50, 38, '#ffd23f', 'center');
@@ -455,6 +474,7 @@
       const c = SS.CHARACTERS[this.cur];
       UI.panel(ctx, W / 2 - 170, 120, 340, 270);
       SS.Art.sloth(ctx, { x: W / 2, y: 330, look: c.look, scale: 1.3 / Math.max(1, c.scale), t: this.t, pose: this.isReady ? 'win' : 'idle' });
+      this.drawStats(ctx, c, W / 2 + 182, 120);
       UI.outlineText(ctx, `◀  ${c.name}  ▶`, W / 2, 360, 22, '#ffffff', 'center');
       UI.text(ctx, c.specialName, W / 2, 380, 13, '#9bf6ff', 'center');
       ctx.fillStyle = this.isReady ? 'rgba(82,224,122,0.25)' : '#ffd23f';

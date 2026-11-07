@@ -335,7 +335,28 @@
   // ---------------- more thrown things ----------------
   const baseProjectile = A.projectile;
   A.projectile = function (ctx, kind, x, y, t, dir = 1) {
-    if (kind === 'acorn') {
+    if (kind === 'quake') {
+      // gorilla ground-pound shockwave: a rolling wall of dust and rocks
+      // (animated from x, so it also moves on Wi-Fi guests' screens)
+      const ph = x * 0.06;
+      ctx.fillStyle = 'rgba(214,180,130,0.55)';
+      el(ctx, x - dir * 14, y + 6, 40, 16);
+      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(x - dir * 4, y + 14, 24, Math.PI * 1.08, Math.PI * 1.92);
+      ctx.stroke();
+      ctx.fillStyle = '#7a5c3e';
+      for (let i = 0; i < 5; i++) {
+        const px = x - dir * i * 11;
+        const py = y + 10 - Math.abs(Math.sin(ph + i * 1.3)) * 30 * (1 - i * 0.15);
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(ph + i);
+        ctx.fillRect(-5, -4, 10, 8);
+        ctx.restore();
+      }
+    } else if (kind === 'acorn') {
       ctx.fillStyle = '#8d5a2b'; el(ctx, x, y + 2, 7, 8);
       ctx.fillStyle = '#5c3b1e'; el(ctx, x, y - 5, 8, 4);
     } else if (kind === 'feather') {

@@ -3,10 +3,18 @@
   const UI = SS.UI;
   const I = SS.Input;
   const W = SS.W, H = SS.H;
-  // sloth cards: rows of 5 (9 sloths = 2 rows)
-  const CARD_W = 160, CARD_H = 150, GAP = 14, PER_ROW = 5, ROW_GAP = 10;
-  const CARD_Y = 70;
-  const DETAILS_Y = CARD_Y + 2 * CARD_H + ROW_GAP + 12;
+  // sloth cards: rows of 6 (11 sloths = 2 rows)
+  const CARD_W = 146, CARD_H = 146, GAP = 8, PER_ROW = 6, ROW_GAP = 8;
+  const CARD_Y = 60;
+  const DETAILS_Y = CARD_Y + 2 * CARD_H + ROW_GAP + 10;
+  // stat bars: how far each stat fills its bar (the extremes are the fastest / strongest sloths)
+  const STAT_BARS = [
+    ['Speed', (c) => c.speed / 400],
+    ['Slap speed', (c) => ((c.atk || 1) - 0.45) / 1.05],
+    ['Power', (c) => c.power / 1.8],
+    ['Health', (c) => c.hp / 150],
+  ];
+  SS.STAT_BARS = STAT_BARS;
 
   const STAGES = (SS.STAGES = [
     { name: 'Jungle Arena', theme: 'jungle' },
@@ -31,6 +39,18 @@
   const P1KEYS = { left: ['KeyA', 'Pad0Left'], right: ['KeyD', 'Pad0Right'], up: ['KeyW', 'Pad0Up'], down: ['KeyS', 'Pad0Down'], ok: ['KeyF', 'Space', 'Pad0A'], back: ['KeyG', 'Pad0B'] };
   const P2KEYS = { left: ['ArrowLeft', 'Pad1Left'], right: ['ArrowRight', 'Pad1Right'], up: ['ArrowUp', 'Pad1Up'], down: ['ArrowDown', 'Pad1Down'], ok: ['Comma', 'Enter', 'Numpad1', 'Pad1A'], back: ['Period', 'Pad1B'] };
   const rowMove = (cur, d, n) => { const t = cur + d * PER_ROW; return t >= 0 && t < n ? t : cur; };
+
+  // Little colored tag: FAST / POWER / BALANCED
+  function roleChip(ctx, role, x, y) {
+    if (!role) return;
+    const w = role.length * 7.5 + 12;
+    ctx.fillStyle = SS.ROLE_COLORS[role] || '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, 17, 8);
+    ctx.fill();
+    UI.text(ctx, role, x + w / 2, y + 9, 11, '#2b193d', 'center');
+  }
+  SS.UI.roleChip = roleChip;
 
   SS.SelectScene = class {
     constructor(opts) {
@@ -263,7 +283,9 @@
         t: this.t + i, pose: hl ? 'win' : 'idle',
       });
       ctx.restore();
-      UI.outlineText(ctx, c.name, r.x + r.w / 2, r.y + r.h - 22, 14, '#ffffff', 'center');
+      const locked = (p1 && this.locked[0]) || (p2 && this.locked[1]);
+      if (!locked) roleChip(ctx, c.role, r.x + 6, r.y + 6);
+      UI.outlineText(ctx, c.name, r.x + r.w / 2, r.y + r.h - 22, 13, '#ffffff', 'center');
       UI.text(ctx, c.specialName, r.x + r.w / 2, r.y + r.h - 8, 10, '#9bf6ff', 'center');
     }
 
@@ -278,16 +300,18 @@
 
     drawDetails(ctx, c, cx, color, tag) {
       const y = DETAILS_Y;
-      const w = this.twoPlayerPick ? 300 : 560;
-      UI.panel(ctx, cx - w / 2, y, w, 114);
-      UI.outlineText(ctx, `${tag}: ${c.name}`, cx, y + 17, 18, color, 'center');
-      UI.text(ctx, '"' + c.quip + '"', cx, y + 39, this.twoPlayerPick ? 10 : 13, '#eeeeee', 'center');
-      const stats = [['Speed', c.speed / 260], ['Power', c.power / 1.4], ['Health', c.hp / 135]];
-      stats.forEach(([label, v], i) => {
-        const sy = y + 60 + i * 17;
-        UI.text(ctx, label, cx - w / 2 + 24, sy, 13, '#ffd23f');
-        UI.bar(ctx, cx - w / 2 + 100, sy - 5, w - 130, 9, v, color);
+      const two = this.twoPlayerPick;
+      const w = two ? 300 : 560;
+      UI.panel(ctx, cx - w / 2, y, w, 140);
+      UI.outlineText(ctx, `${tag}: ${c.name}`, cx, y + 16, 18, color, 'center');
+      if (!two) roleChip(ctx, c.role, cx + w / 2 - 84, y + 8);
+      UI.text(ctx, '"' + c.quip + '"', cx, y + 36, two ? 10 : 13, '#eeeeee', 'center');
+      STAT_BARS.forEach(([label, f], i) => {
+        const sy = y + 55 + i * 15;
+        UI.text(ctx, label, cx - w / 2 + 20, sy, 12, '#ffd23f');
+        UI.bar(ctx, cx - w / 2 + 96, sy - 4, w - 120, 8, Math.max(0.06, Math.min(1, f(c))), SS.ROLE_COLORS[c.role] || color);
       });
+      UI.text(ctx, c.trait || '', cx, y + 127, two ? 10 : 13, '#9bf6ff', 'center');
     }
 
     drawPickedSloths(ctx) {

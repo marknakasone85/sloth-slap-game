@@ -3,17 +3,17 @@
   const U = SS.U;
   const GRAV = 1900;
 
-  const BIRD = { art: 'bird', behavior: 'flyer', hp: 5, speed: 130, w: 50, h: 40, dmg: 8, score: 150 };
+  const BIRD = { art: 'bird', behavior: 'flyer', hp: 4, speed: 130, w: 50, h: 40, dmg: 8, score: 150 };
   const TYPES = {
     beetle: { art: 'beetle', behavior: 'walker', hp: 12, speed: 75, w: 46, h: 34, dmg: 8, score: 100 },
     toucan: Object.assign({}, BIRD, { colors: { color: '#222', wing: '#111', belly: '#fff6a5', beak: '#ff9f1c' } }),
     seagull: Object.assign({}, BIRD, { colors: { color: '#eeeeee', wing: '#9e9e9e', belly: '#ffffff', beak: '#ffb703' } }),
-    parrot: Object.assign({}, BIRD, { hp: 5, speed: 160, colors: { color: '#e63946', wing: '#3a86ff', belly: '#ffd23f', beak: '#333' } }),
+    parrot: Object.assign({}, BIRD, { hp: 4, speed: 160, colors: { color: '#e63946', wing: '#3a86ff', belly: '#ffd23f', beak: '#333' } }),
     crab: { art: 'crab', behavior: 'crab', hp: 22, speed: 90, w: 64, h: 46, dmg: 9, score: 200, leash: 380 },
     monkey: { art: 'monkey', behavior: 'thrower', hp: 18, speed: 110, w: 46, h: 92, dmg: 7, score: 250, leash: 260 },
     pigeon: Object.assign({}, BIRD, { colors: { color: '#8d8fa8', wing: '#5f6178', belly: '#c3c5d6', beak: '#3a3a3a' } }),
-    crane: Object.assign({}, BIRD, { hp: 5, speed: 160, colors: { color: '#f5f5f5', wing: '#222', belly: '#ffffff', beak: '#d4a017' } }),
-    drone: { art: 'drone', behavior: 'flyer', hp: 5, speed: 150, w: 64, h: 52, dmg: 9, score: 200 },
+    crane: Object.assign({}, BIRD, { hp: 4, speed: 160, colors: { color: '#f5f5f5', wing: '#222', belly: '#ffffff', beak: '#d4a017' } }),
+    drone: { art: 'drone', behavior: 'flyer', hp: 4, speed: 150, w: 64, h: 52, dmg: 9, score: 200 },
     // monkey variants (same "keep distance and throw" brain, different looks and snacks)
     chef: { art: 'monkey', behavior: 'thrower', hp: 18, speed: 110, w: 46, h: 92, dmg: 7, score: 250, leash: 260,
       projectile: 'pizza', colors: { hat: 'chef' } },
@@ -48,10 +48,10 @@
     astroRoo: { art: 'kangaroo', behavior: 'hopper', hp: 24, speed: 130, w: 48, h: 110, dmg: 10, score: 300,
       colors: { helmet: true, color: '#b07850' } },
     goat: { art: 'goat', behavior: 'charger', hp: 22, speed: 120, w: 60, h: 50, dmg: 12, score: 250 },
-    eagle: Object.assign({}, BIRD, { hp: 5, speed: 170, colors: { color: '#6b4226', wing: '#4a2c17', belly: '#f5f5f5', beak: '#ffd23f' } }),
+    eagle: Object.assign({}, BIRD, { hp: 4, speed: 170, colors: { color: '#6b4226', wing: '#4a2c17', belly: '#f5f5f5', beak: '#ffd23f' } }),
     snowMonkey: { art: 'monkey', behavior: 'thrower', w: 46, h: 92, speed: 110, leash: 260, hp: 20, dmg: 7, score: 250, projectile: 'snowball', colors: { fur: '#c9c4bd', face: '#f4a6a6' } },
-    bat: { art: 'bat', behavior: 'flyer', hp: 5, speed: 150, w: 50, h: 42, dmg: 8, score: 150 },
-    fireBat: { art: 'bat', behavior: 'flyer', hp: 5, speed: 160, w: 50, h: 42, dmg: 9, score: 175,
+    bat: { art: 'bat', behavior: 'flyer', hp: 4, speed: 150, w: 50, h: 42, dmg: 8, score: 150 },
+    fireBat: { art: 'bat', behavior: 'flyer', hp: 4, speed: 160, w: 50, h: 42, dmg: 9, score: 175,
       colors: { color: '#9c2f1b', eyes: '#ffd23f' }, gore: { blood: '#ff7b00', sound: 'squeak', word: 'SIZZLE!' } },
     knightMonkey: { art: 'monkey', behavior: 'thrower', w: 46, h: 92, speed: 110, leash: 260, hp: 26, dmg: 9, score: 300, projectile: 'cannonball', colors: { hat: 'knight' } },
     fireBeetle: { art: 'beetle', behavior: 'walker', hp: 14, speed: 95, w: 46, h: 34, dmg: 9, score: 125,
@@ -59,12 +59,12 @@
     lavaBlob: { art: 'blob', behavior: 'walker', hp: 16, speed: 70, w: 50, h: 40, dmg: 10, score: 200, bouncy: true,
       colors: { color: '#ff7b00', glow: true }, gore: { blood: '#ff9f1c', sound: 'squish', word: 'SPLORCH!' } },
     raptor: { art: 'raptor', behavior: 'charger', hp: 20, speed: 150, w: 60, h: 64, dmg: 11, score: 300 },
-    ptero: { art: 'ptero', behavior: 'flyer', hp: 5, speed: 170, w: 66, h: 50, dmg: 9, score: 200 },
+    ptero: { art: 'ptero', behavior: 'flyer', hp: 4, speed: 170, w: 66, h: 50, dmg: 9, score: 200 },
     caveMonkey: { art: 'monkey', behavior: 'thrower', w: 46, h: 92, speed: 110, leash: 260, hp: 20, dmg: 8, score: 250, projectile: 'rock', colors: { fur: '#8a5a3c' } },
     alien: { art: 'blob', behavior: 'walker', hp: 16, speed: 80, w: 50, h: 46, dmg: 9, score: 200, bouncy: true,
       colors: { color: '#7cd63b', alien: true }, gore: { blood: '#7cd63b', sound: 'beep', word: 'BLORP!' } },
     spaceMonkey: { art: 'monkey', behavior: 'thrower', w: 46, h: 92, speed: 110, leash: 260, hp: 22, dmg: 8, score: 300, projectile: 'goo', colors: { hat: 'astro' } },
-    miniUfo: { art: 'ufo', behavior: 'flyer', hp: 5, speed: 150, w: 74, h: 48, dmg: 9, score: 250, scale: 0.8 },
+    miniUfo: { art: 'ufo', behavior: 'flyer', hp: 4, speed: 150, w: 74, h: 48, dmg: 9, score: 250, scale: 0.8 },
 
     yeti: {
       art: 'monkey', behavior: 'boss', boss: true, hp: 320, speed: 150, w: 90, h: 185, dmg: 14, score: 4000,
@@ -95,7 +95,7 @@
     scorpion: { art: 'scorpion', behavior: 'crab', hp: 20, speed: 100, w: 70, h: 44, dmg: 10, score: 225, leash: 380 },
     mummy: { art: 'mummy', behavior: 'walker', hp: 30, speed: 55, w: 44, h: 112, dmg: 11, score: 250 },
     camel: { art: 'camel', behavior: 'thrower', hp: 26, speed: 90, w: 80, h: 96, dmg: 8, score: 275, leash: 240, projectile: 'spit' },
-    spider: { art: 'spider', behavior: 'dangler', hp: 5, speed: 0, w: 44, h: 42, dmg: 9, score: 175 },
+    spider: { art: 'spider', behavior: 'dangler', hp: 4, speed: 0, w: 44, h: 42, dmg: 9, score: 175 },
     crystalCrab: { art: 'crab', behavior: 'crab', hp: 22, speed: 95, w: 64, h: 46, dmg: 9, score: 200, leash: 380,
       colors: { color: '#4cc9f0' }, gore: { blood: '#9bf6ff', sound: 'bloop', word: 'CRACK!' } },
     rat: { art: 'rat', behavior: 'walker', hp: 12, speed: 170, w: 56, h: 34, dmg: 7, score: 150 },

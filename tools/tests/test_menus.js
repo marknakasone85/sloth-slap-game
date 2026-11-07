@@ -5,7 +5,7 @@ tap('Enter'); frames(3);
 check(sceneName() === 'Mode(campaign)', 'Campaign opens the "how to play" menu');
 tap('Enter'); frames(3);
 check(sceneName() === 'Select(campaign,char)', 'Solo opens sloth select');
-check(SS.CHARACTERS.length === 9, 'there are 9 sloths');
+check(SS.CHARACTERS.length === 11, 'there are 11 sloths');
 
 // every map can be chosen, even in a brand-new browser
 localStorage.clear();

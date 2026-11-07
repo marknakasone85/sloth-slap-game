@@ -42,19 +42,24 @@ A comical cartoon slap-'em-up starring a crew of sloths.
   - **vs CPU** (Sleepy / Grumpy / Savage) or **2 Players** on one keyboard.
   - **Wi-Fi Battle, 2 to 4 sloths:** free-for-all, and the last sloth standing wins the round (if time runs out, the most health left wins). The host can add **CPU sloths** in the lobby (C = add, X = remove) to fill empty spots. Late arrivals jump in at the next round. After a match: **Rematch** or **Back to Lobby** (same join code, nobody has to rejoin).
 
-There are nine sloths, each with their own stats and special move:
+There are eleven sloths. Each one is **FAST**, **POWER** or **BALANCED**, and it really shows:
+fast sloths run, jump and slap quicker but hit lightly and have less health; power sloths are slow
+with a slower wind-up, but every slap sends enemies flying. The select screen shows a tag and stat bars
+(Speed, Slap speed, Power, Health) for each one.
 
-| Sloth | Style | Special |
-|---|---|---|
-| Sir Slapsalot | Balanced | Triple Tea-Time Slap (3-hit flurry) |
-| Speedy Sue | Fast, fragile | Turbo Smack Dash |
-| Big Chonk | Slow, heavy hitter | Mega Belly Flop (shockwave) |
-| DJ Snooze | Zoner | Lullaby Bass Drop (puts the target to sleep) |
-| Queen Napoleona | All-rounder | Coconut Decree (coconuts rain down) |
-| Sergeant Snooze | Soldier, tough | Banana Barrage (three exploding banana bombs) |
-| Wizzy the Wise | Wizard | Magic Snooze Missiles (three homing missiles) |
-| Captain Clawbeard | Pirate, heavy hitter | Belly Cannon (a huge cannonball) |
-| Frosty Flo | Ice, quick | Brain Freeze Blast (freezes the target solid) |
+| Sloth | Role | What's special | Special move |
+|---|---|---|---|
+| Sir Slapsalot | Balanced | No weak spots | Triple Tea-Time Slap (3-hit flurry) |
+| Speedy Sue | Fast | Quick feet, quick slaps | Turbo Smack Dash |
+| Big Chonk | Power | Hardly budges when hit | Mega Belly Flop (shockwave) |
+| DJ Snooze | Balanced | Sleepy music | Lullaby Bass Drop (puts the target to sleep) |
+| Queen Napoleona | Balanced | All-rounder | Coconut Decree (coconuts rain down) |
+| Sergeant Snooze | Power | Tough soldier | Banana Barrage (three exploding banana bombs) |
+| Wizzy the Wise | Fast | Nimble wizard | Magic Snooze Missiles (three homing missiles) |
+| Captain Clawbeard | Power | Pirate heavy hitter | Belly Cannon (a huge cannonball) |
+| Frosty Flo | Fast | Ice sloth | Brain Freeze Blast (freezes the target solid) |
+| **Gorilla Gainz** | Power | A sloth on steroids. **Super armor:** small hits hurt but don't stop him. The slowest and the strongest | Chest-Pound Quake (pounds his chest, then shockwaves roll along the ground both ways) |
+| **Zippy Zane** | Fast | Athlete. The fastest by far, quickest slaps, and a **double jump** (press jump again in mid-air) | Lightning Lap (zooms across the screen and back, hitting on both passes) |
 
 ## Play it
 
