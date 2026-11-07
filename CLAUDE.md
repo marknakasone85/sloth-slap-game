@@ -16,6 +16,11 @@ Current content: 17 campaign maps (4 boss-less), 11 sloths (FAST / POWER / BALAN
 - Hosts from this Mac: `./share-on-network.command` (port 8000). Host browser: `http://localhost:8000`. Phones/computers: `http://<Mac Wi-Fi IP>:8000` (the sharing window prints it). 2-4 players including iPhones.
 - Port **8765 belongs to another project** (Survive Bob). Never stop or change it.
 
+## Web version (claude.ai artifact)
+- Published at https://claude.ai/artifact/RvdTuR5M1uRDoi4seWEj4d (private until the owner shares it). The page is `artifact.html`, which is the same game as `index.html` with inline CSS. It sets `window.SS_WEB_ONLY = true`, so `SS.Net.available()` is false and the Wi-Fi menu items show a "needs the home version" message (there is no relay server there).
+- To update it after changing the game, publish `artifact.html` to that URL with the Artifact tool. Pass a `files` map with every `js/...` path mapped to itself, using the same list as the `<script>` tags. When a feature is finished, offer to update the web version.
+- `artifact.html` must list the same scripts as `index.html` (`test_menus.js` checks this). Add new script files to both.
+
 ## Code map (script order lives in `index.html` - plain `<script>` tags so `file://` works; no ES modules)
 | Area | Files |
 |---|---|

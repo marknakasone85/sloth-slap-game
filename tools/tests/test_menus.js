@@ -47,4 +47,14 @@ var bl = new SS.LobbyScene({ mode: 'battle', resume: true, players: [{ id: 0, ci
 tap('KeyC'); tap('KeyC');
 check(bl.players.length === 3 && bl.players[1].cpu !== undefined, 'battle lobby: C adds CPU sloths');
 SS.Net.role = null; SS.Net.status = 'off';
+
+// Web version (artifact.html): same scripts as index.html, and Wi-Fi items explain instead of connecting
+function scriptList(file) { var l = []; readFile(file).replace(/<script src="([^"]+)"/g, function (m, s) { l.push(s); return m; }); return l.join(','); }
+check(scriptList('artifact.html') === scriptList('index.html'), 'artifact.html loads the same scripts as index.html');
+location.protocol = 'https:'; window.SS_WEB_ONLY = true;
+check(!SS.Net.available(), 'web version: Wi-Fi is switched off');
+var wm = new SS.CampaignModeScene({ kind: 'duel' }); SS.Engine.setScene(wm); frames(2);
+wm.tryHost('hostBattle'); var hostInfo = wm.info; wm.info = null; wm.tryJoin();
+check(sceneName() === 'Mode(duel)' && hostInfo && /web version/.test(wm.info[1]), 'web version: Host/Join Wi-Fi show a message');
+window.SS_WEB_ONLY = false; location.protocol = 'file:';
 done('menus');

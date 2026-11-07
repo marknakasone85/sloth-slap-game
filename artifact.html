@@ -1,0 +1,80 @@
+<title>The Sloth Slap Game</title>
+<!--
+  Web version of the game, published as a claude.ai artifact (page + the js/ files).
+  Same game as index.html, minus Wi-Fi play (an artifact has no home relay server).
+  Keep the <script> list identical to index.html - tools/run-tests.sh checks it.
+-->
+<style>
+  /* Layout: one full-screen game canvas, letterboxed 16:9; the game draws its own touch buttons on top. */
+  /* The game keeps one dark jungle-night look in every theme. */
+  :root {
+    color-scheme: dark;
+    --bg: #1b1430;
+    --shadow: rgba(0, 0, 0, 0.6);
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;          /* no page bounce / pull-to-refresh on phones */
+    inset: 0;
+    overscroll-behavior: none;
+  }
+  #touchLayer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+  canvas#game {
+    display: block;
+    max-width: 100%;
+    box-shadow: 0 0 40px var(--shadow);
+    outline: none;
+  }
+</style>
+
+<canvas id="game" aria-label="The Sloth Slap Game"></canvas>
+
+<script>window.SS_WEB_ONLY = true; // no Wi-Fi relay in the web version</script>
+<script src="js/core/engine.js"></script>
+<script src="js/core/input.js"></script>
+<script src="js/core/touch.js"></script>
+<script src="js/core/audio.js"></script>
+<script src="js/core/fx.js"></script>
+<script src="js/art/sloth.js"></script>
+<script src="js/art/enemies.js"></script>
+<script src="js/art/creatures2.js"></script>
+<script src="js/art/creatures3.js"></script>
+<script src="js/art/backgrounds.js"></script>
+<script src="js/data/characters.js"></script>
+<script src="js/data/levels.js"></script>
+<script src="js/entities/fighter.js"></script>
+<script src="js/entities/enemy.js"></script>
+<script src="js/entities/ai.js"></script>
+<script src="js/net/net.js"></script>
+<script src="js/net/sync.js"></script>
+<script src="js/scenes/ui.js"></script>
+<script src="js/scenes/menu.js"></script>
+<script src="js/scenes/select.js"></script>
+<script src="js/scenes/campaign_hud.js"></script>
+<script src="js/scenes/campaign.js"></script>
+<script src="js/scenes/remote.js"></script>
+<script src="js/scenes/remote_duel.js"></script>
+<script src="js/scenes/lobby.js"></script>
+<script src="js/scenes/duel.js"></script>
+<script src="js/main.js"></script>

@@ -6,6 +6,13 @@
   const W = SS.W, H = SS.H;
   const MAX_PLAYERS = 4;
   const isLocalhost = () => ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+  const webOnly = () => !!window.SS_WEB_ONLY; // the web (artifact) version has no Wi-Fi play
+  const WEB_ONLY_INFO = [
+    'Wi-Fi games need the home version',
+    'This web version has no Wi-Fi play. On the computer with the',
+    'game folder, double-click share-on-network.command, then',
+    'everyone opens the address its window shows.',
+  ];
 
   function bg(ctx, t, theme = 'jungle') {
     SS.Art.background(ctx, theme, t * 20, t, 470);
@@ -52,6 +59,7 @@
     enter() { SS.Audio.playMusic('menu'); }
 
     tryHost(mode) {
+      if (webOnly()) { this.info = WEB_ONLY_INFO; return; }
       if (!SS.Net.available() || !isLocalhost()) {
         const where = this.kind === 'duel' ? 'Slapdown Duel > Host Wi-Fi Battle' : 'Campaign > Host Wi-Fi Game';
         this.info = [
@@ -66,6 +74,7 @@
     }
 
     tryJoin() {
+      if (webOnly()) { this.info = WEB_ONLY_INFO; return; }
       if (!SS.Net.available()) {
         this.info = [
           'To join a Wi-Fi game:',
@@ -101,7 +110,8 @@
         return;
       }
       this.menu.draw(ctx);
-      UI.text(ctx, 'Wi-Fi games: everyone must be on the same home Wi-Fi.', W / 2, H - 20, 13, '#dddddd', 'center');
+      UI.text(ctx, webOnly() ? 'Wi-Fi games only work from the home version, not this web version.'
+        : 'Wi-Fi games: everyone must be on the same home Wi-Fi.', W / 2, H - 20, 13, '#dddddd', 'center');
       UI.backButton(ctx);
     }
   };

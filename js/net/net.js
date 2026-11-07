@@ -16,7 +16,8 @@
     lastHeard: 0,
     inflight: 0,
 
-    available() { return location.protocol === 'http:' || location.protocol === 'https:'; },
+    // false in the web version (artifact.html sets SS_WEB_ONLY): it has no relay server
+    available() { return !window.SS_WEB_ONLY && (location.protocol === 'http:' || location.protocol === 'https:'); },
     get active() { return !!this.role; },
 
     async api(path, body) {
