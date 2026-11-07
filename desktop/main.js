@@ -11,9 +11,13 @@ function createWindow() {
     backgroundColor: '#1b1430',
     title: 'The Sloth Slap Game',
     autoHideMenuBar: true,
-    webPreferences: { contextIsolation: true, nodeIntegration: false },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   win.loadFile(path.join(__dirname, '..', 'index.html'));
+
+  // The game never leaves its own page: no pop-up windows and no navigating to other sites.
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('will-navigate', (event) => event.preventDefault());
 
   // F11 (or Cmd+Ctrl+F on macOS) toggles fullscreen.
   win.webContents.on('before-input-event', (event, input) => {

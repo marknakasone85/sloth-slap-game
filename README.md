@@ -1,6 +1,8 @@
-# The Sloth Slap Game
+# The Sloth Slap™ Game
 
 A comical cartoon slap-'em-up starring a crew of sloths.
+
+*Sloth Slap™ is a trademark of Mark A. Nakasone. See [Trademark and copyright](#trademark-and-copyright).*
 
 - **Campaign**: 17 side-scrolling maps. Slap enemies, smash crates for bananas and hibiscus, ring gongs to open gates (each one is also a checkpoint), beat the bosses, and reach the nap hammock. Progress and best scores are saved in the browser.
 
@@ -82,7 +84,7 @@ npm run dist:win     # build dist/*.exe   (best run on Windows)
 
 **Another Mac:** in Finder, right-click the `Sloth-Slap-Game` folder, choose **Share → AirDrop**, and pick the other Mac. Or copy the folder over with a USB stick. On the other Mac, double-click `index.html`.
 
-**Your home network:** double-click **`share-on-network.command`**. A window opens with an address like `http://192.168.1.23:8000`. Anyone on the same Wi-Fi can type that into their web browser to play. Keep the window open while people play; close it to stop sharing.
+**Your home network:** double-click **`share-on-network.command`**. A window opens with this computer's Wi-Fi address, like `http://<wifi-network-address>:8000`. Anyone on the same Wi-Fi can type that into their web browser to play. Keep the window open while people play; close it to stop sharing.
 - Only the game files are shared, read-only. Hidden files, the backup history and settings are never served, and folders can't be browsed (see `tools/share_server.py`).
 - Sharing stops by itself after 3 hours.
 - Only use it on your own home Wi-Fi, not on public Wi-Fi.
@@ -90,7 +92,7 @@ npm run dist:win     # build dist/*.exe   (best run on Windows)
 
 ## Playing on phones and tablets
 
-Phones and tablets play in the web browser. On the computer, double-click `share-on-network.command`, then on the phone (on the same Wi-Fi) open the address it shows, like `http://192.168.1.23:8000`. Phones can't open the `index.html` file directly.
+Phones and tablets play in the web browser. On the computer, double-click `share-on-network.command`, then on the phone (on the same Wi-Fi) open the address it shows, like `http://<wifi-network-address>:8000`. Phones can't open the `index.html` file directly.
 
 - **Touch buttons** appear the first time you touch the screen, sized for thumbs and anchored to the screen corners (on wide phones they sit mostly in the black bars beside the game). Left: ◀ ▶ to move and BLOCK. Right: SLAP (big), JUMP, BIG, SHOOT and SUPER (glows when your special is ready). Pause is in the top-right corner. Use several fingers at once to run and slap together.
 - Hold the phone **sideways**. If you hold it upright, the game waits and asks you to turn it.
@@ -104,7 +106,7 @@ Phones and tablets play in the web browser. On the computer, double-click `share
 1. **Host** (the computer that runs the game): double-click `share-on-network.command`, then open **http://localhost:8000** in a browser on that same computer.
    - Co-op: **Campaign → Host Wi-Fi Game**. Battle: **Slapdown Duel → Host Wi-Fi Battle**.
    - Pick your sloth and the lobby shows a **4-digit join code**.
-2. **Everyone else** (computers or phones): open the address shown in the host's sharing window (like `http://192.168.1.23:8000`), choose **Join Wi-Fi Game** or **Join Wi-Fi Battle**, type the code, pick a sloth and press **Enter** (or tap) when ready.
+2. **Everyone else** (computers or phones): open the address shown in the host's sharing window (like `http://<wifi-network-address>:8000`), choose **Join Wi-Fi Game** or **Join Wi-Fi Battle**, type the code, pick a sloth and press **Enter** (or tap) when ready.
 3. The host picks a map or stage with ←/→ (battles: C adds a CPU sloth) and presses **Enter** to start. Late arrivals can still join.
 
 **If someone's connection drops** (Wi-Fi hiccup, phone screen locked, app switched), the game rejoins automatically with the same code and sloth; they drop back in next to the team (in battles, at the next round). Short drops (under 20 seconds) don't even kick anyone out. If the host's connection breaks or the sharing window is restarted, the host re-opens the game **with the same join code** and everyone rejoins by themselves. The join code and address are always shown in a bar at the top of the screen during Wi-Fi games.
@@ -161,8 +163,20 @@ tools/                home-network share server + Wi-Fi relay, automated tests
 - Non-sloth duel characters (the monkey art is already there)
 - More maps, bosses and specials
 
+## Privacy
+
+The game collects no personal information. It has no accounts, ads, analytics or tracking, and it never sends anything over the internet.
+- Progress and best scores are saved only in your own web browser (local storage) and never leave your device.
+- Wi-Fi games stay on your home network. Button presses and game updates go between the players' devices through the host computer, are kept in memory only, and are gone when sharing stops.
+
+## Content
+
+Cartoon slapstick: slaps, bonks, silly sound effects and cartoon guns. Defeated enemies splatter in cartoon colors. **Pause → Blood: OFF** turns the splats into confetti.
+
+Real places (Italy, China, Washington DC, Egypt, New York City) appear only as cartoon backdrops. All characters, creatures and bosses are made up. The game is not affiliated with or endorsed by any city, country, government or company.
+
 ## Trademark and copyright
 
-"Sloth Slap" and "The Sloth Slap Game" are trademarks of Mark A. Nakasone.
+Sloth Slap™ and The Sloth Slap Game™ are trademarks of Mark A. Nakasone.
 
 Copyright © 2026 Mark A. Nakasone. All rights reserved. The code is public so people can see how the game is made and play it, but it is not open source: please don't copy, publish or sell the game, its sloths or its artwork without permission.

@@ -93,12 +93,15 @@
       ctx.rotate(wob);
       UI.outlineText(ctx, 'THE', 0, -52, 30, '#ffffff', 'center');
       UI.outlineText(ctx, 'SLOTH SLAP', 0, 0, 78, '#ffd23f', 'center', '#2b193d');
+      const titleHalf = ctx.measureText('SLOTH SLAP').width / 2; // measured in the 78px title font
+      UI.outlineText(ctx, '™', titleHalf + 3, -26, 24, '#ffd23f', 'left'); // trademark (switch to ® only once registered)
       UI.outlineText(ctx, 'GAME', 0, 62, 44, '#ff4d6d', 'center');
       ctx.restore();
 
       this.menu.draw(ctx);
 
       UI.text(ctx, 'Arrows/WASD + Enter, or click / tap', W / 2, H - 14, 13, 'rgba(255,255,255,0.7)', 'center');
+      UI.text(ctx, 'Sloth Slap™ © 2026 Mark A. Nakasone', W - 10, H - 14, 11, 'rgba(255,255,255,0.55)', 'right');
     }
 
     drawHelp(ctx) {

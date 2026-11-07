@@ -79,7 +79,7 @@
         this.info = [
           'To join a Wi-Fi game:',
           'Open the address shown in the HOST\'s sharing window',
-          '(it looks like  http://192.168.1.23:8000 )',
+          '(it starts with  http://  and ends with  :8000 )',
           'then choose Join Wi-Fi Game / Join Wi-Fi Battle.',
         ];
         return;
