@@ -2,7 +2,7 @@
 
 A comical cartoon slap-'em-up starring a crew of sloths.
 
-- **Campaign**: eight side-scrolling maps. Slap enemies, smash crates for bananas and hibiscus, ring gongs to open gates (each one is also a checkpoint), beat the bosses, and reach the nap hammock. Progress and best scores are saved in the browser.
+- **Campaign**: 17 side-scrolling maps. Slap enemies, smash crates for bananas and hibiscus, ring gongs to open gates (each one is also a checkpoint), beat the bosses, and reach the nap hammock. Progress and best scores are saved in the browser.
 
   | # | Map | Highlights |
   |---|---|---|
@@ -115,7 +115,7 @@ Security: only the host's own computer can start a game, joining needs the code,
 
 ## Backups
 
-The folder is a git repository, so every saved version of the game can be restored. Ask Claude to "save a backup" after changes, or to "go back to the version from before X".
+The folder is a git repository, so every saved version of the game can be restored. Ask Claude to "save a backup" after changes, or to "go back to the version from before X". The versions are also kept on GitHub at https://github.com/marknakasone85/sloth-slap-game.
 
 ## Controls
 
@@ -141,13 +141,16 @@ In single-player you can also use the arrow keys, Space, and J / K / L. In both 
 
 ```
 index.html            entry page (plain <script> tags, so it works from file://)
+artifact.html         the same game as a web page for claude.ai (no Wi-Fi play)
 css/style.css
 js/core/              engine loop + scaling, input (keys/mouse/touch/gamepad), synth audio, FX
 js/art/               procedural cartoon art: sloths, enemies/props, parallax backgrounds
 js/data/              characters.js (roster + stats), levels.js (campaign maps)
 js/entities/          fighter.js (sloths + moves + projectiles), enemy.js, ai.js (duel CPU)
-js/scenes/            menu, select, campaign, duel, ui helpers
+js/net/               Wi-Fi play: connection to the host and game-state sync
+js/scenes/            menu, select, campaign, duel, Wi-Fi lobby, ui helpers
 desktop/main.js       Electron wrapper for the Mac/Windows builds
+tools/                home-network share server + Wi-Fi relay, automated tests
 ```
 
 ### Adding content
@@ -155,7 +158,11 @@ desktop/main.js       Electron wrapper for the Mac/Windows builds
 - **New map**: add an entry to `js/data/levels.js` with a theme (`jungle`, `beach`, `temple`, `volcano`), enemies, crates, pickups, gongs/gates, platforms, and an optional boss.
 
 ## Roadmap ideas
-- On-screen touch buttons for phones and tablets (the game already scales to any screen)
 - Non-sloth duel characters (the monkey art is already there)
-- 2-player co-op campaign
 - More maps, bosses and specials
+
+## Trademark and copyright
+
+"Sloth Slap" and "The Sloth Slap Game" are trademarks of Mark A. Nakasone.
+
+Copyright © 2026 Mark A. Nakasone. All rights reserved. The code is public so people can see how the game is made and play it, but it is not open source: please don't copy, publish or sell the game, its sloths or its artwork without permission.

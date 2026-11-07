@@ -3,6 +3,8 @@
   "productName": "The Sloth Slap Game",
   "version": "0.1.0",
   "description": "A comical cartoon sloth slap-'em-up with a campaign and a 1v1 Slapdown Duel mode.",
+  "author": "Mark A. Nakasone",
+  "license": "UNLICENSED",
   "main": "desktop/main.js",
   "private": true,
   "scripts": {
