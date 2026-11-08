@@ -2,6 +2,10 @@
 
 A comical cartoon slap-'em-up starring a crew of sloths.
 
+## ▶ [Play it now in your browser](https://marknakasone85.github.io/sloth-slap-game/)
+
+Free, nothing to install. It works on computers, phones and tablets.
+
 *Sloth Slap™ is a trademark of Mark A. Nakasone. See [Trademark and copyright](#trademark-and-copyright).*
 
 - **Campaign**: 17 side-scrolling maps. Slap enemies, smash crates for bananas and hibiscus, ring gongs to open gates (each one is also a checkpoint), beat the bosses, and reach the nap hammock. Progress and best scores are saved in the browser.
