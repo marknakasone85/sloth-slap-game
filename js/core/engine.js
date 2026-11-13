@@ -47,6 +47,8 @@ window.SS = window.SS || {};
     pixel: 1,
     time: 0,
     hitstop: 0,
+    slowT: 0, // seconds of slow motion left (real time)
+    slowScale: 1,
     last: 0,
     lastFrameAt: 0, // when a frame last ran (the Wi-Fi host ticker steps in if frames stop or never start)
 
@@ -91,12 +93,23 @@ window.SS = window.SS || {};
     setScene(scene) {
       if (this.scene && this.scene.exit) this.scene.exit();
       this.scene = scene;
+      this.slowT = 0;
       if (scene.enter) scene.enter();
     },
 
     // Freeze gameplay briefly on big hits for comic impact.
     freeze(seconds) {
       this.hitstop = Math.max(this.hitstop, seconds);
+    },
+
+    // Slow motion for knockout finishers: the game runs at `scale` speed for `seconds` of real time.
+    slowmo(seconds, scale) {
+      this.slowT = Math.max(this.slowT, seconds);
+      this.slowScale = scale;
+    },
+    // Turns a slowed-down dt back into real time (for things that must keep real pace, like Wi-Fi snapshots).
+    unscaled(dt) {
+      return this.slowT > 0 ? dt / this.slowScale : dt;
     },
 
     loop(ts) {
@@ -113,6 +126,11 @@ window.SS = window.SS || {};
 
       const frozen = this.hitstop > 0;
       if (frozen) this.hitstop -= dt;
+      let step = dt;
+      if (!frozen && this.slowT > 0) {
+        step = dt * this.slowScale;
+        this.slowT -= dt;
+      }
 
       const ctx = this.ctx;
       ctx.setTransform(this.pixel, 0, 0, this.pixel, 0, 0);
@@ -120,7 +138,7 @@ window.SS = window.SS || {};
       // On a phone held upright the game waits (it asks you to turn the phone sideways).
       const upright = SS.Touch && SS.Touch.enabled && SS.Touch.portrait() && this.scene && this.scene.wantsTouch;
       if (this.scene) {
-        if (!frozen && !upright) this.scene.update(dt);
+        if (!frozen && !upright) this.scene.update(step);
         this.scene.draw(ctx);
         if (SS.Touch) SS.Touch.draw(ctx, this.scene.touchPlayer ? this.scene.touchPlayer() : null);
       }

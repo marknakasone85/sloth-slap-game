@@ -124,6 +124,8 @@
         return;
       }
       const sh = this.fx.offset();
+      ctx.save();
+      this.fx.camera(ctx); // finisher zoom (replayed from the host)
       SS.Art.background(ctx, s.th, 400 + Math.sin(this.t * 0.2) * 40, this.t, this.groundY);
       ctx.save();
       ctx.translate(sh.x, sh.y);
@@ -143,6 +145,8 @@
           .concat(this.proj.map((p) => ({ x: p.x, y: p.y, r: 60 })));
         SS.Art.darkness(ctx, lights, SS.Art.darkAlpha(s.th));
       }
+      ctx.restore();
+      this.fx.drawFinisher(ctx);
 
       SS.DuelHUD.draw(ctx, {
         t: this.t, timer: s.timer, net: SS.Net.hudInfo(),

@@ -112,6 +112,12 @@
     confirm() { this.tone(520, 0.06, 'square', 0.12); this.tone(780, 0.1, 'square', 0.12, null, 0.06); },
     special() { this.tone(200, 0.35, 'sawtooth', 0.15, 900); this.noise(0.3, 0.3, 2500, 0.5); },
     snore() { this.tone(90, 0.5, 'sawtooth', 0.12, 70); },
+    // Slow-motion finisher: a deep "BWOOMM" with a falling whistle.
+    finisher() {
+      this.tone(110, 0.9, 'sawtooth', 0.2, 36);
+      this.noise(0.6, 0.5, 380, 0.7);
+      this.tone(1500, 0.55, 'sine', 0.07, 280, 0.05);
+    },
     ko() {
       [392, 370, 349, 262].forEach((f, i) =>
         this.tone(f, i === 3 ? 0.6 : 0.22, 'square', 0.15, i === 3 ? 180 : null, i * 0.22));

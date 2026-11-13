@@ -9,21 +9,39 @@ function runBattle(players, hook) {
   SS.Engine.setScene(new SS.DuelScene({ net: true, theme: 'castle', stageIndex: 9, players: players }));
   var d = scene(), guest = new SS.RemoteDuelScene(); SS.Net.id = 1;
   var bots = {}; players.forEach(function (p) { if (p.cpu === undefined) bots[p.id] = new SS.CPU(2); });
-  var err = null, i;
+  var err = null, i, fin = { host: 0, slow: false, guest: false, snaps: 0 };
+  // the guest gets exactly the snapshots the host sends (with their effects and sounds)
+  var sent = [], send = SS.Net.send;
+  SS.Net.send = function (m) { if (m && m.t === 'snap') sent.push(JSON.stringify(m)); return send.apply(SS.Net, arguments); };
   for (i = 0; i < 60 * 60 * 8 && d.state !== 'matchEnd'; i++) {
     d.slots.forEach(function (s) { if (bots[s.id]) botInput(d, s, bots[s.id]); });
     if (hook) hook(d, i);
+    var had = !!d.fx.fin;
     frames(1);
-    if (i % 2 === 0) {
-      try { guest.onNet(JSON.parse(JSON.stringify(SS.Sync.duelSnapshot(d)))); guest.update(1 / 30); guest.draw(SS.Engine.ctx); }
+    if (d.fx.fin && !had) fin.host++;
+    if (SS.Engine.slowT > 0) fin.slow = true;
+    while (sent.length) {
+      fin.snaps++;
+      try { guest.onNet(JSON.parse(sent.shift())); guest.update(1 / 30); guest.draw(SS.Engine.ctx); }
       catch (e) { if (!err) err = '' + e; }
+      if (guest.fx.fin) fin.guest = true;
     }
   }
-  return { d: d, err: err };
+  SS.Net.send = send;
+  return { d: d, err: err, fin: fin };
 }
 var r = runBattle([{ id: 0, cid: 'sir', local: null }, { id: 1, cid: 'sue', local: null }, { id: 10, cid: 'chonk', cpu: 2 }, { id: 11, cid: 'dj', cpu: 1 }]);
 check(r.d.state === 'matchEnd' && !!r.d.matchWinner, '4-sloth free-for-all plays to a winner (' + (r.d.matchWinner ? r.d.matchTitle() : '-') + ')');
 check(!r.err, 'guest battle view draws every snapshot' + (r.err ? ': ' + r.err : ''));
+check(r.fin.host >= 1 && r.fin.slow && r.fin.guest, 'knockout finisher: slow motion + zoom on the host, replayed for the guest (' + r.fin.host + ' finishers in ' + r.d.round + ' rounds)');
+check(SS.Engine.slowT <= 0 && Math.abs(SS.Engine.unscaled(1 / 60) - 1 / 60) < 1e-9, 'slow motion is over by the end of the match');
+SS.Engine.slowmo(1, 0.25);
+check(Math.abs(SS.Engine.unscaled(0.25 / 60) - 1 / 60) < 1e-9, 'Wi-Fi snapshots keep real time during slow motion');
+SS.Engine.setScene(new SS.CampaignScene({ charId: 'sir', level: 3 })); var bc = scene(); frames(5);
+bc.boss.hp = 0; bc.boss.alive = false; bc.onEnemyKilled(bc.boss); frames(20);
+check(!!bc.fx.fin && bc.fx.fin.big && SS.Engine.slowT > 0, 'beating a boss plays the big slow-motion finisher');
+frames(150);
+check(!bc.fx.fin && SS.Engine.slowT <= 0, 'the boss finisher ends by itself');
 r = runBattle([{ id: 0, cid: 'sarge', local: null }, { id: 1, cid: 'wizzy', local: null }, { id: 10, cid: 'clawbeard', cpu: 2 }, { id: 11, cid: 'flo', cpu: 2 }]);
 check(r.d.state === 'matchEnd' && !r.err, 'battle with the 4 newest sloths (bombs, homing missiles, cannon, freeze)');
 var leftOk = false;

@@ -112,6 +112,79 @@
       return { x: U.rand(-1, 1) * this.shakeAmt, y: U.rand(-1, 1) * this.shakeAmt };
     }
 
+    // Slow-motion finisher (round-winning slap, boss knockout): the view zooms toward (x, y) in world
+    // coordinates, with cinema bars, speed lines and a flash. Timed in real seconds, so Wi-Fi guests
+    // (who replay this call) see the same thing while the host slows the game down.
+    finisher(x, y, big) {
+      this.fin = { x, y, big: !!big, t0: SS.Engine.time, dur: big ? 1.75 : 1.2 };
+      this.shake(big ? 16 : 10);
+    }
+
+    finAge() {
+      const f = this.fin;
+      if (!f) return null;
+      const a = SS.Engine.time - f.t0;
+      if (a < 0 || a > f.dur) { this.fin = null; return null; }
+      return a;
+    }
+
+    // 0 = no finisher, 1 = full effect: snaps in, then eases out at the end.
+    finAmount() {
+      const a = this.finAge();
+      if (a === null) return 0;
+      const inn = Math.min(1, a / 0.16), out = Math.min(1, (this.fin.dur - a) / 0.45);
+      return Math.min(1 - Math.pow(1 - inn, 3), out * out * (3 - 2 * out));
+    }
+
+    // Call after ctx.save() and before drawing the world. Zooming about a point on the screen never
+    // shows anything past the edges.
+    camera(ctx, camX = 0) {
+      const k = this.finAmount();
+      if (!k) return;
+      const z = 1 + k * (this.fin.big ? 0.3 : 0.2);
+      const px = U.clamp(this.fin.x - camX, 0, SS.W), py = U.clamp(this.fin.y, 0, SS.H);
+      ctx.translate(px, py);
+      ctx.scale(z, z);
+      ctx.translate(-px, -py);
+    }
+
+    // Screen overlay for the finisher (draw after the world, before the HUD).
+    drawFinisher(ctx, camX = 0) {
+      const k = this.finAmount();
+      if (!k) return;
+      const W = SS.W, H = SS.H, a = SS.Engine.time - this.fin.t0;
+      const cx = U.clamp(this.fin.x - camX, 0, W), cy = U.clamp(this.fin.y, 0, H);
+      const R = Math.hypot(W, H);
+      const hash = (n) => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+      const seed = Math.floor(a * 14); // the comic speed lines jitter ~14 times a second
+      ctx.save();
+      ctx.globalAlpha = 0.3 * k;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      const n = 28;
+      for (let i = 0; i < n; i++) {
+        const r1 = hash(seed * 31 + i), r2 = hash(seed * 17 + i * 7 + 3);
+        const ang = ((i + r1 * 0.8) / n) * Math.PI * 2, wid = 0.01 + 0.018 * r2;
+        const inner = R * (0.24 + 0.14 * r2);
+        ctx.moveTo(cx + Math.cos(ang) * inner, cy + Math.sin(ang) * inner);
+        ctx.lineTo(cx + Math.cos(ang - wid) * R, cy + Math.sin(ang - wid) * R);
+        ctx.lineTo(cx + Math.cos(ang + wid) * R, cy + Math.sin(ang + wid) * R);
+        ctx.closePath();
+      }
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      const bar = Math.round(44 * k);
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, W, bar);
+      ctx.fillRect(0, H - bar, W, bar);
+      if (a < 0.2) {
+        ctx.globalAlpha = 0.55 * (1 - a / 0.2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, W, H);
+      }
+      ctx.restore();
+    }
+
     update(dt) {
       this.shakeAmt *= Math.pow(0.002, dt);
       for (const p of this.parts) {

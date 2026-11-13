@@ -9,7 +9,7 @@ Current content: 17 campaign maps (4 boss-less), 11 sloths (FAST / POWER / BALAN
 - **Controls are always shown on screen** in every mode: the bottom key-hint strip (`UI.keyStrip`), Pause → Controls, and the touch buttons on phones. Any new move or mode must be added to all three.
 - **Never delete or replace maps.** Every map must stay unique; new ones are appended to `SS.LEVELS`.
 - **Backups:** the folder is a git repo. After each finished feature, offer to "save a backup", and commit only when the owner says yes. End commit messages with the Co-Authored-By line from the system reminder.
-- **GitHub (public):** `origin` is https://github.com/marknakasone85/sloth-slap-game. After saving a backup, offer to upload it (`git push`), and push only when the owner says yes. The repo's git config already sets the author to Mark A. Nakasone with the GitHub no-reply address, and push logs in through `gh`. Because the repo is public, never put personal details in tracked files: family names, personal emails, the home Wi-Fi address or location.
+- **GitHub (public):** `origin` is https://github.com/marknakasone85/sloth-slap-game. After saving a backup, offer to upload it (`git push`), and push only when the owner says yes. The repo's git config already sets the author to Mark A. Nakasone with the GitHub no-reply address, and push logs in through `gh`. Because the repo is public, never put personal details in tracked files: family names, personal emails, the home Wi-Fi address or location. `main` is protected on GitHub (no force pushes, no deleting it, admins included), so history can't be rewritten after a push.
 - **Trademark:** "Sloth Slap" and "The Sloth Slap Game" are the owner's trademarks, not registered yet (the owner plans to register). Use ™ for now: on the title screen (`menu.js`, plus a "Sloth Slap™ © 2026 Mark A. Nakasone" footer), in the page titles and in the README. Switch to ® only once the US trademark office has registered the mark. The code is all rights reserved, not open source (see the README's last section). Don't add an open-source license.
 - **Public statements:** the README has Privacy (no data collected, saves stay in the browser, Wi-Fi stays at home), Content (cartoon slapstick, cartoon guns, Blood: OFF) and not-affiliated notes. Keep them true when adding features, for example if something ever goes online.
 - **Before saying it's ready:** run `tools/run-tests.sh` and check the change visually (see Testing). The owner usually asks "let me know when it's ready" - then give the exact steps to start sharing and what to refresh.
@@ -28,11 +28,12 @@ Current content: 17 campaign maps (4 boss-less), 11 sloths (FAST / POWER / BALAN
 ## Code map (script order lives in `index.html` - plain `<script>` tags so `file://` works; no ES modules)
 | Area | Files |
 |---|---|
-| Engine loop, scaling, host ticker, `SS.U` utils, `SS.Save` (localStorage) | `js/core/engine.js` |
+| Engine loop, scaling, host ticker, hit-stop `freeze`, `slowmo` (+ `unscaled(dt)` for real-time things like Wi-Fi snapshots), `SS.U` utils, `SS.Save` (localStorage) | `js/core/engine.js` |
 | Keyboard/gamepad/pointer -> virtual key codes, control schemes `SS.Controls` (SOLO/P1/P2), `SS.Menu` | `js/core/input.js` |
 | Touch buttons (separate full-screen layer `#touchLayer`, virtual keys `TouchSlap` etc.) | `js/core/touch.js` |
 | Synth sound effects + step-sequencer music (`SONGS`), `funnyDeath(style)` | `js/core/audio.js` |
-| Particles, popups, shake, blood/confetti (`gore`, `splat`, `feathers`), `SS.Settings.blood` | `js/core/fx.js` |
+| Particles, popups, shake, blood/confetti (`gore`, `splat`, `feathers`), slow-motion `finisher` (zoom via `fx.camera`, overlay via `fx.drawFinisher`; every scene that draws a world calls both), `SS.Settings.blood` | `js/core/fx.js` |
+| Icons + link-preview picture (`og:image`), drawn from the game's art by `tools/make-images.sh` (headless Chrome + `tools/make-images.html`). Not served by the home share server (only on GitHub Pages) | `img/` |
 | Art: sloth (+ accessories), enemies/props/pickups, more creatures, backgrounds/themes + cave darkness | `js/art/*.js` |
 | Data: sloths (`SS.CHARACTERS`), maps (`SS.LEVELS`) | `js/data/*.js` |
 | Fighter (sloths, moves, specials, ammo, power-ups, `renderState`/`drawState`) + `SS.Projectile` | `js/entities/fighter.js` |
@@ -59,6 +60,8 @@ Current content: 17 campaign maps (4 boss-less), 11 sloths (FAST / POWER / BALAN
 - **Automated:** `tools/run-tests.sh` (about 10 s; add `--full` to play every sloth on every map). It uses macOS's built-in JavaScriptCore with a fake browser (`tools/tests/harness.js`) and covers menus/map choice, touch buttons, sloth stats and specials (`test_sloths.js`), battles (with guest view), 3-player Wi-Fi co-op on every map, and a solo difficulty bot. Add new checks with `check(ok, 'what')`.
 - **Visual:** `.claude/launch.json` runs `share_server.py --local --port 8770` for the app's built-in browser. Useful in-page shortcuts are `SS.Engine.setScene(new SS.CampaignScene({ charId, level }))`, `scene.openMapPicker()`, and `SS.Touch.enabled = true`.
 - **Gotchas:**
+  - a FX effect that Wi-Fi guests should see must be listed in `FX_METHODS` (sounds in `AUDIO_METHODS`) in `js/net/sync.js`; the host's own snapshot carries them, so tests must feed guests what `SS.Net.send` sent (see `test_battle.js`)
+  - the co-op test bot sometimes gets stuck on map 17 and times out at 300 s (about 1 run in 12, before and after the slow-motion change); rerun before hunting a bug
   - restarting the preview server reloads its tabs
   - a hidden browser pane freezes animation, except on a Wi-Fi host, which has its own ticker
   - automated key presses within one frame collapse into one

@@ -44,7 +44,7 @@ Free, nothing to install. It works on computers, phones and tablets.
   - **2 Players (this computer):** P1 uses WASD + F/G/H/R and P2 uses the arrow keys + , . / ;
   - **Wi-Fi co-op, 2 to 4 players** on different computers on the same Wi-Fi (see *Playing together on Wi-Fi* below).
   - Everyone shares one screen. If you get snoozed while a teammate is still up, you pop back in next to them after 5 seconds. Checkpoints are only needed if the whole team goes down. Enemies get tougher the more sloths there are.
-- **Slapdown Duel**: a fighting mode, first to 2 round wins.
+- **Slapdown Duel**: a fighting mode, first to 2 round wins. The round-winning slap plays in **slow motion** with a dramatic zoom (bigger for the match winner, and for every boss knockout in the campaign).
   - **vs CPU** (Sleepy / Grumpy / Savage) or **2 Players** on one keyboard.
   - **Wi-Fi Battle, 2 to 4 sloths:** free-for-all, and the last sloth standing wins the round (if time runs out, the most health left wins). The host can add **CPU sloths** in the lobby (C = add, X = remove) to fill empty spots. Late arrivals jump in at the next round. After a match: **Rematch** or **Back to Lobby** (same join code, nobody has to rejoin).
 
@@ -152,6 +152,7 @@ In single-player you can also use the arrow keys, Space, and J / K / L. In both 
 index.html            entry page (plain <script> tags, so it works from file://)
 artifact.html         the same game as a web page for claude.ai (no Wi-Fi play)
 css/style.css
+img/                  app icons + the link-preview picture (drawn from the game's art by tools/make-images.sh)
 js/core/              engine loop + scaling, input (keys/mouse/touch/gamepad), synth audio, FX
 js/art/               procedural cartoon art: sloths, enemies/props, parallax backgrounds
 js/data/              characters.js (roster + stats), levels.js (campaign maps)
@@ -159,7 +160,7 @@ js/entities/          fighter.js (sloths + moves + projectiles), enemy.js, ai.js
 js/net/               Wi-Fi play: connection to the host and game-state sync
 js/scenes/            menu, select, campaign, duel, Wi-Fi lobby, ui helpers
 desktop/main.js       Electron wrapper for the Mac/Windows builds
-tools/                home-network share server + Wi-Fi relay, automated tests
+tools/                home-network share server + Wi-Fi relay, automated tests, image maker
 ```
 
 ### Adding content

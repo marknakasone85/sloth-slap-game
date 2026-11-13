@@ -20,7 +20,7 @@
   "build": {
     "appId": "com.slothslap.game",
     "productName": "The Sloth Slap Game",
-    "files": ["index.html", "css/**", "js/**", "desktop/**"],
+    "files": ["index.html", "css/**", "img/**", "js/**", "desktop/**"],
     "directories": { "output": "dist" },
     "mac": { "target": ["dmg"], "category": "public.app-category.arcade-games" },
     "win": { "target": ["nsis", "portable"] }

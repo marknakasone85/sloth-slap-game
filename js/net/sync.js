@@ -2,10 +2,10 @@
 // "snapshot" of everything guests need to draw, plus the effects and sounds that
 // happened since the last one (recorded here so guests can replay them).
 (function () {
-  const FX_METHODS = ['burst', 'text', 'gore', 'splat', 'feathers', 'shake', 'slapText'];
+  const FX_METHODS = ['burst', 'text', 'gore', 'splat', 'feathers', 'shake', 'slapText', 'finisher'];
   const AUDIO_METHODS = ['tone', 'noise', 'wobble', 'slap', 'bigSlap', 'whiff', 'jump', 'land', 'hurt', 'block',
     'pickup', 'heal', 'gong', 'crate', 'special', 'snore', 'ko', 'win', 'shoot', 'emptyClick', 'ammo', 'powerUp',
-    'funnyDeath', 'playMusic'];
+    'funnyDeath', 'playMusic', 'finisher'];
   const MAX_EVENTS = 300;
   const r1 = (v) => Math.round(v * 10) / 10;
   const r2 = (v) => Math.round(v * 100) / 100;

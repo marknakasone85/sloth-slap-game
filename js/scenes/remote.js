@@ -207,6 +207,8 @@
         return;
       }
       const sh = this.fx.offset();
+      ctx.save();
+      this.fx.camera(ctx, this.camX); // finisher zoom (replayed from the host)
       SS.Art.background(ctx, this.L.theme, this.camX, this.t, this.groundY);
       ctx.save();
       ctx.translate(-Math.round(this.camX) + sh.x, sh.y);
@@ -236,6 +238,8 @@
           .concat(this.proj.map((p) => ({ x: p.x - this.camX, y: p.y, r: 60 })));
         SS.Art.darkness(ctx, lights, SS.Art.darkAlpha(this.L.theme));
       }
+      ctx.restore();
+      this.fx.drawFinisher(ctx, this.camX);
 
       const me = s.pl.find((p) => p.id === SS.Net.id);
       const alive = s.pl.filter((p) => p.st !== 'ko');

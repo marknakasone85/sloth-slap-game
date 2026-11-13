@@ -225,6 +225,9 @@
       if (e === this.boss) {
         this.fx.text(e.x, e.y - 220, e.d.defeatText || `${e.d.name} DEFEATED!`, '#ffd23f', 36);
         this.fx.shake(20);
+        this.fx.finisher(e.x, e.y - e.d.h * 0.5, true); // boss knockout in slow motion
+        SS.Engine.slowmo(1.5, 0.25);
+        SS.Audio.finisher();
         SS.Audio.win();
       }
     }
@@ -248,9 +251,10 @@
       } finally {
         if (this.net) SS.Sync.capturing = false;
       }
-      if (this.net) SS.Net.maintain(dt, () => this.onRehosted());
+      const realDt = SS.Engine.unscaled(dt); // Wi-Fi keeps real pace during slow motion
+      if (this.net) SS.Net.maintain(realDt, () => this.onRehosted());
       if (this.net && SS.Engine.scene === this) {
-        this.syncT += dt;
+        this.syncT += realDt;
         if (this.syncT >= SNAP_RATE) {
           this.syncT = 0;
           SS.Net.send(SS.Sync.snapshot(this));
@@ -539,6 +543,8 @@
 
     draw(ctx) {
       const sh = this.fx.offset();
+      ctx.save();
+      this.fx.camera(ctx, this.camX); // finisher zoom
       SS.Art.background(ctx, this.L.theme, this.camX, this.t, this.groundY);
 
       ctx.save();
@@ -567,6 +573,8 @@
           .concat(this.projectiles.map((p) => ({ x: p.x - this.camX, y: p.y, r: 60 })));
         SS.Art.darkness(ctx, lights, SS.Art.darkAlpha(this.L.theme));
       }
+      ctx.restore();
+      this.fx.drawFinisher(ctx, this.camX);
 
       SS.CampaignHUD.draw(ctx, this.hudModel());
       SS.CampaignHUD.overlays(ctx, {

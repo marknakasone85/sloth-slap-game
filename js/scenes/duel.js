@@ -230,12 +230,13 @@
       this.fx.update(dt);
       if (this.net) SS.Sync.capturing = true;
       try { this.step(dt); } finally { if (this.net) SS.Sync.capturing = false; }
-      if (this.net) SS.Net.maintain(dt, () => {
+      const realDt = SS.Engine.unscaled(dt); // Wi-Fi keeps real pace during slow motion
+      if (this.net) SS.Net.maintain(realDt, () => {
         this.slots = this.slots.filter((s) => s.local || s.cpu);
         this.fx.text(W / 2, 190, `Wi-Fi is back! Friends jump in next round (code ${SS.Net.code})`, '#9bf6ff', 20);
       });
       if (this.net && SS.Engine.scene === this) {
-        this.syncT += dt;
+        this.syncT += realDt;
         if (this.syncT >= SNAP_RATE) { this.syncT = 0; SS.Net.send(SS.Sync.duelSnapshot(this)); }
       }
     }
@@ -333,6 +334,20 @@
       else this.setBanner('SLAPPED SILLY!');
       SS.Engine.freeze(0.25);
       this.fx.shake(18);
+      if (how === 'ko' && winner) this.finisher(winner);
+    }
+
+    // The round-winning slap plays in slow motion, zoomed in on the sloth who got knocked out
+    // (longer and bigger when it wins the whole match).
+    finisher(winner) {
+      const downed = this.slots.filter((s) => s !== winner && s.f.state === 'ko');
+      if (!downed.length) return;
+      const near = (s) => Math.abs(s.f.x - winner.f.x);
+      const loser = downed.reduce((a, b) => (near(b) < near(a) ? b : a));
+      const big = winner.wins >= WINS_NEEDED;
+      this.fx.finisher(loser.f.x, loser.f.y - loser.f.h * 0.5, big);
+      SS.Engine.slowmo(big ? 1.5 : 0.95, big ? 0.25 : 0.35);
+      SS.Audio.finisher();
     }
 
     endMatch() {
@@ -420,6 +435,8 @@
 
     draw(ctx) {
       const sh = this.fx.offset();
+      ctx.save();
+      this.fx.camera(ctx); // finisher zoom
       SS.Art.background(ctx, this.theme, 400 + Math.sin(this.t * 0.2) * 40, this.t, this.groundY);
       ctx.save();
       ctx.translate(sh.x, sh.y);
@@ -439,6 +456,8 @@
           .concat(this.projectiles.map((p) => ({ x: p.x, y: p.y, r: 60 })));
         SS.Art.darkness(ctx, lights, SS.Art.darkAlpha(this.theme));
       }
+      ctx.restore();
+      this.fx.drawFinisher(ctx);
 
       SS.DuelHUD.draw(ctx, this.hudModel());
       if (this.showStrip && ['intro', 'fight', 'roundEnd'].includes(this.state)) this.drawKeyStrips(ctx);
