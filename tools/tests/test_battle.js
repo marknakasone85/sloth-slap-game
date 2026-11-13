@@ -42,6 +42,19 @@ bc.boss.hp = 0; bc.boss.alive = false; bc.onEnemyKilled(bc.boss); frames(20);
 check(!!bc.fx.fin && bc.fx.fin.big && SS.Engine.slowT > 0, 'beating a boss plays the big slow-motion finisher');
 frames(150);
 check(!bc.fx.fin && SS.Engine.slowT <= 0, 'the boss finisher ends by itself');
+// a boss charging past a sloth at the arena's left wall used to run off-screen and get stuck there for good
+var escaped = [];
+SS.LEVELS.forEach(function (L, lv) {
+  if (!L.boss || SS.ENEMY_TYPES[L.boss.type].behavior !== 'boss') return;
+  SS.Engine.setScene(new SS.CampaignScene({ charId: 'sir', level: lv })); var c = scene(); frames(2);
+  c.gates.forEach(function (g) { g.opened = true; g.lift = 1; });
+  c.player.x = c.arenaX + 160; frames(30);
+  var b = c.boss; c.player.invuln = 99;
+  b.x = c.arenaX + 120; b.hurt = 0; b.cool = 99; b.state = 'charge'; b.stateT = 0; b.chargeDir = -1;
+  for (var i = 0; i < 150; i++) { c.player.x = c.arenaX + 10; frames(1); }
+  if (!c.bossAwake || b.x - b.d.w / 2 < c.camX - 2) escaped.push(L.name);
+});
+check(!escaped.length, 'a charging boss stays inside its arena on every boss map' + (escaped.length ? ': escaped on ' + escaped.join(', ') : ''));
 r = runBattle([{ id: 0, cid: 'sarge', local: null }, { id: 1, cid: 'wizzy', local: null }, { id: 10, cid: 'clawbeard', cpu: 2 }, { id: 11, cid: 'flo', cpu: 2 }]);
 check(r.d.state === 'matchEnd' && !r.err, 'battle with the 4 newest sloths (bombs, homing missiles, cannon, freeze)');
 var leftOk = false;

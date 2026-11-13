@@ -195,7 +195,13 @@
       if (this.bossAwake && this.boss.alive) b.min = Math.max(b.min, this.arenaX);
       return b;
     }
-    enemyBounds(e) { const b = this.limitsFor(e.x); return { min: b.min + 20, max: b.max - 20 }; }
+    enemyBounds(e) {
+      const b = this.limitsFor(e.x);
+      const min = b.min + 20;
+      // a fighting boss stays inside its arena (a charge used to carry it off-screen, where it got stuck)
+      if (e === this.boss && this.bossAwake) return { min: Math.max(min, this.arenaX + e.d.w / 2), max: b.max - 20 };
+      return { min, max: b.max - 20 };
+    }
     targets(team) {
       if (team === 'enemy') return this.aliveFighters();
       return this.enemies.filter((e) => e.alive).concat(this.crates.filter((c) => c.alive), this.gongs);
@@ -294,8 +300,9 @@
       this.updateRevives(dt);
 
       for (const e of this.enemies) {
-        if (e.alive && (e.x < this.camX - 300 || e.x > this.camX + W + 300)) continue;
         if (e === this.boss && !this.bossAwake) continue;
+        // far-off enemies wait, but an awake boss always keeps fighting (so it can never get stuck off-screen)
+        if (e.alive && e !== this.boss && (e.x < this.camX - 300 || e.x > this.camX + W + 300)) continue;
         e.update(dt, this, this.nearestFighter(e.x));
       }
       this.enemies = this.enemies.filter((e) => e.alive || e.dying > 0);
