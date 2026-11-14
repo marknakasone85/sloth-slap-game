@@ -409,19 +409,24 @@
         this.fx.burst(pk.x, pk.y - 24, SS.Art.POWER_COLORS[pk.type], 20, 300);
         this.fx.text(pk.x, pk.y - 70, SS.POWER_NAMES[pk.type], SS.Art.POWER_COLORS[pk.type], 26);
       } else if (pk.type === 'ammo') {
-        f.ammo = f.maxAmmo;
+        const added = f.refillAmmo();
         SS.Audio.ammo();
-        this.fx.text(pk.x, pk.y - 40, 'AMMO FULL!', '#ffb703', 20);
+        if (added) {
+          const gun = SS.WEAPONS[f.weapon];
+          this.fx.text(pk.x, pk.y - 40, `+${added} ${gun.unit} (${f.wAmmo})`, gun.color, 20);
+        } else {
+          this.fx.text(pk.x, pk.y - 40, 'AMMO FULL!', '#ffb703', 20);
+        }
       } else if (pk.type === 'grenade') {
         const got = f.addGrenades(2);
         if (!got) { pk.taken = false; return; } // pouch full: leave them for later (or a friend)
         SS.Audio.ammo();
         this.fx.text(pk.x, pk.y - 40, `+${got} GRENADE${got > 1 ? 'S' : ''} (${f.grenades}/${SS.MAX_GRENADES})`, '#9ef01a', 20);
       } else if (pk.type === 'weapon') {
-        const gun = f.giveRandomWeapon();
+        const { gun, added } = f.openWeaponBox();
         SS.Audio.weaponGet();
         this.fx.burst(pk.x, pk.y - 24, gun.color, 20, 300);
-        this.fx.text(pk.x, pk.y - 70, gun.name + '!', gun.color, 28);
+        this.fx.text(pk.x, pk.y - 70, added ? `+${added} ${gun.unit}! (${f.wAmmo})` : gun.name + '!', gun.color, 28);
       } else if (pk.type === 'banana') {
         this.bananas++;
         this.score += 50;

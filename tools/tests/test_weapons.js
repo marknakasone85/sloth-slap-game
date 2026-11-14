@@ -50,8 +50,26 @@ check(p.grenades === 10 && !sc.pickups.some(function (k) { return k.type === 'gr
 sc = camp(); p = sc.player;
 check(p.weapon === 'pistol', 'every sloth starts with the pistol');
 var got = {};
-for (var i = 0; i < 40; i++) { sc.addPickup('weapon', p.x, sc.groundY - 6); frames(1); got[p.weapon] = true; }
+for (var i = 0; i < 40; i++) { p.weapon = 'pistol'; sc.addPickup('weapon', p.x, sc.groundY - 6); frames(1); got[p.weapon] = true; }
 check(got.shotgun && got.rocket && got.lmg, '"?" weapon boxes give a shotgun, rocket launcher or machine gun');
+
+// keep your big gun: more "?" boxes and ammo boxes just add ammo (no limit)
+sc = camp(); p = sc.player; p.giveWeapon('shotgun'); p.wAmmo = 3;
+sc.addPickup('weapon', p.x, sc.groundY - 6); frames(2);
+check(p.weapon === 'shotgun' && p.wAmmo === 3 + 8, '"?" box with a shotgun in hand: keep it, +8 shells (3 -> 11)');
+sc.addPickup('weapon', p.x, sc.groundY - 6); frames(2);
+check(p.weapon === 'shotgun' && p.wAmmo === 19, 'and again: no limit (19)');
+p.giveWeapon('rocket'); p.wAmmo = 1; p.ammo = 0;
+sc.addPickup('ammo', p.x, sc.groundY - 6); frames(2);
+check(p.weapon === 'rocket' && p.wAmmo === 3 && p.ammo === p.maxAmmo, 'ammo box: +half a load for the big gun (rockets 1 -> 3) and a full pistol');
+p.giveWeapon('lmg'); p.wAmmo = 5;
+sc.addPickup('ammo', p.x, sc.groundY - 6); frames(2);
+check(p.wAmmo === 35, 'ammo box: machine gun +30 (5 -> 35)');
+p.weapon = 'pistol'; p.wAmmo = 0;
+sc.addPickup('ammo', p.x, sc.groundY - 6); frames(2);
+check(p.weapon === 'pistol' && p.wAmmo === 0, 'ammo box with only the pistol: just refills the pistol');
+sc.addPickup('weapon', p.x, sc.groundY - 6); frames(2);
+check(p.weapon !== 'pistol' && p.wAmmo === SS.WEAPONS[p.weapon].ammo, 'gun ran dry, back on the pistol: the next "?" box gives a new big gun (' + p.weapon + ')');
 
 sc = camp(); p = sc.player; p.giveWeapon('shotgun');
 tap('KeyR'); frames(2);
@@ -159,6 +177,7 @@ check(d.state === 'fight' && d.pickups.length === 0 && d.dropT > 3, 'duel: no we
 d.dropT = 0; frames(2);
 var drop = d.pickups[0];
 check(drop && drop.type === 'weapon' && drop.fall && drop.y < 60, 'duel: a "?" weapon box parachutes in from the sky');
+drop.x = (d.f1.x + d.f2.x) / 2; // land it between the two sloths (it drops at a random spot)
 frames(60 * 5);
 check(drop.fall === false && Math.abs(drop.y - (d.groundY - 6)) < 1 && !drop.taken, 'it lands on the ground (nobody touched it)');
 var snapD = JSON.parse(JSON.stringify(SS.Sync.duelSnapshot(d)));
@@ -167,6 +186,9 @@ try { gd.onNet(snapD); gd.update(1 / 30); gd.draw(SS.Engine.ctx); } catch (e) { 
 check(snapD.pk.length === 1 && gd.pickups.length === 1 && !gdErr, 'Wi-Fi guests see the box' + (gdErr ? ' ERROR ' + gdErr : ''));
 d.f1.x = drop.x; frames(2);
 check(d.f1.weapon !== 'pistol' && d.pickups.length === 0, 'walking into it gives a big gun (' + d.f1.weapon + ')');
+var duelGun = d.f1.weapon, duelAmmo = d.f1.wAmmo;
+d.dropT = 0; frames(2); d.pickups[0].fall = false; d.pickups[0].y = d.groundY - 6; d.pickups[0].x = d.f1.x; frames(2);
+check(d.f1.weapon === duelGun && d.f1.wAmmo === duelAmmo + SS.WEAPONS[duelGun].ammo, 'duel: a second box keeps the gun and adds a full load');
 d.dropT = 0; frames(2); d.dropT = 0; frames(2); d.dropT = 0; frames(2);
 check(d.pickups.length === 2, 'never more than 2 boxes waiting at once');
 d.f2.hp = 0; d.f2.knockOut(d); frames(60 * 5);

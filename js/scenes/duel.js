@@ -335,10 +335,10 @@
         const s = this.slots.find((q) => q.f.state !== 'ko' && U.overlap(pk.box, q.f.box));
         if (s) {
           pk.taken = true;
-          const gun = s.f.giveRandomWeapon();
+          const { gun, added } = s.f.openWeaponBox();
           SS.Audio.weaponGet();
           this.fx.burst(pk.x, pk.y - 24, gun.color, 20, 300);
-          this.fx.text(pk.x, pk.y - 70, `${this.tagOf(s)}: ${gun.name}!`, gun.color, 24);
+          this.fx.text(pk.x, pk.y - 70, `${this.tagOf(s)}: ${added ? `+${added} ${gun.unit}! (${s.f.wAmmo})` : gun.name + '!'}`, gun.color, 24);
         }
       }
       this.pickups = this.pickups.filter((pk) => !pk.taken);

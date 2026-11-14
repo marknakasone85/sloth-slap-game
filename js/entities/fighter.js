@@ -15,12 +15,14 @@
   SS.POWER_TIME = 12; // seconds a power-up lasts
 
   // Guns. Everyone starts with the pistol (its ammo slowly refills). A "?" weapon box gives a
-  // big gun with limited ammo; when that runs dry the sloth goes back to the pistol.
+  // big gun (ammo = one full load). While you have it, more "?" boxes add a full load and ammo
+  // boxes add half a load - no limit. When it runs dry the sloth goes back to the pistol, and
+  // the next "?" box gives a new big gun.
   SS.WEAPONS = {
     pistol: { id: 1, name: 'PISTOL', short: 'ammo' },
-    shotgun: { id: 2, name: 'SHOTGUN', short: 'SHOTGUN', ammo: 8, color: '#ff9f1c', out: 'OUT OF SHELLS!' },
-    rocket: { id: 3, name: 'ROCKET LAUNCHER', short: 'ROCKETS', ammo: 4, color: '#ff4d6d', out: 'OUT OF ROCKETS!' },
-    lmg: { id: 4, name: 'MACHINE GUN', short: 'MACHINE GUN', ammo: 60, color: '#9bf6ff', out: 'BELT EMPTY!' },
+    shotgun: { id: 2, name: 'SHOTGUN', short: 'SHOTGUN', ammo: 8, unit: 'SHELLS', color: '#ff9f1c', out: 'OUT OF SHELLS!' },
+    rocket: { id: 3, name: 'ROCKET LAUNCHER', short: 'ROCKETS', ammo: 4, unit: 'ROCKETS', color: '#ff4d6d', out: 'OUT OF ROCKETS!' },
+    lmg: { id: 4, name: 'MACHINE GUN', short: 'MACHINE GUN', ammo: 60, unit: 'BULLETS', color: '#9bf6ff', out: 'BELT EMPTY!' },
   };
   SS.WEAPON_BY_ID = ['', 'pistol', 'shotgun', 'rocket', 'lmg'];
   SS.BIG_GUNS = ['shotgun', 'rocket', 'lmg'];
@@ -105,11 +107,26 @@
       this.wAmmo = SS.WEAPONS[type].ammo;
     }
 
-    // what's inside a "?" weapon box
-    giveRandomWeapon() {
+    // A "?" weapon box: a random big gun - or, if you already have one, a full load of ammo for it.
+    // Returns { gun, added } (added = ammo added to the gun you kept, 0 for a new gun).
+    openWeaponBox() {
+      if (this.weapon !== 'pistol') {
+        const gun = SS.WEAPONS[this.weapon];
+        this.wAmmo += gun.ammo;
+        return { gun, added: gun.ammo };
+      }
       const type = U.choice(SS.BIG_GUNS);
       this.giveWeapon(type);
-      return SS.WEAPONS[type];
+      return { gun: SS.WEAPONS[type], added: 0 };
+    }
+
+    // An ammo box: fills the pistol back up, and adds half a load to a big gun. Returns that half load (or 0).
+    refillAmmo() {
+      this.ammo = this.maxAmmo;
+      if (this.weapon === 'pistol') return 0;
+      const n = Math.ceil(SS.WEAPONS[this.weapon].ammo / 2);
+      this.wAmmo += n;
+      return n;
     }
 
     // returns how many grenades were actually added (the pouch holds MAX_GRENADES)
