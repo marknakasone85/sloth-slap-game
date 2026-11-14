@@ -105,6 +105,13 @@
       this.wAmmo = SS.WEAPONS[type].ammo;
     }
 
+    // what's inside a "?" weapon box
+    giveRandomWeapon() {
+      const type = U.choice(SS.BIG_GUNS);
+      this.giveWeapon(type);
+      return SS.WEAPONS[type];
+    }
+
     // returns how many grenades were actually added (the pouch holds MAX_GRENADES)
     addGrenades(n) {
       const before = this.grenades;

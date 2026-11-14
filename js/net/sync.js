@@ -73,6 +73,7 @@
           wp: s.f.weapon === 'pistol' ? 0 : s.f.weapon, wa: s.f.wAmmo, gr: s.f.grenades,
         })),
         pr: scene.projectiles.map((p) => [p.kind, r1(p.x), r1(p.y), Math.round(p.vx), Math.round(p.vy)]),
+        pk: (scene.pickups || []).map((p) => [p.type, r1(p.x), r1(p.y), p.fall ? 1 : 0]), // supply drops
         fx: b.fx, au: b.au,
       };
     },

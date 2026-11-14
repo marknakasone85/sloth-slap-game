@@ -159,6 +159,8 @@
         s.presses = {};
       });
       this.projectiles = [];
+      this.pickups = [];
+      this.dropT = U.rand(5, 7); // first supply drop
       this.timer = ROUND_TIME + (n > 2 ? 15 : 0);
       this.state = 'intro';
       this.stateT = 0;
@@ -187,7 +189,7 @@
     floorBelow() { return this.groundY; }
 
     controlsFor(s, dt) {
-      if (s.cpu) return s.cpu.control(s.f, this.opponentOf(s.f), dt);
+      if (s.cpu) return s.cpu.control(s.f, this.opponentOf(s.f), dt, this.nearestDrop(s.f));
       if (s.local) return SS.readControls(SS.Controls[s.local]);
       const c = Object.assign({ left: false, right: false, down: false }, s.held, s.presses);
       s.presses = {};
@@ -282,6 +284,7 @@
         if (this.stateT > 1.9) { this.state = 'fight'; this.stateT = 0; this.banner = null; }
       } else if (fighting) {
         this.timer -= dt;
+        this.updateDrops(dt);
         const standing = this.slots.filter((s) => s.f.state !== 'ko');
         if (standing.length <= 1) {
           this.endRound(standing.length ? standing[0] : null, 'ko');
@@ -301,6 +304,54 @@
           else this.startRound();
         }
       }
+    }
+
+    // Supply drops: every so often a "?" weapon box floats down on a parachute. Grab it first!
+    updateDrops(dt) {
+      this.dropT -= dt;
+      if (this.dropT <= 0) {
+        this.dropT = U.rand(9, 13);
+        if (this.pickups.length < 2) {
+          const x = U.rand(110, W - 110);
+          const pk = new SS.Pickup('weapon', x, -40);
+          pk.fall = true;
+          this.pickups.push(pk);
+          this.fx.text(x, 150, 'SUPPLY DROP!', '#ffd23f', 24);
+          SS.Audio.tone(1300, 0.6, 'sine', 0.1, 600); // falling whistle
+        }
+      }
+      for (const pk of this.pickups) {
+        pk.update(dt);
+        if (pk.fall) {
+          pk.y += 130 * dt;
+          if (pk.y >= this.groundY - 6) {
+            pk.y = this.groundY - 6;
+            pk.fall = false;
+            SS.Audio.land();
+            this.fx.burst(pk.x, pk.y, '#d4a373', 8, 140);
+          }
+        }
+        // anyone touching it gets it - jump to snatch it out of the air
+        const s = this.slots.find((q) => q.f.state !== 'ko' && U.overlap(pk.box, q.f.box));
+        if (s) {
+          pk.taken = true;
+          const gun = s.f.giveRandomWeapon();
+          SS.Audio.weaponGet();
+          this.fx.burst(pk.x, pk.y - 24, gun.color, 20, 300);
+          this.fx.text(pk.x, pk.y - 70, `${this.tagOf(s)}: ${gun.name}!`, gun.color, 24);
+        }
+      }
+      this.pickups = this.pickups.filter((pk) => !pk.taken);
+    }
+
+    // where a CPU sloth could grab a weapon box (landed, or about to land)
+    nearestDrop(f) {
+      let best = null;
+      for (const pk of this.pickups) {
+        if (pk.y < this.groundY - 160) continue;
+        if (!best || Math.abs(pk.x - f.x) < Math.abs(best.x - f.x)) best = pk;
+      }
+      return best;
     }
 
     // keep fighters from walking through each other
@@ -449,6 +500,7 @@
         s.f.tagColor = this.colorOf(s);
         s.f.draw(ctx, this);
       }
+      for (const pk of this.pickups) pk.draw(ctx);
       for (const p of this.projectiles) p.draw(ctx);
       this.fx.draw(ctx);
       ctx.restore();

@@ -9,7 +9,7 @@ function runBattle(players, hook) {
   SS.Engine.setScene(new SS.DuelScene({ net: true, theme: 'castle', stageIndex: 9, players: players }));
   var d = scene(), guest = new SS.RemoteDuelScene(); SS.Net.id = 1;
   var bots = {}; players.forEach(function (p) { if (p.cpu === undefined) bots[p.id] = new SS.CPU(2); });
-  var err = null, i, fin = { host: 0, slow: false, guest: false, snaps: 0 };
+  var err = null, i, fin = { host: 0, slow: false, guest: false, snaps: 0, drops: 0, guns: 0, guestBox: false };
   // the guest gets exactly the snapshots the host sends (with their effects and sounds)
   var sent = [], send = SS.Net.send;
   SS.Net.send = function (m) { if (m && m.t === 'snap') sent.push(JSON.stringify(m)); return send.apply(SS.Net, arguments); };
@@ -19,12 +19,15 @@ function runBattle(players, hook) {
     var had = !!d.fx.fin;
     frames(1);
     if (d.fx.fin && !had) fin.host++;
+    d.pickups.forEach(function (p) { if (!p.counted) { p.counted = true; fin.drops++; } });
+    d.slots.forEach(function (s) { if (s.f.weapon !== 'pistol' && !s.hadGun) { s.hadGun = true; fin.guns++; } if (s.f.weapon === 'pistol') s.hadGun = false; });
     if (SS.Engine.slowT > 0) fin.slow = true;
     while (sent.length) {
       fin.snaps++;
       try { guest.onNet(JSON.parse(sent.shift())); guest.update(1 / 30); guest.draw(SS.Engine.ctx); }
       catch (e) { if (!err) err = '' + e; }
       if (guest.fx.fin) fin.guest = true;
+      if (guest.pickups.length) fin.guestBox = true;
     }
   }
   SS.Net.send = send;
@@ -35,6 +38,7 @@ check(r.d.state === 'matchEnd' && !!r.d.matchWinner, '4-sloth free-for-all plays
 check(!r.err, 'guest battle view draws every snapshot' + (r.err ? ': ' + r.err : ''));
 check(r.fin.host >= 1 && r.fin.slow && r.fin.guest, 'knockout finisher: slow motion + zoom on the host, replayed for the guest (' + r.fin.host + ' finishers in ' + r.d.round + ' rounds)');
 check(SS.Engine.slowT <= 0 && Math.abs(SS.Engine.unscaled(1 / 60) - 1 / 60) < 1e-9, 'slow motion is over by the end of the match');
+check(r.fin.drops >= 2 && r.fin.guns >= 1 && r.fin.guestBox, 'weapon boxes parachute in during the battle and the sloths grab them (' + r.fin.drops + ' drops, ' + r.fin.guns + ' big guns grabbed)');
 SS.Engine.slowmo(1, 0.25);
 check(Math.abs(SS.Engine.unscaled(0.25 / 60) - 1 / 60) < 1e-9, 'Wi-Fi snapshots keep real time during slow motion');
 SS.Engine.setScene(new SS.CampaignScene({ charId: 'sir', level: 3 })); var bc = scene(); frames(5);

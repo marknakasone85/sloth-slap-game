@@ -534,6 +534,28 @@
     ctx.restore();
   };
 
+  // Striped parachute (duel supply drops). (x, y) = where the strings meet the box.
+  A.parachute = function (ctx, x, y, t = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(Math.sin(t * 2) * 0.08);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (const sx of [-34, -12, 12, 34]) { ctx.moveTo(0, 0); ctx.lineTo(sx, -58); }
+    ctx.stroke();
+    const colors = ['#ff4d6d', '#ffffff', '#ff4d6d', '#ffffff'];
+    for (let i = 0; i < 4; i++) {
+      ctx.fillStyle = colors[i];
+      ctx.beginPath();
+      ctx.moveTo(0, -60);
+      ctx.arc(0, -60, 40, Math.PI + (i * Math.PI) / 4, Math.PI + ((i + 1) * Math.PI) / 4);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  };
+
   // Grumpy surveillance drone (military base flyer)
   A.drone = function (ctx, x, y, o) {
     const C = begin(ctx, x, y, o);

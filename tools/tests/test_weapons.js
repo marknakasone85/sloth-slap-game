@@ -151,4 +151,24 @@ check(me && me.wp === 'rocket' && me.gr === 2 && !gErr, 'Wi-Fi player throws a g
 host.netInput(1, { n: 2, l: 0, r: 0, d: 0, s: 1, p: [] });
 host.slots[1].f.giveWeapon('lmg'); frames(30);
 check(host.slots[1].f.wAmmo < SS.WEAPONS.lmg.ammo - 3, 'Wi-Fi player holding Shoot keeps the machine gun firing');
+
+// ---- duels: weapon boxes parachute in from the sky ----
+SS.Engine.setScene(new SS.DuelScene({ p1: 'sir', p2: 'chonk', vsCpu: false, theme: 'jungle' }));
+var d = scene(); frames(130);
+check(d.state === 'fight' && d.pickups.length === 0 && d.dropT > 3, 'duel: no weapon box at the start of a round, the first one comes after a few seconds');
+d.dropT = 0; frames(2);
+var drop = d.pickups[0];
+check(drop && drop.type === 'weapon' && drop.fall && drop.y < 60, 'duel: a "?" weapon box parachutes in from the sky');
+frames(60 * 5);
+check(drop.fall === false && Math.abs(drop.y - (d.groundY - 6)) < 1 && !drop.taken, 'it lands on the ground (nobody touched it)');
+var snapD = JSON.parse(JSON.stringify(SS.Sync.duelSnapshot(d)));
+var gd = new SS.RemoteDuelScene(), gdErr = null;
+try { gd.onNet(snapD); gd.update(1 / 30); gd.draw(SS.Engine.ctx); } catch (e) { gdErr = '' + e; }
+check(snapD.pk.length === 1 && gd.pickups.length === 1 && !gdErr, 'Wi-Fi guests see the box' + (gdErr ? ' ERROR ' + gdErr : ''));
+d.f1.x = drop.x; frames(2);
+check(d.f1.weapon !== 'pistol' && d.pickups.length === 0, 'walking into it gives a big gun (' + d.f1.weapon + ')');
+d.dropT = 0; frames(2); d.dropT = 0; frames(2); d.dropT = 0; frames(2);
+check(d.pickups.length === 2, 'never more than 2 boxes waiting at once');
+d.f2.hp = 0; d.f2.knockOut(d); frames(60 * 5);
+check(d.round === 2 && d.pickups.length === 0 && d.f1.weapon === 'pistol', 'next round: boxes cleared, everyone back to the pistol');
 done('weapons');

@@ -16,7 +16,8 @@
       this.blockT = 0;
     }
 
-    control(me, opp, dt) {
+    // goal = a weapon box worth running to (duel supply drops), or null
+    control(me, opp, dt, goal) {
       const ctrl = { left: false, right: false, down: false, jumpP: false, slapP: false, heavyP: false, specialP: false, shootP: false, grenadeP: false };
       if (!opp || opp.state === 'ko' || me.state === 'ko') return ctrl;
 
@@ -43,7 +44,9 @@
         this.hold = { left: false, right: false, down: false };
         const aggressive = Math.random() < this.cfg.aggression;
 
-        if (me.canSpecial && this.goodSpecialRange(me.def.special, dist)) {
+        if (goal && me.weapon === 'pistol' && Math.abs(goal.x - me.x) < 450 && Math.random() < 0.3 + this.cfg.aggression * 0.4) {
+          this.hold[goal.x > me.x ? 'right' : 'left'] = true; // go grab the big gun
+        } else if (me.canSpecial && this.goodSpecialRange(me.def.special, dist)) {
           ctrl.specialP = true;
         } else if (me.grenades > 0 && dist > 300 && dist < 480 && Math.random() < 0.12 + this.cfg.aggression * 0.12) {
           ctrl.grenadeP = true; // lobbed grenades land about this far away

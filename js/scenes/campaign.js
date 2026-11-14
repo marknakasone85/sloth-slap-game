@@ -418,9 +418,7 @@
         SS.Audio.ammo();
         this.fx.text(pk.x, pk.y - 40, `+${got} GRENADE${got > 1 ? 'S' : ''} (${f.grenades}/${SS.MAX_GRENADES})`, '#9ef01a', 20);
       } else if (pk.type === 'weapon') {
-        const type = U.choice(SS.BIG_GUNS);
-        f.giveWeapon(type);
-        const gun = SS.WEAPONS[type];
+        const gun = f.giveRandomWeapon();
         SS.Audio.weaponGet();
         this.fx.burst(pk.x, pk.y - 24, gun.color, 20, 300);
         this.fx.text(pk.x, pk.y - 70, gun.name + '!', gun.color, 28);

@@ -716,6 +716,7 @@
     update(dt) { this.t += dt; }
     draw(ctx) {
       if (this.taken) return;
+      if (this.fall) SS.Art.parachute(ctx, this.x, this.y - 30, this.t); // duel supply drop on its way down
       if (this.type === 'banana') SS.Art.banana(ctx, this.x, this.y, this.t);
       else if (this.type === 'ammo') SS.Art.ammoBox(ctx, this.x, this.y, this.t);
       else if (this.type === 'heart') SS.Art.heart(ctx, this.x, this.y, this.t);

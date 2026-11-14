@@ -10,6 +10,7 @@
       this.snap = null;
       this.players = {};
       this.proj = [];
+      this.pickups = [];
       this.fx = new SS.FX();
       this.groundY = SS.GROUND_Y;
       this.input = {};
@@ -59,6 +60,7 @@
       }
       for (const id of Object.keys(this.players)) if (!seen.has(+id)) delete this.players[id];
       this.proj = m.pr.map(([kind, x, y, vx, vy]) => new SS.Projectile(kind, x, y, vx, vy, 'host', {}));
+      this.pickups = (m.pk || []).map(([type, x, y, fall]) => Object.assign(new SS.Pickup(type, x, y), { fall: !!fall }));
       SS.Sync.replay(this.fx, m);
     }
 
@@ -93,6 +95,7 @@
       this.fx.update(dt);
       const k = 1 - Math.pow(0.0004, dt);
       for (const p of Object.values(this.players)) { p.x += (p.tx - p.x) * k; p.y += (p.ty - p.y) * k; }
+      for (const p of this.pickups) p.t = this.t + p.x * 0.013;
 
       if (this.ended) {
         const item = this.menu.update(dt);
@@ -134,6 +137,7 @@
       ctx.translate(sh.x, sh.y);
       const ps = Object.values(this.players).sort((a, b) => (a.st === 'attack') - (b.st === 'attack'));
       for (const p of ps) SS.Fighter.drawState(ctx, p, this);
+      for (const p of this.pickups) p.draw(ctx);
       const ahead = Math.min(0.1, (performance.now() - this.snapAt) / 1000);
       for (const p of this.proj) {
         const x = p.x, y = p.y;
