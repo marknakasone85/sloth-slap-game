@@ -126,7 +126,7 @@ Security: only the host's own computer can start a game, joining needs the code,
 
 ## Backups
 
-The folder is a git repository, so every saved version of the game can be restored. Ask Claude to "save a backup" after changes, or to "go back to the version from before X". The versions are also kept on GitHub at https://github.com/marknakasone85/sloth-slap-game.
+The folder is a git repository, so every saved version of the game can be restored. After each finished change Claude saves a backup and keeps all three copies in step: this folder, GitHub (https://github.com/marknakasone85/sloth-slap-game, which also updates the online game) and the claude.ai web version. Ask Claude to "go back to the version from before X" to restore an older one.
 
 ## Controls
 
