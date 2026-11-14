@@ -15,10 +15,59 @@ SS.Art = SS.Art || {};
     ctx.fill();
   }
 
-  // Cartoon pistol held in the hand at the end of the arm (arm-local coords).
+  // What's in the hand at the end of the arm (arm-local coords):
+  // kind 1 pistol, 2 shotgun, 3 rocket launcher, 4 belt-fed machine gun, 5 a grenade about to be thrown.
+  function flash(ctx, x, y, r) {
+    ctx.fillStyle = '#ffd23f';
+    SS.FX.star(ctx, x, y, r);
+    ctx.fillStyle = '#fff3b0';
+    SS.FX.star(ctx, x - 2, y, r / 2);
+  }
   function drawGun(ctx, len, gun) {
     const C = gun.C;
     const x = len - 4;
+    if (gun.kind === 5) { SS.Art.grenade(ctx, len + 6, -4, 8, 0.3); return; }
+    if (gun.kind === 2) { // shotgun: wooden stock, two long barrels
+      ctx.fillStyle = C('#8b5a2b');
+      ctx.beginPath(); ctx.moveTo(x - 14, -12); ctx.lineTo(x + 8, -12); ctx.lineTo(x + 8, -4); ctx.lineTo(x - 12, 2); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = C('#34343f');
+      ctx.fillRect(x + 6, -15, 50, 5);
+      ctx.fillRect(x + 6, -10, 50, 5);
+      ctx.fillStyle = C('#6b4226');
+      ctx.fillRect(x + 18, -6, 18, 5); // pump
+      if (gun.flash) flash(ctx, x + 66, -10, 18);
+      return;
+    }
+    if (gun.kind === 3) { // rocket launcher: a fat tube with a red rocket peeking out
+      ctx.fillStyle = C('#556b2f');
+      ctx.beginPath(); ctx.roundRect(x - 26, -20, 76, 16, 5); ctx.fill();
+      ctx.fillStyle = C('#3c4a22');
+      ctx.fillRect(x - 26, -20, 8, 16);
+      ctx.fillRect(x + 42, -21, 8, 18);
+      ctx.fillStyle = C(gun.color);
+      ctx.fillRect(x - 6, -16, 22, 3);
+      if (!gun.flash) { ctx.fillStyle = C('#e63946'); ctx.beginPath(); ctx.arc(x + 51, -12, 6, -Math.PI / 2, Math.PI / 2); ctx.fill(); }
+      ctx.fillStyle = C('#2a2a33');
+      ctx.fillRect(x + 2, -4, 7, 12); // grip
+      if (gun.flash) flash(ctx, x + 60, -12, 20);
+      return;
+    }
+    if (gun.kind === 4) { // belt-fed machine gun with a dangling ammo belt
+      ctx.fillStyle = C('#2f2f38');
+      ctx.beginPath(); ctx.roundRect(x - 6, -17, 46, 13, 3); ctx.fill();
+      ctx.fillRect(x + 38, -13, 24, 5);
+      ctx.fillStyle = C('#55556a');
+      ctx.fillRect(x + 40, -15, 18, 2);
+      ctx.fillStyle = C(gun.color);
+      ctx.fillRect(x, -9, 22, 3);
+      ctx.fillStyle = C('#d4a017'); // brass belt
+      for (let i = 0; i < 5; i++) ctx.fillRect(x + 6 - i * 3, -4 + i * 4, 6, 3);
+      ctx.strokeStyle = C('#2a2a33');
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x + 50, -8); ctx.lineTo(x + 46, 6); ctx.moveTo(x + 50, -8); ctx.lineTo(x + 56, 6); ctx.stroke(); // bipod
+      if (gun.flash) flash(ctx, x + 70, -10, 15);
+      return;
+    }
     ctx.fillStyle = C('#34343f');
     ctx.beginPath();
     ctx.roundRect(x, -14, 36, 11, 3);
@@ -448,7 +497,7 @@ SS.Art = SS.Art || {};
     if (pose === 'ko') arm = REST + 0.6;
     if (pose === 'win') arm = -2.0 + Math.sin(t * 8 + 1) * 0.3;
     if (pose === 'jump' && o.arm === undefined) arm = -0.6;
-    const gun = o.gun ? { color: L.accent || '#e63946', flash: o.muzzle, C } : null;
+    const gun = o.gun ? { color: L.accent || '#e63946', flash: o.muzzle, kind: o.weapon || 1, C } : null;
     if (gun) arm = o.arm !== undefined ? o.arm : -0.05;
     drawArm(ctx, buff ? 20 : 12, -62, arm, C(L.fur), C(L.furDark), C('#f4e7c5'), 44, o.slapping, gun, armStyle);
 

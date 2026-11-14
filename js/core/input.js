@@ -3,12 +3,13 @@
 // else can treat them exactly like keys.
 (function () {
   const PREVENT = new Set([
-    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Slash', 'Tab', 'Semicolon',
+    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Slash', 'Tab', 'Semicolon', 'Quote',
   ]);
 
   // Which keys the player is using, so on-screen hints can match them.
-  const ARROW_SIDE = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyJ', 'KeyK', 'KeyL',
-    'Comma', 'Period', 'Slash', 'Semicolon']);
+  // (K = big slap on both sides, so it doesn't switch the hints)
+  const ARROW_SIDE = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyJ', 'KeyL',
+    'Comma', 'Period', 'Slash', 'Semicolon', 'Quote']);
   const WASD_SIDE = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyR']);
 
   const I = (SS.Input = {
@@ -71,13 +72,14 @@
           st.Up = ay < -0.6 || b(12);
           st.Down = ay > 0.6 || b(13) || b(4);
           st.R = b(5) || b(7);
+          st.L = b(6); // left trigger: grenade
           st.A = b(0);
           st.B = b(1);
           st.X = b(2);
           st.Y = b(3);
           st.Start = b(9);
         }
-        for (const k of ['Left', 'Right', 'Up', 'Down', 'A', 'B', 'X', 'Y', 'R', 'Start']) {
+        for (const k of ['Left', 'Right', 'Up', 'Down', 'A', 'B', 'X', 'Y', 'R', 'L', 'Start']) {
           const code = 'Pad' + i + k;
           const now = !!st[k];
           if (now && !this._padPrev[code]) { this.pressed[code] = true; this.lastDevice = 'pad'; }
@@ -106,9 +108,10 @@
     up: ['KeyW', 'Pad0Up', 'Pad0A', 'TouchJump'],
     down: ['KeyS', 'Pad0Down', 'TouchDown'],
     slap: ['KeyF', 'Pad0X', 'TouchSlap'],
-    heavy: ['KeyG', 'Pad0Y', 'TouchHeavy'],
+    heavy: ['KeyK', 'Pad0Y', 'TouchHeavy'],
     special: ['KeyH', 'Pad0B', 'TouchSpecial'],
     shoot: ['KeyR', 'Pad0R', 'TouchShoot'],
+    grenade: ['KeyG', 'Pad0L', 'TouchGrenade'],
   };
   const P2 = {
     left: ['ArrowLeft', 'Pad1Left'],
@@ -119,13 +122,13 @@
     heavy: ['Period', 'Numpad2', 'Pad1Y'],
     special: ['Slash', 'Numpad3', 'Pad1B'],
     shoot: ['Semicolon', 'Numpad4', 'Pad1R'],
+    grenade: ['Quote', 'Numpad5', 'Pad1L'],
   };
-  // Solo play accepts both halves of the keyboard plus J/K/L and Space.
+  // Solo play accepts both halves of the keyboard plus J/L and Space.
   const SOLO = {};
   for (const k of Object.keys(P1)) SOLO[k] = P1[k].concat(P2[k]);
   SOLO.up.push('Space');
   SOLO.slap.push('KeyJ');
-  SOLO.heavy.push('KeyK');
   SOLO.special.push('KeyL');
 
   SS.Controls = { P1, P2, SOLO };
@@ -141,6 +144,8 @@
       heavyP: I.anyHit(scheme.heavy),
       specialP: I.anyHit(scheme.special),
       shootP: I.anyHit(scheme.shoot),
+      shoot: I.anyDown(scheme.shoot), // held: the machine gun keeps firing
+      grenadeP: I.anyHit(scheme.grenade),
     };
   };
 

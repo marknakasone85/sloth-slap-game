@@ -6,7 +6,7 @@
   const W = SS.W;
   const RESPAWN_TIME = 5;     // seconds before a snoozed co-op player pops back in
   const SNAP_RATE = 1 / 30;   // Wi-Fi updates per second sent to guests
-  const PRESS_KEYS = ['jumpP', 'slapP', 'heavyP', 'specialP', 'shootP'];
+  const PRESS_KEYS = ['jumpP', 'slapP', 'heavyP', 'specialP', 'shootP', 'grenadeP'];
 
   SS.CampaignScene = class {
     // opts: { level, charId }                         solo
@@ -115,25 +115,31 @@
       if (!slot) return;
       if (m.n > slot.inSeq) {
         slot.inSeq = m.n;
-        slot.held = { left: !!m.l, right: !!m.r, down: !!m.d };
+        slot.held = { left: !!m.l, right: !!m.r, down: !!m.d, shoot: !!m.s };
       }
       for (const k of m.p || []) if (PRESS_KEYS.includes(k)) slot.presses[k] = true;
     }
 
     tagEnemy(e) { e.uid = ++this.uid; return e; }
 
-    // Hearts right after every gate (where you respawn) and before the boss,
-    // plus two power-up bubbles per map (a different pair on each map).
+    // Hearts right after every gate (where you respawn) and before the boss, two power-up bubbles
+    // per map (a different pair on each map), grenades, and "?" weapon boxes - one right before the boss.
     placeHelpers() {
       const add = (type, x) => this.pickups.push(new SS.Pickup(type, x, this.groundY - 6));
-      for (const g of this.gates) add('heart', g.x + 140);
-      if (this.boss) add('heart', this.arenaX - 120);
-      const types = SS.POWER_TYPES;
-      [0.3, 0.62].forEach((f, i) => {
-        let x = this.L.length * f;
+      const clear = (x) => {
         for (const g of this.gates.concat(this.gongs)) if (Math.abs(g.x - x) < 90) x += 160;
-        add(types[(this.levelIndex * 2 + i) % types.length], x);
-      });
+        return x;
+      };
+      for (const g of this.gates) add('heart', g.x + 140);
+      if (this.boss) {
+        add('heart', this.arenaX - 120);
+        add('weapon', this.arenaX - 200);
+        add('grenade', this.arenaX - 260);
+      }
+      const types = SS.POWER_TYPES;
+      [0.3, 0.62].forEach((f, i) => add(types[(this.levelIndex * 2 + i) % types.length], clear(this.L.length * f)));
+      [0.18, 0.5].forEach((f) => add('grenade', clear(this.L.length * f)));
+      add('weapon', clear(this.L.length * 0.4));
     }
 
     enter() {
@@ -406,6 +412,18 @@
         f.ammo = f.maxAmmo;
         SS.Audio.ammo();
         this.fx.text(pk.x, pk.y - 40, 'AMMO FULL!', '#ffb703', 20);
+      } else if (pk.type === 'grenade') {
+        const got = f.addGrenades(2);
+        if (!got) { pk.taken = false; return; } // pouch full: leave them for later (or a friend)
+        SS.Audio.ammo();
+        this.fx.text(pk.x, pk.y - 40, `+${got} GRENADE${got > 1 ? 'S' : ''} (${f.grenades}/${SS.MAX_GRENADES})`, '#9ef01a', 20);
+      } else if (pk.type === 'weapon') {
+        const type = U.choice(SS.BIG_GUNS);
+        f.giveWeapon(type);
+        const gun = SS.WEAPONS[type];
+        SS.Audio.weaponGet();
+        this.fx.burst(pk.x, pk.y - 24, gun.color, 20, 300);
+        this.fx.text(pk.x, pk.y - 70, gun.name + '!', gun.color, 28);
       } else if (pk.type === 'banana') {
         this.bananas++;
         this.score += 50;
@@ -521,6 +539,7 @@
           tag: `P${s.id + 1}`, color: SS.PLAYER_COLORS[s.id % 4], name: s.def.name,
           hp: f.hp, mhp: f.maxHp, meter: f.meter, canSpecial: f.canSpecial, ammo: f.ammo, maxAmmo: f.maxAmmo,
           ammoT: f.ammoT, ammoRegen: f.ammoRegen, powers: f.powers, lucky: f.lucky,
+          weapon: f.weapon, wAmmo: f.wAmmo, grenades: f.grenades,
           respawnT: s.respawnT, ko: f.state === 'ko', combo: f.combo,
         };
       });

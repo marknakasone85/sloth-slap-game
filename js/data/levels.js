@@ -9,8 +9,8 @@ SS.GROUND_Y = 460;
 SS.LEVELS = [
   {
     name: 'Jungle Jog',
-    blurb: 'Slap your way to the nap hammock. Slowly.',
-    theme: 'jungle', music: 'jungle', length: 3400,
+    blurb: 'Slap your way to the nap hammock. Barry the Big Beetle took it!',
+    theme: 'jungle', music: 'jungle', length: 4050,
     platforms: [{ x: 900, y: 360, w: 180 }, { x: 1180, y: 290, w: 160 }, { x: 2300, y: 350, w: 200 }],
     enemies: [
       { type: 'beetle', x: 700 }, { type: 'beetle', x: 1000 }, { type: 'toucan', x: 1350, y: 300 },
@@ -24,11 +24,12 @@ SS.LEVELS = [
     ],
     gongs: [{ id: 1, x: 1900 }],
     gates: [{ id: 1, x: 2050 }],
+    boss: { type: 'bigBeetle', x: 3450 },
   },
   {
     name: 'Banana Beach',
     blurb: 'Crabs. Seagulls. Monkeys throwing coconuts. Relaxing!',
-    theme: 'beach', music: 'jungle', length: 4000,
+    theme: 'beach', music: 'jungle', length: 4700,
     platforms: [{ x: 1400, y: 350, w: 200 }, { x: 2700, y: 340, w: 220 }, { x: 3000, y: 270, w: 160 }],
     enemies: [
       { type: 'crab', x: 650 }, { type: 'seagull', x: 900, y: 280 }, { type: 'crab', x: 1150 },
@@ -43,11 +44,12 @@ SS.LEVELS = [
     ],
     gongs: [{ id: 1, x: 1250 }, { id: 2, x: 3000 }],
     gates: [{ id: 1, x: 1330 }, { id: 2, x: 3200 }],
+    boss: { type: 'greedyGull', x: 4100, y: 300 },
   },
   {
     name: 'Temple of Mischief',
     blurb: 'Ancient ruins full of very rude monkeys.',
-    theme: 'temple', music: 'jungle', length: 4200,
+    theme: 'temple', music: 'jungle', length: 4900,
     platforms: [
       { x: 700, y: 360, w: 160 }, { x: 950, y: 290, w: 160 }, { x: 1200, y: 360, w: 160 },
       { x: 2400, y: 340, w: 240 }, { x: 3300, y: 350, w: 200 },
@@ -65,6 +67,7 @@ SS.LEVELS = [
     ],
     gongs: [{ id: 1, x: 1450 }, { id: 2, x: 2950 }],
     gates: [{ id: 1, x: 1550 }, { id: 2, x: 3050 }],
+    boss: { type: 'scorpionQueen', x: 4300 },
   },
   {
     name: 'Volcano Snooze',
@@ -107,7 +110,7 @@ SS.LEVELS = [
   {
     name: 'Pizza Piazza',
     blurb: 'Pigeons and pizza-flinging chef monkeys. Mamma mia!',
-    theme: 'italy', music: 'italy', length: 4200,
+    theme: 'italy', music: 'italy', length: 4850,
     platforms: [
       { x: 700, y: 360, w: 160 }, { x: 950, y: 300, w: 150 }, { x: 1800, y: 350, w: 200 },
       { x: 2600, y: 340, w: 180 }, { x: 2850, y: 280, w: 160 }, { x: 3400, y: 350, w: 200 },
@@ -127,6 +130,7 @@ SS.LEVELS = [
     ],
     gongs: [{ id: 1, x: 1350 }, { id: 2, x: 3000 }],
     gates: [{ id: 1, x: 1450 }, { id: 2, x: 3150 }],
+    boss: { type: 'bigCheese', x: 4250 },
   },
   {
     name: 'Lantern Valley',
@@ -228,7 +232,7 @@ SS.LEVELS = [
   {
     name: 'Lava Lagoon',
     blurb: 'Deep inside the volcano. Fire beetles, lava blobs and hot-headed kangaroos!',
-    theme: 'lava', music: 'duel', length: 4200,
+    theme: 'lava', music: 'duel', length: 4800,
     platforms: [
       { x: 600, y: 350, w: 160 }, { x: 850, y: 290, w: 160 }, { x: 1700, y: 340, w: 200 },
       { x: 2300, y: 320, w: 180 }, { x: 2550, y: 260, w: 160 }, { x: 3300, y: 340, w: 220 },
@@ -247,6 +251,7 @@ SS.LEVELS = [
     ],
     gongs: [{ id: 1, x: 1300 }, { id: 2, x: 2800 }],
     gates: [{ id: 1, x: 1400 }, { id: 2, x: 2900 }],
+    boss: { type: 'blobzilla', x: 4200 },
   },
   {
     name: 'Jurassic Jog',

@@ -8,21 +8,21 @@ Free, nothing to install. It works on computers, phones and tablets.
 
 *Sloth Slap™ is a trademark of Mark A. Nakasone. See [Trademark and copyright](#trademark-and-copyright).*
 
-- **Campaign**: 17 side-scrolling maps. Slap enemies, smash crates for bananas and hibiscus, ring gongs to open gates (each one is also a checkpoint), beat the bosses, and reach the nap hammock. Progress and best scores are saved in the browser.
+- **Campaign**: 17 side-scrolling maps, **each with its own boss**. Slap enemies, smash crates for bananas and hibiscus, ring gongs to open gates (each one is also a checkpoint), beat the boss, and reach the nap hammock. Progress and best scores are saved in the browser.
 
   | # | Map | Highlights |
   |---|---|---|
-  | 1 | Jungle Jog | beetles, toucans |
-  | 2 | Banana Beach | crabs, seagulls, coconut monkeys |
-  | 3 | Temple of Mischief | platforms, parrots, rude monkeys |
+  | 1 | Jungle Jog | beetles, toucans; boss: **Barry the Big Beetle** (the gentle first boss) |
+  | 2 | Banana Beach | crabs, seagulls, coconut monkeys; boss: **Gulliver the Greedy Gull** (flies, drops coconuts) |
+  | 3 | Temple of Mischief | platforms, parrots, rude monkeys; boss: **The Scorpion Queen** |
   | 4 | Volcano Snooze | boss: **King Bonkers** |
   | 5 | Crab Cove | boss: **Big Pinchy the Super Crab** |
-  | 6 | Pizza Piazza (Italy) | pigeons, pizza-flinging chef monkeys, leaning tower |
+  | 6 | Pizza Piazza (Italy) | pigeons, pizza-flinging chef monkeys, leaning tower; boss: **The Big Cheese** |
   | 7 | Lantern Valley (China) | cranes, golden monkeys, pagodas; boss: **The Dancing Dragon** |
   | 8 | Operation Nap Time (military base) | drones, helmet monkeys with water balloons; boss: **General Bonkers** |
   | 9 | Mount Snoozemore (mountain) | charging goats, eagles, snowball monkeys, boxing kangaroos; boss: **Big Fluffy the Yeti** |
   | 10 | Castle Kerfuffle (castle) | bats, knight monkeys with cannonballs, boxing kangaroos; boss: **King Kanga** |
-  | 11 | Lava Lagoon (inside the volcano) | fire beetles, bouncing lava blobs, fire bats, kangaroos |
+  | 11 | Lava Lagoon (inside the volcano) | fire beetles, bouncing lava blobs, fire bats, kangaroos; boss: **Blobzilla** |
   | 12 | Jurassic Jog (time machine) | charging raptors, pterodactyls, rock-throwing cave monkeys; boss: **Tiny-Arms Rex** |
   | 13 | Space Station Zzz (low gravity!) | alien blobs, astronaut monkeys, astro-kangaroos, mini UFOs; boss: **The Big UFO** |
   | 14 | Capitol Capers (Washington DC) | acorn-throwing squirrels, charging geese, pigeons; boss: **The Mega Goose** |
@@ -30,7 +30,9 @@ Free, nothing to install. It works on computers, phones and tablets.
   | 16 | Crystal Caverns (dark cave: light only around your sloths) | dropping spiders, bats, crystal crabs; boss: **The Giant Mole** (burrows and pops up under you) |
   | 17 | Big Apple Bash (New York City) | pizza rats, speeding taxis, hot-dog monkeys, pigeons; final boss: **Mega Pizza Rat** |
 
-  Flying enemies (birds, bats, drones, UFOs) go down with one slap or one shot.
+  Flying enemies (birds, bats, drones, UFOs) go down with one slap or one shot. When a boss runs into you it **bumps you back** out of its way (or over it, if you're against a wall) instead of pinning you, and **blocking works against bosses from any side**.
+
+  **Guns & grenades:** every sloth starts with a pistol (6 bullets that slowly refill) and 3 grenades. **Grenades (G)** are lobbed in an arc and blast everything nearby; grenade pickups give +2 and you can carry up to 10. Glowing **"?" weapon boxes** (a couple per map, one right before each boss, and sometimes in crates) hold a random big gun with limited ammo: a **shotgun** (5 pellets per shot), a **rocket launcher** (exploding rockets) or a **belt-fed machine gun** (hold Shoot). When it runs dry you're back to the pistol. In Slapdown Duel each sloth gets 2 grenades per round.
 
   **Health & power-ups:** a heart (+50 HP) waits just past every gate and before each boss. Enemies sometimes drop leaf snacks (+10) or hearts. Each map has two glowing power-up bubbles, and crates sometimes hold one:
   🛡️ Bubble Shield (no damage), 👊 Super Slap (double damage), 🔫 Rapid Fire (unlimited ammo), ☕ Coffee (super speed): each lasts 12 seconds.
@@ -41,7 +43,7 @@ Free, nothing to install. It works on computers, phones and tablets.
   - During a map: **Pause → Choose Another Map**. It's also on the "Nap achieved!" and "Snoozed out!" screens. In Wi-Fi games the host picks and everyone moves to the new map together.
 
 - **Co-op campaign** (Campaign → choose how to play):
-  - **2 Players (this computer):** P1 uses WASD + F/G/H/R and P2 uses the arrow keys + , . / ;
+  - **2 Players (this computer):** P1 uses WASD + F/K/H/R/G and P2 uses the arrow keys + , . / ; '
   - **Wi-Fi co-op, 2 to 4 players** on different computers on the same Wi-Fi (see *Playing together on Wi-Fi* below).
   - Everyone shares one screen. If you get snoozed while a teammate is still up, you pop back in next to them after 5 seconds. Checkpoints are only needed if the whole team goes down. Enemies get tougher the more sloths there are.
 - **Slapdown Duel**: a fighting mode, first to 2 round wins. The round-winning slap plays in **slow motion** with a dramatic zoom (bigger for the match winner, and for every boss knockout in the campaign).
@@ -134,12 +136,13 @@ The folder is a git repository, so every saved version of the game can be restor
 | Jump | W | ↑ |
 | Block (hold) | S | ↓ |
 | Slap | F | , |
-| Big Slap | G | . |
+| Big Slap | K | . |
 | Special (when the meter is full) | H | / |
-| Shoot (6 bullets, refill slowly; crates drop ammo) | R | ; |
+| Shoot (pistol: 6 bullets, refill slowly; crates drop ammo. Hold it with the machine gun) | R | ; |
+| Grenade (up to 10) | G | ' |
 | Pause | Esc / P | Esc / P |
 
-In single-player you can also use the arrow keys, Space, and J / K / L. In both the campaign and Slapdown Duel, a key-hint strip along the bottom shows each player's keys and lights up the move they're doing. You can switch it off in the pause menu, and **Pause → Controls** shows the full list. Enemies splatter in their own color (monkeys red, beetles green, crabs blue, drones oil) and make silly noises when they go down. **Pause → Blood: OFF** swaps the blood for confetti. Gamepads work too: X = slap, Y = big slap, B = special, RB = shoot, A = jump, LB = block. Menus also work with the mouse or touch.
+In single-player you can also use the arrow keys, Space, and J / K / L / ; / '. In both the campaign and Slapdown Duel, a key-hint strip along the bottom shows each player's keys and lights up the move they're doing. You can switch it off in the pause menu, and **Pause → Controls** shows the full list. Enemies splatter in their own color (monkeys red, beetles green, crabs blue, drones oil) and make silly noises when they go down. **Pause → Blood: OFF** swaps the blood for confetti. Gamepads work too: X = slap, Y = big slap, B = special, RB = shoot, LT = grenade, A = jump, LB = block. On phones and tablets there's a GRENADE touch button with your grenade count. Menus also work with the mouse or touch.
 
 ## For developers
 
@@ -180,7 +183,7 @@ The game collects no personal information. It has no accounts, ads, analytics or
 
 ## Content
 
-Cartoon slapstick: slaps, bonks, silly sound effects and cartoon guns. Defeated enemies splatter in cartoon colors. **Pause → Blood: OFF** turns the splats into confetti.
+Cartoon slapstick: slaps, bonks, silly sound effects, cartoon guns and cartoon grenades (KA-BOOM clouds, no realistic violence). Defeated enemies splatter in cartoon colors. **Pause → Blood: OFF** turns the splats into confetti.
 
 Real places (Italy, China, Washington DC, Egypt, New York City) appear only as cartoon backdrops. All characters, creatures and bosses are made up. The game is not affiliated with or endorsed by any city, country, government or company.
 

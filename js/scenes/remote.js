@@ -3,7 +3,7 @@
 (function () {
   const UI = SS.UI;
   const W = SS.W, H = SS.H;
-  const PRESS_KEYS = ['jumpP', 'slapP', 'heavyP', 'specialP', 'shootP'];
+  const PRESS_KEYS = ['jumpP', 'slapP', 'heavyP', 'specialP', 'shootP', 'grenadeP'];
 
   SS.RemoteScene = class {
     constructor(opts) {
@@ -169,13 +169,13 @@
 
     sendInput(dt, c) {
       const presses = PRESS_KEYS.filter((k) => c[k]);
-      const held = [c.left ? 1 : 0, c.right ? 1 : 0, c.down ? 1 : 0];
+      const held = [c.left ? 1 : 0, c.right ? 1 : 0, c.down ? 1 : 0, c.shoot ? 1 : 0];
       const changed = !this.lastHeld || held.some((v, i) => v !== this.lastHeld[i]);
       this.heartbeat -= dt;
       if (presses.length || changed || this.heartbeat <= 0) {
         this.heartbeat = 0.5;
         this.lastHeld = held;
-        SS.Net.send({ t: 'in', n: ++this.inSeq, l: held[0], r: held[1], d: held[2], p: presses }, 'host', true);
+        SS.Net.send({ t: 'in', n: ++this.inSeq, l: held[0], r: held[1], d: held[2], s: held[3], p: presses }, 'host', true);
       }
     }
 
@@ -194,7 +194,7 @@
     wantsTouch() { return !!this.snap && !this.menu && !this.ended && !this.showControls; }
     touchPlayer() {
       const me = this.snap && this.snap.pl.find((p) => p.id === SS.Net.id);
-      return me ? { canSpecial: !!me.cs, ammo: me.am } : null;
+      return me ? { canSpecial: !!me.cs, ammo: me.am, weapon: me.wp || 'pistol', wAmmo: me.wa, grenades: me.gr } : null;
     }
 
     // ---------------- draw ----------------
@@ -247,7 +247,8 @@
       const strips = [];
       if (this.showStrip && me && s.st === 'play' && !this.menu && !SS.Touch.enabled) {
         strips.push({
-          fighter: { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am },
+          fighter: { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am,
+            weapon: me.wp || 'pistol', wAmmo: me.wa, grenades: me.gr },
           opts: { tag: `YOU (P${me.id + 1})`, tagColor: SS.PLAYER_COLORS[me.id % 4] },
         });
       }
@@ -260,6 +261,7 @@
           tag: `P${p.id + 1}`, color: SS.PLAYER_COLORS[p.id % 4], name: SS.charById(p.cid).name,
           hp: p.hp, mhp: p.mhp, meter: p.me, canSpecial: !!p.cs, ammo: p.am, maxAmmo: p.mam, ammoT: p.amt,
           ammoRegen: p.amr, powers: p.pw, lucky: p.lk, respawnT: p.rt, ko: p.st === 'ko', combo: p.cb,
+          weapon: p.wp || 'pistol', wAmmo: p.wa, grenades: p.gr,
         })),
         strips,
       });

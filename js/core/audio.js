@@ -154,6 +154,32 @@
       [392, 523, 659, 784, 1046].forEach((f, i) => this.tone(f, 0.12, 'square', 0.11, null, i * 0.05));
       this.tone(200, 0.4, 'sine', 0.2, 800);
     },
+    shotgun() {
+      this.noise(0.22, 1.0, 900, 0.5);
+      this.tone(150, 0.16, 'square', 0.2, 50);
+      this.noise(0.06, 0.4, 2600, 1, 0.28); // ka-chunk
+    },
+    rocket() {
+      this.noise(0.5, 0.5, 700, 0.8);
+      this.tone(260, 0.45, 'sawtooth', 0.12, 900);
+    },
+    lmg() {
+      this.noise(0.05, 0.6, 2000, 0.7);
+      this.tone(420, 0.04, 'square', 0.07, 160);
+    },
+    throwGrenade() {
+      this.tone(1500, 0.05, 'square', 0.06); // the pin
+      this.noise(0.14, 0.3, 700, 2, 0.05);
+    },
+    explosion() {
+      this.noise(0.7, 1.0, 260, 0.5);
+      this.tone(80, 0.6, 'sine', 0.5, 28);
+      this.noise(0.25, 0.6, 1400, 0.8);
+    },
+    weaponGet() {
+      [330, 440, 554, 659].forEach((f, i) => this.tone(f, 0.1, 'square', 0.12, null, i * 0.06));
+      this.noise(0.08, 0.4, 3000, 1, 0.26); // cha-chick
+    },
     emptyClick() { this.tone(1800, 0.03, 'square', 0.08); this.tone(1200, 0.03, 'square', 0.06, null, 0.06); },
     ammo() { [660, 880, 1100].forEach((f, i) => this.tone(f, 0.07, 'square', 0.1, null, i * 0.05)); },
 

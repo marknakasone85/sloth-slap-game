@@ -175,6 +175,7 @@
     ctx.strokeStyle = C('#2b193d');
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(2, -8, 5, 0.2, Math.PI - 0.2); ctx.stroke();
+    if (o.crown) crown(ctx, C, 0, -34 * (1 - sq), 18);
     ctx.restore();
   };
 

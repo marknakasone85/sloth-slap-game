@@ -47,6 +47,13 @@
     ctx.strokeStyle = C('#222');
     ctx.beginPath(); ctx.moveTo(24, -22); ctx.quadraticCurveTo(32, -34, 38, -30); ctx.stroke();
     angryEye(ctx, C, 22, -18, 3.5);
+    if (o.crown) {
+      ctx.fillStyle = C('#ffd23f');
+      ctx.beginPath();
+      ctx.moveTo(13, -23); ctx.lineTo(12, -31); ctx.lineTo(16, -27); ctx.lineTo(19, -33);
+      ctx.lineTo(22, -27); ctx.lineTo(26, -31); ctx.lineTo(25, -23);
+      ctx.closePath(); ctx.fill();
+    }
     ctx.restore();
   };
 
@@ -482,6 +489,51 @@
     ctx.restore();
   };
 
+  // A pair of grenades (+2) bobbing on the ground.
+  A.grenade = function (ctx, x, y, r, rot = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.fillStyle = '#4f772d';
+    el(ctx, 0, 0, r, r * 1.2);
+    ctx.strokeStyle = '#31572c';
+    ctx.lineWidth = Math.max(1, r * 0.18);
+    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, -r * 1.2); ctx.lineTo(0, r * 1.2); ctx.stroke();
+    ctx.fillStyle = '#8d99ae';
+    ctx.fillRect(-r * 0.45, -r * 1.6, r * 0.9, r * 0.5);
+    ctx.strokeStyle = '#ffd23f';
+    ctx.lineWidth = Math.max(1, r * 0.15);
+    ctx.beginPath(); ctx.arc(r * 0.55, -r * 1.55, r * 0.35, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    el(ctx, -r * 0.4, -r * 0.45, r * 0.25, r * 0.35);
+    ctx.restore();
+  };
+  A.grenadePack = function (ctx, x, y, t = 0) {
+    const by = y - 16 + Math.sin(t * 4 + 1) * 3;
+    A.grenade(ctx, x - 9, by, 9, -0.2);
+    A.grenade(ctx, x + 9, by, 9, 0.2);
+    SS.UI.outlineText(ctx, '+2', x, by - 27, 14, '#9ef01a', 'center');
+  };
+
+  // Mystery weapon box: a shotgun, rocket launcher or machine gun inside.
+  A.weaponBox = function (ctx, x, y, t = 0) {
+    ctx.save();
+    ctx.translate(x, y + Math.sin(t * 3) * 2);
+    ctx.globalAlpha = 0.3 + Math.sin(t * 5) * 0.15;
+    ctx.fillStyle = '#ffd23f';
+    el(ctx, 0, -18, 30, 26);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#3c4a5c';
+    ctx.beginPath(); ctx.roundRect(-18, -34, 36, 32, 4); ctx.fill();
+    ctx.fillStyle = '#5c6f85';
+    ctx.fillRect(-18, -34, 36, 6);
+    ctx.strokeStyle = '#ffd23f';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-15, -26, 30, 21);
+    SS.UI.outlineText(ctx, '?', 0, -15, 20, '#ffd23f', 'center');
+    ctx.restore();
+  };
+
   // Grumpy surveillance drone (military base flyer)
   A.drone = function (ctx, x, y, o) {
     const C = begin(ctx, x, y, o);
@@ -567,11 +619,36 @@
     ctx.restore();
   };
 
-  // Thrown things: pizza, peach, bubble, water balloon, cream pie, paper lantern.
+  // Thrown things: pizza, peach, bubble, water balloon, cream pie, paper lantern
+  // (+ the sloths' shotgun pellets, rockets and grenades).
   A.projectile = function (ctx, kind, x, y, t, dir = 1) {
     ctx.save();
     ctx.translate(x, y);
-    if (kind === 'bullet') {
+    if (kind === 'pellet') {
+      ctx.scale(dir, 1);
+      ctx.fillStyle = 'rgba(255,210,63,0.45)';
+      ctx.fillRect(-22, -1.5, 22, 3);
+      ctx.fillStyle = '#ffe14d';
+      el(ctx, 0, 0, 4, 4);
+    } else if (kind === 'rocket') {
+      ctx.scale(dir, 1);
+      const fl = 14 + Math.sin(x * 0.7) * 5; // flickering flame
+      ctx.fillStyle = 'rgba(200,200,200,0.5)';
+      el(ctx, -34 - fl, 0, 12, 7);
+      ctx.fillStyle = '#ff9f1c';
+      ctx.beginPath(); ctx.moveTo(-14, -5); ctx.lineTo(-16 - fl, 0); ctx.lineTo(-14, 5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffe14d';
+      ctx.beginPath(); ctx.moveTo(-14, -3); ctx.lineTo(-10 - fl * 0.6, 0); ctx.lineTo(-14, 3); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#556b2f';
+      ctx.beginPath(); ctx.roundRect(-16, -5, 26, 10, 3); ctx.fill();
+      ctx.fillStyle = '#e63946';
+      ctx.beginPath(); ctx.moveTo(10, -5); ctx.quadraticCurveTo(20, 0, 10, 5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#3c4a22';
+      ctx.beginPath(); ctx.moveTo(-16, -5); ctx.lineTo(-20, -10); ctx.lineTo(-10, -5); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-16, 5); ctx.lineTo(-20, 10); ctx.lineTo(-10, 5); ctx.fill();
+    } else if (kind === 'grenade') {
+      A.grenade(ctx, 0, 0, 8, x * 0.06);
+    } else if (kind === 'bullet') {
       ctx.scale(dir, 1);
       const g = ctx.createLinearGradient(-46, 0, 0, 0);
       g.addColorStop(0, 'rgba(255,210,63,0)');

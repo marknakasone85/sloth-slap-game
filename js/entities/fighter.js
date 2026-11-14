@@ -14,6 +14,18 @@
   const SPECIAL_COST = 100;
   SS.POWER_TIME = 12; // seconds a power-up lasts
 
+  // Guns. Everyone starts with the pistol (its ammo slowly refills). A "?" weapon box gives a
+  // big gun with limited ammo; when that runs dry the sloth goes back to the pistol.
+  SS.WEAPONS = {
+    pistol: { id: 1, name: 'PISTOL', short: 'ammo' },
+    shotgun: { id: 2, name: 'SHOTGUN', short: 'SHOTGUN', ammo: 8, color: '#ff9f1c', out: 'OUT OF SHELLS!' },
+    rocket: { id: 3, name: 'ROCKET LAUNCHER', short: 'ROCKETS', ammo: 4, color: '#ff4d6d', out: 'OUT OF ROCKETS!' },
+    lmg: { id: 4, name: 'MACHINE GUN', short: 'MACHINE GUN', ammo: 60, color: '#9bf6ff', out: 'BELT EMPTY!' },
+  };
+  SS.WEAPON_BY_ID = ['', 'pistol', 'shotgun', 'rocket', 'lmg'];
+  SS.BIG_GUNS = ['shotgun', 'rocket', 'lmg'];
+  SS.MAX_GRENADES = 10;
+
   const MOVES = {
     slap: { startup: 0.07, active: 0.09, recover: 0.14, dmg: 6, kbx: 220, kby: -140, reach: 64, stun: 0.28, wind: -1.3, swing: 0.35 },
     heavy: { startup: 0.24, active: 0.1, recover: 0.3, dmg: 13, kbx: 520, kby: -340, reach: 72, stun: 0.5, wind: -2.7, swing: 0.45, big: true },
@@ -52,6 +64,9 @@
       this.ammoT = 0;
       this.gunT = 0;
       this.muzzleT = 0;
+      this.weapon = 'pistol'; // or a big gun from a weapon box (wAmmo shots left)
+      this.wAmmo = 0;
+      this.grenades = opts.grenades !== undefined ? opts.grenades : 3;
       // Power-ups: name -> seconds left. lucky = extra lives (Lucky Banana).
       this.powers = {};
       this.lucky = 0;
@@ -84,6 +99,21 @@
       if (type === 'lucky') this.lucky++;
       else this.powers[type] = SS.POWER_TIME;
     }
+
+    giveWeapon(type) {
+      this.weapon = type;
+      this.wAmmo = SS.WEAPONS[type].ammo;
+    }
+
+    // returns how many grenades were actually added (the pouch holds MAX_GRENADES)
+    addGrenades(n) {
+      const before = this.grenades;
+      this.grenades = Math.min(SS.MAX_GRENADES, this.grenades + n);
+      return this.grenades - before;
+    }
+
+    // shots left in the gun in hand (for the HUD and the dimmed SHOOT button)
+    get shotsLeft() { return this.weapon === 'pistol' ? this.ammo : this.wAmmo; }
 
     // ------------------------------------------------------------------
     update(dt, ctrl, world) {
@@ -157,7 +187,8 @@
         if (ctrl.slapP) this.startMove('slap');
         else if (ctrl.heavyP) this.startMove('heavy');
         else if (ctrl.specialP && this.canSpecial) this.startSpecial(world);
-        else if (ctrl.shootP) this.tryShoot(world);
+        else if (ctrl.shootP || (ctrl.shoot && this.weapon === 'lmg')) this.tryShoot(world); // hold to keep the machine gun going
+        else if (ctrl.grenadeP) this.throwGrenade(world);
       }
 
       if (this.autoFace && this.state !== 'attack') {
@@ -221,29 +252,75 @@
     }
 
     tryShoot(world) {
-      if (this.powers.rapid) { this.startMove('shoot'); return; } // unlimited ammo
-      if (this.ammo <= 0) {
-        SS.Audio.emptyClick();
-        world.fx.text(this.x, this.y - this.h - 10, '*click* out of ammo!', '#cccccc', 16);
-        return;
+      const weapon = this.weapon;
+      if (weapon !== 'pistol') {
+        if (!this.powers.rapid) this.wAmmo--;
+      } else if (!this.powers.rapid) { // rapid fire = unlimited ammo
+        if (this.ammo <= 0) {
+          SS.Audio.emptyClick();
+          world.fx.text(this.x, this.y - this.h - 10, '*click* out of ammo!', '#cccccc', 16);
+          return;
+        }
+        this.ammo--;
       }
-      this.ammo--;
       this.startMove('shoot');
+      this.move.weapon = weapon;
     }
 
-    fireBullet(world) {
+    throwGrenade(world) {
+      if (this.grenades <= 0) {
+        SS.Audio.emptyClick();
+        world.fx.text(this.x, this.y - this.h - 10, 'no grenades left!', '#cccccc', 16);
+        return;
+      }
+      this.grenades--;
+      this.startMove('grenade');
+    }
+
+    fire(world, weapon) {
       const s = this.def.scale;
       const mx = this.x + this.facing * (12 + 44 + 44) * s;
       const my = this.y - (62 + 9) * s;
-      // Bullet starts at the body (not the muzzle) so point-blank enemies still get hit.
-      world.spawn(new SS.Projectile('bullet', this.x + this.facing * 20 * s, my, this.facing * 950, 0, this.team,
-        { dmg: 5, stun: 0.18, kbx: 150, kby: -70, props: true, life: 0.75 }));
+      // Shots start at the body (not the muzzle) so point-blank enemies still get hit.
+      const shot = (kind, vx, vy, hit) =>
+        world.spawn(new SS.Projectile(kind, this.x + this.facing * 20 * s, my, vx, vy, this.team, hit));
       this.muzzleT = 0.07;
       this.gunT = 0.6;
-      this.vx -= this.facing * 70; // recoil
-      SS.Audio.shoot();
-      world.fx.text(mx + this.facing * 20, my - 22, SS.U.choice(['BANG!', 'PEW!', 'BLAM!']), '#ffd23f', 18);
-      world.fx.shake(2);
+      if (weapon === 'shotgun') {
+        for (let i = -2; i <= 2; i++) {
+          shot('pellet', this.facing * U.rand(820, 930), i * 75 + U.rand(-20, 20),
+            { dmg: 4.5, stun: 0.3, kbx: 260, kby: -160, props: true, life: 0.34 });
+        }
+        this.vx -= this.facing * 220; // big kick
+        SS.Audio.shotgun();
+        world.fx.text(mx + this.facing * 24, my - 24, U.choice(['KA-BLAM!', 'BOOM!', 'KA-CHUNK!']), '#ff9f1c', 22);
+        world.fx.shake(7);
+      } else if (weapon === 'rocket') {
+        shot('rocket', this.facing * 420, 0,
+          { dmg: 26, blast: 125, accel: 1300, maxSpeed: 1150, kbx: 520, kby: -520, stun: 0.6, big: true, props: true, life: 1.5 });
+        this.vx -= this.facing * 180;
+        SS.Audio.rocket();
+        world.fx.text(mx + this.facing * 24, my - 26, 'FWOOSH!', '#ff4d6d', 22);
+        world.fx.shake(6);
+      } else if (weapon === 'lmg') {
+        shot('bullet', this.facing * 1100, U.rand(-30, 30),
+          { dmg: 3.2, stun: 0.14, kbx: 90, kby: -50, props: true, life: 0.7, quiet: true });
+        this.vx -= this.facing * 25;
+        SS.Audio.lmg();
+        this.lmgN = (this.lmgN || 0) + 1;
+        if (this.lmgN % 6 === 1) world.fx.text(mx + this.facing * 20, my - 22, U.choice(['RATATAT!', 'BRRRT!', 'TAKATAKA!']), '#9bf6ff', 18);
+        world.fx.shake(1.5);
+      } else {
+        shot('bullet', this.facing * 950, 0, { dmg: 5, stun: 0.18, kbx: 150, kby: -70, props: true, life: 0.75 });
+        this.vx -= this.facing * 70; // recoil
+        SS.Audio.shoot();
+        world.fx.text(mx + this.facing * 20, my - 22, U.choice(['BANG!', 'PEW!', 'BLAM!']), '#ffd23f', 18);
+        world.fx.shake(2);
+      }
+      if (weapon !== 'pistol' && this.weapon === weapon && this.wAmmo <= 0 && !this.powers.rapid) {
+        this.weapon = 'pistol';
+        world.fx.text(this.x, this.y - this.h - 34, SS.WEAPONS[weapon].out + ' Back to the pistol.', '#cccccc', 16);
+      }
     }
 
     startSpecial(world) {
@@ -307,8 +384,21 @@
       const finish = () => { this.state = 'idle'; this.move = null; };
 
       if (m.kind === 'shoot') {
-        if (!m.fired && m.t >= 0.04) { m.fired = true; this.fireBullet(world); }
-        if (m.t > (this.powers.rapid ? 0.1 : 0.22)) finish();
+        const weapon = m.weapon || 'pistol';
+        if (!m.fired && m.t >= 0.04) { m.fired = true; this.fire(world, weapon); }
+        const len = weapon === 'lmg' ? 0.075 : this.powers.rapid ? 0.1 : weapon === 'pistol' ? 0.22 : 0.34;
+        if (m.t > len) finish();
+      } else if (m.kind === 'grenade') {
+        // overhand throw: the grenade flies in an arc and goes off where it lands (or on whoever it hits)
+        if (!m.fired && m.t >= 0.13) {
+          m.fired = true;
+          world.spawn(new SS.Projectile('grenade', this.x + this.facing * 26 * this.def.scale, this.y - this.h * 0.85,
+            this.facing * 440 + this.vx * 0.3, -480, this.team,
+            { dmg: 20, blast: 115, kbx: 440, kby: -500, stun: 0.6, big: true, props: true, gravity: 1150, life: 3 }));
+          SS.Audio.throwGrenade();
+          world.fx.text(this.x, this.y - this.h - 24, U.choice(['CATCH!', 'HEADS UP!', 'FORE!']), '#9ef01a', 18);
+        }
+        if (m.t > 0.32) finish();
       } else if (m.kind === 'slap' || m.kind === 'heavy') {
         const d = m.def;
         if (m.t >= d.startup && m.t < d.startup + d.active) {
@@ -481,16 +571,18 @@
         return 'blocked';
       }
       const facingAttacker = hit.from ? (hit.from.x - this.x) * this.facing > 0 : true;
-      if (this.state === 'block' && facingAttacker && !hit.sleep) {
+      // a boss is big enough to block from any side (it used to stand on you and slip past your guard)
+      const bossHit = !!(hit.from && hit.from.isBoss);
+      if (this.state === 'block' && (facingAttacker || bossHit) && !hit.sleep) {
         this.hp -= hit.dmg * 0.12;
-        this.vx = hit.kbx * 0.35;
+        this.vx = hit.kbx * (bossHit ? 0.9 : 0.35);
         SS.Audio.block();
         world.fx.burst(this.x + this.facing * 26, this.y - this.h * 0.6, '#9bf6ff', 6, 150);
         world.fx.text(this.x, this.y - this.h - 10, 'BLOCKED', '#9bf6ff', 18);
         if (this.hp <= 0) this.knockOut(world);
         return 'blocked';
       }
-      if (this.def.armor && !hit.big && !hit.sleep && hit.dmg < ARMOR_MAX) {
+      if (this.def.armor && !hit.big && !hit.sleep && !hit.bump && hit.dmg < ARMOR_MAX) {
         // super armor: it hurts, but it doesn't stop this sloth
         this.hp -= hit.dmg;
         this.vx += hit.kbx * 0.15 / this.def.weight;
@@ -561,6 +653,9 @@
         return U.lerp(d.swing, REST, Math.min(1, (m.t - d.startup - d.active) / d.recover));
       }
       if (m.kind === 'shoot') return -0.05 - Math.max(0, 1 - Math.abs(m.t - 0.06) / 0.08) * 0.35; // recoil kick
+      if (m.kind === 'grenade') { // wind back over the head, then lob
+        return m.t < 0.13 ? U.lerp(REST, -2.7, m.t / 0.13) : U.lerp(-2.7, 0.5, Math.min(1, (m.t - 0.13) / 0.08));
+      }
       if (m.kind === 'flurry') return -1.0 + Math.sin(m.t * 45) * 1.3;
       if (m.kind === 'dash' || m.kind === 'sprint') return 0.05;
       if (m.kind === 'bellyflop') return -2.4;
@@ -591,6 +686,13 @@
         : 'idle';
       const busy = ['hurt', 'ko', 'sleep', 'block', 'win'].includes(this.state);
       const arm = this.armAngle();
+      // what's in the hand: 1-4 = the gun (big guns are carried all the time), 5 = a grenade about to fly
+      const m = this.move;
+      let gun = 0;
+      if (!busy) {
+        if (m && m.kind === 'grenade') gun = m.fired ? 0 : 5;
+        else if (m ? m.kind === 'shoot' : this.gunT > 0 || this.weapon !== 'pistol') gun = SS.WEAPONS[(m && m.weapon) || this.weapon].id;
+      }
       const r2 = (v) => Math.round(v * 100) / 100;
       return {
         cid: this.def.id, x: Math.round(this.x * 10) / 10, y: Math.round(this.y * 10) / 10, f: this.facing,
@@ -599,7 +701,7 @@
         mo: this.state === 'attack' ? 'open' : this.state === 'hurt' ? 'ouch' : 0,
         fl: this.flash > 0 ? 1 : 0,
         sq: this.move && this.move.kind === 'bellyflop' && this.move.phase === 'impact' ? 0.25 : 0,
-        gun: !busy && (this.move ? this.move.kind === 'shoot' : this.gunT > 0) ? 1 : 0,
+        gun,
         mz: this.muzzleT > 0 ? 1 : 0,
         hide: this.invuln > 0.1 && Math.floor(this.t * 20) % 2 === 0 ? 1 : 0,
         ps: r2(this.powers.shield || 0), ss: this.powers.superslap ? 1 : 0, co: this.powers.coffee ? 1 : 0,
@@ -653,7 +755,7 @@
         }
       }
       SS.Art.sloth(ctx, {
-        gun: !!s.gun, muzzle: !!s.mz,
+        gun: !!s.gun, weapon: s.gun, muzzle: !!s.mz,
         x: s.x + (s.co ? SS.U.rand(-1.2, 1.2) : 0), y: s.y,
         facing: s.f, scale: def.scale, look: def.look,
         t: s.t, pose: s.pose, walk: s.walk, arm: s.arm === null ? undefined : s.arm,
@@ -689,8 +791,8 @@
   };
 
   // ---------- Projectiles (DJ notes, coconuts, monkey throws) ----------
-  const PROJ_WORD = { quake: 'RUMBLE!', bullet: 'POW!', note: 'LULLABY!', magic: 'ZAP!', ice: 'FROZEN!', cannonball: 'KABOOM!', bananaBomb: 'KA-SPLAT!', pizza: 'SPLAT!', pie: 'SPLAT!', balloon: 'SPLOOSH!', bubble: 'POP!', peach: 'BONK!', lantern: 'FWUMP!' };
-  const PROJ_COLOR = { bullet: '#ffd23f', pizza: '#f4c542', pie: '#fff8e7', balloon: '#4cc9f0', bubble: '#bde0fe', peach: '#ffab91', lantern: '#e63946' };
+  const PROJ_WORD = { quake: 'RUMBLE!', bullet: 'POW!', pellet: 'BLAM!', note: 'LULLABY!', magic: 'ZAP!', ice: 'FROZEN!', cannonball: 'KABOOM!', bananaBomb: 'KA-SPLAT!', pizza: 'SPLAT!', pie: 'SPLAT!', balloon: 'SPLOOSH!', bubble: 'POP!', peach: 'BONK!', lantern: 'FWUMP!' };
+  const PROJ_COLOR = { bullet: '#ffd23f', pellet: '#ffd23f', pizza: '#f4c542', pie: '#fff8e7', balloon: '#4cc9f0', bubble: '#bde0fe', peach: '#ffab91', lantern: '#e63946' };
   SS.Projectile = class {
     constructor(kind, x, y, vx, vy, team, hit) {
       this.kind = kind;
@@ -725,10 +827,21 @@
           this.vy += ((dy / dd) * 520 - this.vy) * k;
         }
       }
+      if (this.hit.accel) { // rockets speed up as they go
+        this.vx = Math.sign(this.vx || 1) * Math.min(this.hit.maxSpeed || 1200, Math.abs(this.vx) + this.hit.accel * dt);
+      }
       this.vy += this.gravity * (world.gravity || 1) * dt;
       this.x += this.vx * dt;
       this.y += this.vy * dt;
-      if (this.life <= 0) this.dead = true;
+      if (this.life <= 0) {
+        if (this.hit.blast) { this.blast(world); return; }
+        this.dead = true;
+      }
+      if (this.hit.blast && this.y >= world.groundY - 8) { // grenades and rockets go off when they land
+        this.y = world.groundY - 8;
+        this.blast(world);
+        return;
+      }
       if (this.kind === 'magic' || this.kind === 'ice') this.y = Math.min(this.y, world.groundY - 12);
       if (this.y >= world.groundY - 8 && !['note', 'magic', 'ice', 'quake'].includes(this.kind)) {
         this.dead = true;
@@ -753,6 +866,12 @@
       }
       for (const target of world.targets(this.team)) {
         if (!target.alive || (target.isProp && !this.hit.props) || this.hitList.has(target)) continue;
+        if (this.hit.blast) {
+          // grenades and rockets have a proximity fuse, so they also get short enemies like beetles
+          const bx = this.box;
+          if (U.overlap({ x: bx.x - 30, y: bx.y - 30, w: bx.w + 60, h: bx.h + 60 }, target.box)) { this.blast(world); return; }
+          continue;
+        }
         if (!U.overlap(this.box, target.box)) continue;
         this.hitList.add(target);
         const dir = this.vx !== 0 ? Math.sign(this.vx) : (target.x >= this.x ? 1 : -1);
@@ -762,15 +881,36 @@
           sleep: h.sleep || 0, freeze: !!h.freeze, big: !!h.big, from: this, dir,
         }, world);
         if (res !== 'miss') {
-          world.fx.burst(this.x, this.y, this.kind === 'note' ? '#c77dff' : '#ffd23f', 12);
-          world.fx.text(this.x, this.y - 30, PROJ_WORD[this.kind] || 'BONK!', '#fff', 26);
-          SS.Audio.slap();
-          world.fx.shake(this.kind === 'bullet' ? 3 : 6);
+          if (h.quiet) { // machine gun: lots of little hits, so keep them small
+            world.fx.burst(this.x, this.y, '#ffd23f', 4, 160);
+          } else {
+            world.fx.burst(this.x, this.y, this.kind === 'note' ? '#c77dff' : '#ffd23f', 12);
+            world.fx.text(this.x, this.y - 30, PROJ_WORD[this.kind] || 'BONK!', '#fff', 26);
+            SS.Audio.slap();
+          }
+          world.fx.shake(this.kind === 'bullet' || this.kind === 'pellet' ? 3 : 6);
           if (h.pierce) continue; // shockwaves roll on through everyone
           this.dead = true;
           break;
         }
       }
+    }
+
+    // Grenade / rocket explosion: hurts everyone (on the other side) within the blast.
+    blast(world) {
+      if (this.dead) return;
+      this.dead = true;
+      const h = this.hit, r = h.blast;
+      for (const tg of world.targets(this.team)) {
+        if (!tg.alive || (tg.isProp && !h.props)) continue;
+        const b = tg.box;
+        const nx = U.clamp(this.x, b.x, b.x + b.w), ny = U.clamp(this.y, b.y, b.y + b.h);
+        if (Math.hypot(nx - this.x, ny - this.y) > r) continue;
+        const dir = tg.x >= this.x ? 1 : -1;
+        tg.takeHit({ dmg: h.dmg, kbx: h.kbx * dir, kby: h.kby, stun: h.stun, big: true, from: this, dir }, world);
+      }
+      world.fx.explosion(this.x, this.y, r);
+      SS.Audio.explosion();
     }
 
     draw(ctx) {

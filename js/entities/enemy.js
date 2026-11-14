@@ -123,6 +123,35 @@
       scale: 2.8, name: 'MEGA PIZZA RAT', weight: 3, moves: ['charge', 'volley', 'slam', 'charge'], projectile: 'pizza',
       colors: { crown: true }, defeatText: 'MEGA PIZZA RAT DROPS THE SLICE!',
     },
+
+    // ---- bosses for the first maps (so every map ends with a boss) ----
+    bigBeetle: { // map 1: the gentle first boss
+      art: 'beetle', behavior: 'boss', boss: true, hp: 170, speed: 110, w: 150, h: 100, dmg: 9, score: 2000,
+      scale: 3.2, name: 'BARRY THE BIG BEETLE', weight: 3, moves: ['charge', 'slam', 'charge'],
+      colors: { color: '#6a4c93', crown: true }, defeatText: 'BARRY THE BIG BEETLE IS SQUASHED!',
+    },
+    greedyGull: { // map 2: flies over the beach, drops coconuts, then lands for a breather
+      art: 'bird', behavior: 'dragon', boss: true, hp: 200, speed: 220, w: 120, h: 90, dmg: 10, score: 2500,
+      scale: 2.6, name: 'GULLIVER THE GREEDY GULL', weight: 4, projectile: 'coconut',
+      colors: { color: '#eeeeee', wing: '#9e9e9e', belly: '#ffffff', beak: '#ffb703' },
+      restText: 'TOO MANY BANANAS... SLAP IT!', restWord: 'burp', defeatText: 'GULLIVER FLIES HOME IN A HUFF!',
+    },
+    scorpionQueen: { // map 3
+      art: 'scorpion', behavior: 'boss', boss: true, hp: 260, speed: 150, w: 150, h: 100, dmg: 12, score: 3000,
+      scale: 2.5, name: 'THE SCORPION QUEEN', weight: 3, moves: ['charge', 'volley', 'slam'], projectile: 'rock',
+      colors: { color: '#9d4edd', crown: true }, defeatText: 'THE SCORPION QUEEN SCUTTLES AWAY!',
+    },
+    bigCheese: { // map 6
+      art: 'monkey', behavior: 'boss', boss: true, hp: 300, speed: 155, w: 88, h: 180, dmg: 13, score: 3500,
+      scale: 2.0, name: 'THE BIG CHEESE', weight: 3, moves: ['volley', 'charge', 'slam', 'volley'], projectile: 'pizza',
+      colors: { hat: 'chef', fur: '#a0522d' }, defeatText: 'THE BIG CHEESE IS TOAST!',
+    },
+    blobzilla: { // map 11
+      art: 'blob', behavior: 'boss', boss: true, hp: 330, speed: 140, w: 160, h: 120, dmg: 13, score: 4500,
+      scale: 3.4, name: 'BLOBZILLA', weight: 3, moves: ['slam', 'volley', 'charge', 'slam'], projectile: 'fireball',
+      colors: { color: '#ff4800', glow: true, crown: true }, defeatText: 'BLOBZILLA COOLS DOWN!',
+      gore: { blood: '#ff9f1c', sound: 'squish', word: 'SPLORCH!' },
+    },
   };
   const FLYING = new Set(['flyer', 'dragon', 'dangler']); // no gravity
   SS.ENEMY_TYPES = TYPES;
@@ -272,6 +301,7 @@
 
     contact(world, player, mult = 1) {
       if (this.cool > 0 || player.state === 'ko' || this.burrowed) return;
+      if (this.isBoss && U.overlap(this.box, player.box)) { this.bump(world, player, mult); return; }
       if (U.overlap(this.box, player.box)) {
         player.takeHit({
           dmg: this.d.dmg * mult, kbx: Math.sign(player.x - this.x || 1) * 320, kby: -260,
@@ -279,6 +309,22 @@
         }, world);
         this.cool = 1.0;
       }
+    }
+
+    // A boss walking or charging into a sloth bumps it clear instead of pinning it: away from the boss,
+    // or - when there's a wall behind the sloth - in a big hop right over the boss. Blocking softens it.
+    bump(world, player, mult) {
+      let dir = Math.sign(player.x - this.x) || -this.facing;
+      const b = world.bounds ? world.bounds(player) : null;
+      const room = b ? (dir > 0 ? b.max - player.x : player.x - b.min) : 999;
+      const over = room < this.d.w * 0.6 + 40;
+      if (over) dir = -dir;
+      player.takeHit({
+        dmg: this.d.dmg * 0.75 * mult, kbx: dir * (over ? 600 : 560), kby: over ? -700 : -380,
+        stun: 0.35, from: this, bump: true,
+      }, world);
+      this.cool = 1.0;
+      this.backoff = 0.7; // and the boss steps back for a moment
     }
 
     think(dt, world, player, dx, dist) {
@@ -428,6 +474,7 @@
       const enraged = this.hp < this.maxHp * 0.4;
       if (this.state === 'idle') {
         this.vx = dir * d.speed * (enraged ? 1.3 : 0.8);
+        if (this.backoff > 0) { this.backoff -= dt; this.vx = -dir * d.speed * 0.6; }
         this.contact(world, player, 1);
         if (this.cool <= 0) {
           const moves = d.moves || ['volley', 'slam', 'charge'];
@@ -631,6 +678,8 @@
         if (this.loot !== 'none') world.addPickup(this.loot, this.x, this.y - 30);
         world.addPickup('ammo', this.x + 34, this.y - 4);
         if (Math.random() < 0.25) world.addPickup(U.choice(SS.POWER_TYPES), this.x - 34, this.y - 4);
+        else if (Math.random() < 0.3) world.addPickup('weapon', this.x - 34, this.y - 4);
+        if (Math.random() < 0.45) world.addPickup('grenade', this.x + 66, this.y - 4);
       }
       return 'hit';
     }
@@ -671,6 +720,8 @@
       else if (this.type === 'ammo') SS.Art.ammoBox(ctx, this.x, this.y, this.t);
       else if (this.type === 'heart') SS.Art.heart(ctx, this.x, this.y, this.t);
       else if (this.type === 'leaf') SS.Art.leaf(ctx, this.x, this.y, this.t);
+      else if (this.type === 'grenade') SS.Art.grenadePack(ctx, this.x, this.y, this.t);
+      else if (this.type === 'weapon') SS.Art.weaponBox(ctx, this.x, this.y, this.t);
       else if (SS.POWER_TYPES.includes(this.type)) SS.Art.powerOrb(ctx, this.type, this.x, this.y, this.t);
       else SS.Art.hibiscus(ctx, this.x, this.y - 16, this.t);
     }

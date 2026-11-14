@@ -83,7 +83,10 @@
 
     me() { return this.snap && this.snap.pl.find((p) => p.id === SS.Net.id); }
     wantsTouch() { return !!this.snap && !this.menu && !this.ended && !this.showControls && ['intro', 'fight', 'roundEnd'].includes(this.snap.st); }
-    touchPlayer() { const me = this.me(); return me ? { canSpecial: !!me.cs, ammo: me.am } : null; }
+    touchPlayer() {
+      const me = this.me();
+      return me ? { canSpecial: !!me.cs, ammo: me.am, weapon: me.wp || 'pistol', wAmmo: me.wa, grenades: me.gr } : null;
+    }
 
     update(dt) {
       this.t += dt;
@@ -153,12 +156,14 @@
         sides: s.pl.map((p) => ({
           tag: p.tag, color: p.tc, name: SS.charById(p.cid).name, hp: p.hp, mhp: p.mhp, ghost: p.gh,
           meter: p.me, canSpecial: !!p.cs, ammo: p.am, maxAmmo: p.mam, ammoT: p.amt, ammoRegen: p.amr,
+          weapon: p.wp || 'pistol', wAmmo: p.wa, grenades: p.gr,
           wins: p.wins, ko: p.st === 'ko',
         })),
       });
       const me = this.me();
       if (me && this.showStrip && !SS.Touch.enabled && !this.menu && ['intro', 'fight', 'roundEnd'].includes(s.st)) {
-        UI.keyStrip(ctx, { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am },
+        UI.keyStrip(ctx, { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am,
+          weapon: me.wp || 'pistol', wAmmo: me.wa, grenades: me.gr },
           this.t, { tag: `YOU (${me.tag})`, tagColor: me.tc });
       }
       SS.DuelHUD.banner(ctx, s.bn, s.ba);

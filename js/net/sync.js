@@ -2,10 +2,10 @@
 // "snapshot" of everything guests need to draw, plus the effects and sounds that
 // happened since the last one (recorded here so guests can replay them).
 (function () {
-  const FX_METHODS = ['burst', 'text', 'gore', 'splat', 'feathers', 'shake', 'slapText', 'finisher'];
+  const FX_METHODS = ['burst', 'text', 'gore', 'splat', 'feathers', 'shake', 'slapText', 'finisher', 'explosion'];
   const AUDIO_METHODS = ['tone', 'noise', 'wobble', 'slap', 'bigSlap', 'whiff', 'jump', 'land', 'hurt', 'block',
     'pickup', 'heal', 'gong', 'crate', 'special', 'snore', 'ko', 'win', 'shoot', 'emptyClick', 'ammo', 'powerUp',
-    'funnyDeath', 'playMusic', 'finisher'];
+    'funnyDeath', 'playMusic', 'finisher', 'shotgun', 'rocket', 'lmg', 'throwGrenade', 'explosion', 'weaponGet'];
   const MAX_EVENTS = 300;
   const r1 = (v) => Math.round(v * 10) / 10;
   const r2 = (v) => Math.round(v * 100) / 100;
@@ -70,6 +70,7 @@
           id: s.id, tag: scene.tagOf(s), tc: scene.colorOf(s), hp: Math.max(0, Math.round(s.f.hp)), mhp: s.f.maxHp,
           gh: r2(s.ghost), me: Math.round(s.f.meter), cs: s.f.canSpecial ? 1 : 0, am: s.f.ammo, mam: s.f.maxAmmo,
           amt: r2(s.f.ammoT), amr: s.f.ammoRegen, wins: s.wins, cpu: s.cpu ? 1 : 0,
+          wp: s.f.weapon === 'pistol' ? 0 : s.f.weapon, wa: s.f.wAmmo, gr: s.f.grenades,
         })),
         pr: scene.projectiles.map((p) => [p.kind, r1(p.x), r1(p.y), Math.round(p.vx), Math.round(p.vy)]),
         fx: b.fx, au: b.au,
@@ -78,16 +79,16 @@
 
     // Guests: send held keys when they change, every press, and a heartbeat twice a second.
     sendInput(state, dt, c) {
-      const keys = ['jumpP', 'slapP', 'heavyP', 'specialP', 'shootP'];
+      const keys = ['jumpP', 'slapP', 'heavyP', 'specialP', 'shootP', 'grenadeP'];
       const presses = keys.filter((k) => c[k]);
-      const held = [c.left ? 1 : 0, c.right ? 1 : 0, c.down ? 1 : 0];
+      const held = [c.left ? 1 : 0, c.right ? 1 : 0, c.down ? 1 : 0, c.shoot ? 1 : 0];
       const changed = !state.lastHeld || held.some((v, i) => v !== state.lastHeld[i]);
       state.heartbeat = (state.heartbeat || 0) - dt;
       if (presses.length || changed || state.heartbeat <= 0) {
         state.heartbeat = 0.5;
         state.lastHeld = held;
         state.inSeq = (state.inSeq || 0) + 1;
-        SS.Net.send({ t: 'in', n: state.inSeq, l: held[0], r: held[1], d: held[2], p: presses }, 'host', true);
+        SS.Net.send({ t: 'in', n: state.inSeq, l: held[0], r: held[1], d: held[2], s: held[3], p: presses }, 'host', true);
       }
     },
 
@@ -107,6 +108,7 @@
           return Object.assign(f.renderState(), {
             id: sl.id, hp: Math.max(0, Math.round(f.hp)), mhp: f.maxHp, me: Math.round(f.meter),
             am: f.ammo, mam: f.maxAmmo, amt: r2(f.ammoT), amr: f.ammoRegen, pw: powers(f.powers), lk: f.lucky,
+            wp: f.weapon === 'pistol' ? 0 : f.weapon, wa: f.wAmmo, gr: f.grenades,
             rt: r1(sl.respawnT), cb: f.combo, cs: f.canSpecial ? 1 : 0,
           });
         }),

@@ -126,6 +126,7 @@
     ctx.beginPath(); ctx.moveTo(30, -18); ctx.lineTo(42, -26 - snap * 8); ctx.lineTo(40, -14); ctx.fill();
     ctx.beginPath(); ctx.moveTo(30, -14); ctx.lineTo(42, -6 + snap * 6); ctx.lineTo(40, -16); ctx.fill();
     angryEye(ctx, C, 14, -20, 3);
+    if (o.crown) crown(ctx, C, 10, -22, 14);
     ctx.restore();
   };
 

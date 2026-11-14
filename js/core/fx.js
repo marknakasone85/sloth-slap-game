@@ -18,6 +18,7 @@
       this.parts = [];
       this.texts = [];
       this.shakeAmt = 0;
+      this.booms = [];
     }
 
     burst(x, y, color, n = 10, speed = 260) {
@@ -115,6 +116,15 @@
     // Slow-motion finisher (round-winning slap, boss knockout): the view zooms toward (x, y) in world
     // coordinates, with cinema bars, speed lines and a flash. Timed in real seconds, so Wi-Fi guests
     // (who replay this call) see the same thing while the host slows the game down.
+    // Grenade / rocket blast: a quick fireball, flying sparks and smoke, KA-BOOM!
+    explosion(x, y, r) {
+      this.booms.push({ x, y, r, life: 0.5 });
+      this.burst(x, y, '#ff9f1c', 22, 420);
+      this.burst(x, y, '#ffe14d', 12, 260);
+      this.text(x, y - r * 0.6, U.choice(['KA-BOOM!', 'KABLOOEY!', 'BOOM!']), '#ff9f1c', 34);
+      this.shake(12);
+    }
+
     finisher(x, y, big) {
       this.fin = { x, y, big: !!big, t0: SS.Engine.time, dur: big ? 1.75 : 1.2 };
       this.shake(big ? 16 : 10);
@@ -211,9 +221,30 @@
         t.life -= dt;
       }
       this.texts = this.texts.filter((t) => t.life > 0);
+      for (const b of this.booms) b.life -= dt;
+      this.booms = this.booms.filter((b) => b.life > 0);
     }
 
     draw(ctx) {
+      for (const b of this.booms) {
+        const k = 1 - b.life / 0.5; // 0 -> 1 over the blast
+        ctx.globalAlpha = Math.max(0, 0.55 * (1 - k));
+        ctx.fillStyle = '#6c6c6c';
+        for (let i = 0; i < 5; i++) {
+          const a = i * 1.26 + b.x * 0.01;
+          ctx.beginPath();
+          ctx.arc(b.x + Math.cos(a) * b.r * 0.55 * k, b.y - 20 * k + Math.sin(a) * b.r * 0.35 * k, b.r * (0.25 + 0.3 * k), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = Math.max(0, 1 - k * 1.4);
+        ctx.fillStyle = '#ff9f1c';
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r * (0.35 + 0.65 * k), 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffe14d';
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r * (0.2 + 0.4 * k), 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.2 * (1 - k), 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
       for (const p of this.parts) {
         ctx.globalAlpha = Math.max(0, p.life / p.max);
         ctx.fillStyle = p.color;

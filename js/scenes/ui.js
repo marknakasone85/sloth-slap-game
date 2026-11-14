@@ -59,30 +59,32 @@
     // Full controls page (title menu, pause menus).
     controlsPanel(ctx) {
       const W = SS.W;
-      UI.panel(ctx, 110, 150, W - 220, 360);
-      UI.outlineText(ctx, 'HOW TO SLAP', W / 2, 180, 30, '#ffd23f', 'center');
+      UI.panel(ctx, 110, 134, W - 220, 392);
+      UI.outlineText(ctx, 'HOW TO SLAP', W / 2, 162, 30, '#ffd23f', 'center');
       const rows = [
         ['', 'Player 1', 'Player 2', 'Gamepad'],
         ['Move', 'A / D', '← / →', 'D-pad / stick'],
         ['Jump (Zane: 2x)', 'W', '↑', 'A'],
         ['Block (hold)', 'S', '↓', 'Down / LB'],
         ['Slap', 'F', ', (comma)', 'X'],
-        ['Big Slap', 'G', '. (period)', 'Y'],
+        ['Big Slap', 'K', '. (period)', 'Y'],
         ['Special', 'H', '/ (slash)', 'B'],
         ['Shoot', 'R', '; (semicolon)', 'RB / RT'],
+        ['Grenade', 'G', "' (quote)", 'LT'],
         ['Pause', 'Esc / P', 'Esc / P', 'Start'],
       ];
       rows.forEach((r, i) => {
-        const y = 216 + i * 27;
+        const y = 196 + i * 24;
         const col = i === 0 ? '#9bf6ff' : '#ffffff';
         UI.text(ctx, r[0], 150, y, 17, '#ffd23f');
         UI.text(ctx, r[1], 400, y, 17, col, 'center');
         UI.text(ctx, r[2], 570, y, 17, col, 'center');
         UI.text(ctx, r[3], 735, y, 17, col, 'center');
       });
-      UI.text(ctx, 'Solo campaign also accepts arrows + J (slap) / K (big slap) / L (special) / ; (shoot).', W / 2, 464, 14, '#cccccc', 'center');
-      UI.text(ctx, 'Special needs a full blue meter. Phones & tablets: touch buttons appear when you tap.', W / 2, 484, 14, '#cccccc', 'center');
-      UI.text(ctx, 'Press any key to go back.', W / 2, 502, 13, '#9bf6ff', 'center');
+      UI.text(ctx, "Solo also accepts arrows + J (slap) / K (big slap) / L (special) / ; (shoot) / ' (grenade).", W / 2, 446, 14, '#cccccc', 'center');
+      UI.text(ctx, 'Carry up to 10 grenades. "?" boxes hold a shotgun, rocket launcher or machine gun (hold Shoot).', W / 2, 466, 14, '#cccccc', 'center');
+      UI.text(ctx, 'Special needs a full blue meter. Phones & tablets: touch buttons appear when you tap.', W / 2, 486, 14, '#cccccc', 'center');
+      UI.text(ctx, 'Press any key to go back.', W / 2, 508, 13, '#9bf6ff', 'center');
     },
 
     // Key-hint strip along the bottom edge. Lights up the move the sloth is doing.
@@ -92,21 +94,21 @@
     //  opts.tag / opts.tagColor: e.g. 'P1' in the player's color
     keyStrip(ctx, player, t, opts = {}) {
       const LAYOUTS = {
-        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'slap'], [['G'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['Esc'], 'pause']],
-        arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [['J'], 'slap'], [['K'], 'big slap'], [['L'], 'special'], [[';'], 'shoot'], [['Esc'], 'pause']],
-        pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'block'], [['X'], 'slap'], [['Y'], 'big slap'], [['B'], 'special'], [['RB'], 'shoot'], [['Start'], 'pause']],
-        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'slap'], [['G'], 'big slap'], [['H'], 'special'], [['R'], 'shoot']],
-        p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [[','], 'slap'], [['.'], 'big slap'], [['/'], 'special'], [[';'], 'shoot']],
+        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'slap'], [['K'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade'], [['Esc'], 'pause']],
+        arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [['J'], 'slap'], [['K'], 'big slap'], [['L'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['Esc'], 'pause']],
+        pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'block'], [['X'], 'slap'], [['Y'], 'big slap'], [['B'], 'special'], [['RB'], 'shoot'], [['LT'], 'grenade'], [['Start'], 'pause']],
+        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'slap'], [['K'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade']],
+        p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [[','], 'slap'], [['.'], 'big slap'], [['/'], 'special'], [[';'], 'shoot'], [["'"], 'grenade']],
       };
-      const SHORT = { 'big slap': 'big', special: 'spec', move: '' };
+      const SHORT = { 'big slap': 'big', special: 'spec', move: '', grenade: 'nade', shoot: 'shoot' };
       const compact = !!opts.compact;
       let items = LAYOUTS[opts.layout || SS.Input.lastDevice] || LAYOUTS.wasd;
       if (compact) items = items.filter(([, label]) => label !== 'pause');
       const kind = player.move ? player.move.kind : null;
       const active = {
         slap: kind === 'slap', 'big slap': kind === 'heavy',
-        special: kind && kind !== 'slap' && kind !== 'heavy' && kind !== 'shoot',
-        shoot: kind === 'shoot',
+        special: kind && kind !== 'slap' && kind !== 'heavy' && kind !== 'shoot' && kind !== 'grenade',
+        shoot: kind === 'shoot', grenade: kind === 'grenade',
         block: player.state === 'block', jump: !player.onGround && player.state !== 'ko',
       };
       const fs = compact ? 11 : 12;
@@ -134,7 +136,7 @@
       }
       for (const [keys, label] of items) {
         const ready = label === 'special' && player.canSpecial;
-        const empty = label === 'shoot' && player.ammo <= 0;
+        const empty = (label === 'shoot' && UI.shotsLeft(player) <= 0) || (label === 'grenade' && player.grenades <= 0);
         const on = active[label];
         const glow = ready && Math.floor(t * 4) % 2 === 0;
         for (const k of keys) {
@@ -156,25 +158,52 @@
       }
     },
 
-    // Row of bullet icons showing the fighter's ammo (+ refill progress).
+    // Shots left in the gun in hand (pistol ammo, or the big gun's ammo).
+    shotsLeft(f) { return f.weapon && f.weapon !== 'pistol' ? f.wAmmo : f.ammo; },
+
+    // The gun: a row of bullet icons for the pistol (+ refill progress), or the big gun's name and
+    // shots left. Then the grenades. (align 'right' grows leftward from x.)
     ammo(ctx, x, y, f, align = 'left') {
-      const step = 13;
-      const total = f.maxAmmo * step;
-      const sx = align === 'right' ? x - total : x;
-      for (let i = 0; i < f.maxAmmo; i++) {
-        const full = i < f.ammo;
-        ctx.fillStyle = full ? '#ffb703' : 'rgba(255,255,255,0.18)';
-        ctx.beginPath();
-        ctx.roundRect(sx + i * step, y - 6, 7, 12, 3.5);
-        ctx.fill();
-        if (!full && i === f.ammo) {
-          ctx.fillStyle = 'rgba(255,183,3,0.6)';
-          const fh = 12 * (f.ammoT / f.ammoRegen);
-          ctx.fillRect(sx + i * step, y + 6 - fh, 7, fh);
+      const right = align === 'right';
+      const sign = right ? -1 : 1;
+      let edge; // where the gun part ends
+      const big = f.weapon && f.weapon !== 'pistol' ? SS.WEAPONS[f.weapon] : null;
+      if (big) {
+        const label = `${big.short} ${f.wAmmo}`;
+        ctx.font = `bold 12px ${FONT}`;
+        const w = ctx.measureText(label).width + 12;
+        const bx = right ? x - w : x;
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.beginPath(); ctx.roundRect(bx, y - 8, w, 16, 8); ctx.fill();
+        UI.text(ctx, label, bx + w / 2, y, 12, big.color, 'center');
+        edge = x + sign * w;
+      } else {
+        const step = 13;
+        const total = f.maxAmmo * step;
+        const sx = right ? x - total : x;
+        for (let i = 0; i < f.maxAmmo; i++) {
+          const full = i < f.ammo;
+          ctx.fillStyle = full ? '#ffb703' : 'rgba(255,255,255,0.18)';
+          ctx.beginPath();
+          ctx.roundRect(sx + i * step, y - 6, 7, 12, 3.5);
+          ctx.fill();
+          if (!full && i === f.ammo) {
+            ctx.fillStyle = 'rgba(255,183,3,0.6)';
+            const fh = 12 * (f.ammoT / f.ammoRegen);
+            ctx.fillRect(sx + i * step, y + 6 - fh, 7, fh);
+          }
         }
+        const label = f.ammo > 0 ? 'ammo' : 'reloading...';
+        UI.text(ctx, label, right ? sx - 8 : sx + total + 6, y, 11, f.ammo > 0 ? '#ffb703' : '#aaa', right ? 'right' : 'left');
+        ctx.font = `bold 11px ${FONT}`;
+        edge = right ? sx - 8 - ctx.measureText(label).width : sx + total + 6 + ctx.measureText(label).width;
       }
-      UI.text(ctx, f.ammo > 0 ? 'ammo' : 'reloading...', align === 'right' ? sx - 8 : sx + total + 6, y, 11,
-        f.ammo > 0 ? '#ffb703' : '#aaa', align === 'right' ? 'right' : 'left');
+      if (f.grenades === undefined) return;
+      const gx = edge + sign * 16;
+      ctx.globalAlpha = f.grenades > 0 ? 1 : 0.4;
+      SS.Art.grenade(ctx, gx, y + 1, 5);
+      UI.text(ctx, `x${f.grenades}`, gx + sign * 8, y, 11, '#9ef01a', right ? 'right' : 'left');
+      ctx.globalAlpha = 1;
     },
 
     // Active power-ups as round icons with a countdown ring (+ Lucky Banana lives).

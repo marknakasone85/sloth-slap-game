@@ -17,7 +17,7 @@
     }
 
     control(me, opp, dt) {
-      const ctrl = { left: false, right: false, down: false, jumpP: false, slapP: false, heavyP: false, specialP: false, shootP: false };
+      const ctrl = { left: false, right: false, down: false, jumpP: false, slapP: false, heavyP: false, specialP: false, shootP: false, grenadeP: false };
       if (!opp || opp.state === 'ko' || me.state === 'ko') return ctrl;
 
       this.timer -= dt;
@@ -45,7 +45,9 @@
 
         if (me.canSpecial && this.goodSpecialRange(me.def.special, dist)) {
           ctrl.specialP = true;
-        } else if (dist > 240 && me.ammo > 0 && Math.random() < 0.35 + this.cfg.aggression * 0.3) {
+        } else if (me.grenades > 0 && dist > 300 && dist < 480 && Math.random() < 0.12 + this.cfg.aggression * 0.12) {
+          ctrl.grenadeP = true; // lobbed grenades land about this far away
+        } else if (dist > 240 && (me.shotsLeft !== undefined ? me.shotsLeft : me.ammo) > 0 && Math.random() < 0.35 + this.cfg.aggression * 0.3) {
           ctrl.shootP = true;
         } else if (dist < 85 * me.def.scale + 10) {
           if (aggressive) {

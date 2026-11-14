@@ -9,7 +9,7 @@
   const ROUND_TIME = 60;
   const WINS_NEEDED = 2;
   const SNAP_RATE = 1 / 30;
-  const PRESS_KEYS = ['jumpP', 'slapP', 'heavyP', 'specialP', 'shootP'];
+  const PRESS_KEYS = ['jumpP', 'slapP', 'heavyP', 'specialP', 'shootP', 'grenadeP'];
 
   // ---------------------------------------------------------------- HUD (shared with Wi-Fi guests)
   // side = { tag, color, name, hp, mhp, ghost, meter, canSpecial, ammo, maxAmmo, ammoT, ammoRegen, wins, ko }
@@ -150,7 +150,7 @@
       this.pending = [];
       this.round++;
       const n = this.slots.length;
-      const gun = { ammo: 3, ammoRegen: 3 };
+      const gun = { ammo: 3, ammoRegen: 3, grenades: 2 }; // 2 grenades a round
       this.slots.forEach((s, i) => {
         const x = n === 2 ? (i === 0 ? 290 : W - 290) : 150 + i * ((W - 300) / Math.max(1, n - 1));
         s.f = new SS.Fighter(s.def, x, Object.assign({ team: 'd' + s.id, facing: x < W / 2 ? 1 : -1, autoFace: true }, gun));
@@ -214,7 +214,7 @@
       if (m.t === 'in') {
         const s = this.slots.find((q) => q.id === from);
         if (!s) return;
-        if (m.n > s.inSeq) { s.inSeq = m.n; s.held = { left: !!m.l, right: !!m.r, down: !!m.d }; }
+        if (m.n > s.inSeq) { s.inSeq = m.n; s.held = { left: !!m.l, right: !!m.r, down: !!m.d, shoot: !!m.s }; }
         for (const k of m.p || []) if (PRESS_KEYS.includes(k)) s.presses[k] = true;
       } else if (m.t === 'pick' && m.ready && !this.slots.some((s) => s.id === from) && !this.pending.some((p) => p.id === from)) {
         if (this.slots.length + this.pending.length >= 4) return;
@@ -420,6 +420,7 @@
             tag: this.tagOf(s), color: this.colorOf(s), name: s.def.name, hp: f.hp, mhp: f.maxHp, ghost: s.ghost,
             meter: f.meter, canSpecial: f.canSpecial, ammo: f.ammo, maxAmmo: f.maxAmmo, ammoT: f.ammoT,
             ammoRegen: f.ammoRegen, wins: s.wins, ko: f.state === 'ko',
+            weapon: f.weapon, wAmmo: f.wAmmo, grenades: f.grenades,
           };
         }),
       };

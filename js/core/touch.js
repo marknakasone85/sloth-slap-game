@@ -19,6 +19,7 @@
     { id: 'Heavy', corner: 'br', dx: 1.1, dy: 3.9, r: 0.9, label: 'BIG', color: '#ff4d6d' },
     { id: 'Shoot', corner: 'br', dx: 3.3, dy: 3.1, r: 0.85, label: 'SHOOT', color: '#ffb703' },
     { id: 'Special', corner: 'br', dx: 5.9, dy: 0.8, r: 0.75, label: 'SUPER', color: '#00f5d4' },
+    { id: 'Grenade', corner: 'br', dx: 5.5, dy: 2.6, r: 0.75, icon: 'grenade', color: '#9ef01a' },
     { id: 'Pause', corner: 'tr', dx: 0.6, dy: 0.6, r: 0.55, icon: 'pause' },
   ];
 
@@ -103,7 +104,7 @@
     },
 
     // Draw the buttons on their own layer (and the "turn sideways" hint on the game).
-    // player = fighter-like object ({ canSpecial, ammo }) to light up SUPER / dim SHOOT
+    // player = fighter-like object ({ canSpecial, ammo, weapon, wAmmo, grenades }) to light up SUPER / dim SHOOT and GRENADE
     draw(ctx, player) {
       if (this.enabled && this.portrait()) this.drawRotate(ctx);
       const layer = this.layer;
@@ -129,7 +130,8 @@
       for (const b of this.layout()) {
         const down = !!I.keys['Touch' + b.id];
         let alpha = down ? 0.8 : 0.42;
-        if (b.id === 'Shoot' && player && player.ammo <= 0) alpha *= 0.5;
+        if (b.id === 'Shoot' && player && SS.UI.shotsLeft(player) <= 0) alpha *= 0.5;
+        if (b.id === 'Grenade' && player && player.grenades <= 0) alpha *= 0.5;
         const ready = b.id === 'Special' && player && player.canSpecial;
         c.save();
         c.translate(b.x, b.y);
@@ -152,6 +154,10 @@
         } else if (b.icon === 'pause') {
           c.fillRect(-6 * k * 1.6, -8 * k * 1.6, 4 * k * 1.6, 16 * k * 1.6);
           c.fillRect(2 * k * 1.6, -8 * k * 1.6, 4 * k * 1.6, 16 * k * 1.6);
+        } else if (b.icon === 'grenade') {
+          SS.Art.grenade(c, 0, -b.r * 0.12, b.r * 0.26, 0.2);
+          const n = player && player.grenades !== undefined ? player.grenades : '';
+          SS.UI.text(c, 'x' + n, 0, b.r * 0.55, Math.max(9, b.r * 0.3), '#ffffff', 'center');
         } else if (b.icon === 'block') {
           SS.Art.powerIcon(c, 'shield', 0, -b.r * 0.15, b.r * 0.42);
           SS.UI.text(c, b.label, 0, b.r * 0.5, Math.max(9, b.r * 0.3), '#ffffff', 'center');
