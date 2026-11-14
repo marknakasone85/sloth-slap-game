@@ -35,6 +35,7 @@
 
   const approach = (v, target, amt) => (v < target ? Math.min(target, v + amt) : Math.max(target, v - amt));
   const ARMOR_MAX = 12; // super armor shrugs off hits weaker than this (that aren't big slaps)
+  const CROUCH_H = 0.72; // a crouching sloth is this much of its full height (drawn squashed by 1 - this)
 
   // Slap timings for one sloth: fast sloths (atk > 1) wind up and recover quicker.
   function movesFor(def) {
@@ -92,8 +93,15 @@
       this.alive = true;
     }
 
+    // Holding down = crouch (which also blocks). Shots fired while crouched fly low along the ground,
+    // so they hit small enemies (beetles, crabs, rats) that standing shots fly over.
+    get crouched() {
+      return this.state === 'block' || (this.state === 'attack' && !!this.move && !!this.move.low);
+    }
+
     get box() {
-      return { x: this.x - this.w / 2, y: this.y - this.h, w: this.w, h: this.h };
+      const h = this.crouched ? this.h * CROUCH_H : this.h;
+      return { x: this.x - this.w / 2, y: this.y - h, w: this.w, h };
     }
     get canSpecial() { return this.meter >= SPECIAL_COST; }
 
@@ -277,6 +285,7 @@
 
     tryShoot(world) {
       const weapon = this.weapon;
+      const low = this.state === 'block'; // crouching: shoot low
       if (weapon !== 'pistol') {
         if (!this.powers.rapid) this.wAmmo--;
       } else if (!this.powers.rapid) { // rapid fire = unlimited ammo
@@ -289,6 +298,7 @@
       }
       this.startMove('shoot');
       this.move.weapon = weapon;
+      this.move.low = low;
     }
 
     throwGrenade(world) {
@@ -303,8 +313,9 @@
 
     fire(world, weapon) {
       const s = this.def.scale;
+      const low = !!(this.move && this.move.low);
       const mx = this.x + this.facing * (12 + 44 + 44) * s;
-      const my = this.y - (62 + 9) * s;
+      const my = low ? this.y - 30 * s : this.y - (62 + 9) * s; // crouched: just above the ground
       // Shots start at the body (not the muzzle) so point-blank enemies still get hit.
       const shot = (kind, vx, vy, hit) =>
         world.spawn(new SS.Projectile(kind, this.x + this.facing * 20 * s, my, vx, vy, this.team, hit));
@@ -676,7 +687,7 @@
         if (m.t < d.startup + d.active) return U.lerp(d.wind, d.swing, (m.t - d.startup) / d.active);
         return U.lerp(d.swing, REST, Math.min(1, (m.t - d.startup - d.active) / d.recover));
       }
-      if (m.kind === 'shoot') return -0.05 - Math.max(0, 1 - Math.abs(m.t - 0.06) / 0.08) * 0.35; // recoil kick
+      if (m.kind === 'shoot') return (m.low ? 0.35 : -0.05) - Math.max(0, 1 - Math.abs(m.t - 0.06) / 0.08) * 0.35; // recoil kick (aimed down when crouched)
       if (m.kind === 'grenade') { // wind back over the head, then lob
         return m.t < 0.13 ? U.lerp(REST, -2.7, m.t / 0.13) : U.lerp(-2.7, 0.5, Math.min(1, (m.t - 0.13) / 0.08));
       }
@@ -724,7 +735,7 @@
         sl: this.isSwinging() ? 1 : 0,
         mo: this.state === 'attack' ? 'open' : this.state === 'hurt' ? 'ouch' : 0,
         fl: this.flash > 0 ? 1 : 0,
-        sq: this.move && this.move.kind === 'bellyflop' && this.move.phase === 'impact' ? 0.25 : 0,
+        sq: this.move && this.move.kind === 'bellyflop' && this.move.phase === 'impact' ? 0.25 : this.crouched ? 1 - CROUCH_H : 0,
         gun,
         mz: this.muzzleT > 0 ? 1 : 0,
         hide: this.invuln > 0.1 && Math.floor(this.t * 20) % 2 === 0 ? 1 : 0,

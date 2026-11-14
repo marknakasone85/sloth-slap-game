@@ -88,6 +88,30 @@ check(fired >= 9, 'machine gun: holding Shoot keeps firing (' + fired + ' shots 
 p.wAmmo = 1; frames(30); tap('KeyR'); frames(20);
 check(p.weapon === 'pistol', 'big gun out of ammo: back to the pistol');
 
+// ---- crouch (hold down) to shoot low: standing shots fly over small enemies ----
+function shootAt(type, crouch, weapon) {
+  var c = camp(); var me = c.player;
+  if (weapon) me.giveWeapon(weapon);
+  var e = c.tagEnemy(new SS.Enemy(type, me.x + 260)); c.enemies.push(e);
+  e.cool = 99; e.d = Object.assign({}, e.d, { speed: 0, leash: 0 });
+  if (crouch) key('KeyS', true);
+  frames(3);
+  tap('KeyR'); frames(50);
+  if (crouch) key('KeyS', false);
+  frames(2);
+  return e.hp < e.maxHp || !e.alive;
+}
+check(!shootAt('beetle', false) && shootAt('beetle', true), 'standing pistol shots fly over a beetle; crouched (hold S) they hit it');
+check(shootAt('rat', true) && shootAt('crab', true), 'crouched shots hit rats and crabs too');
+check(shootAt('beetle', true, 'shotgun') && shootAt('beetle', true, 'lmg'), 'crouched shotgun and machine gun hit a beetle');
+sc = camp(); p = sc.player;
+var tall = p.box.h; key('KeyS', true); frames(3);
+check(p.state === 'block' && p.crouched && p.box.h < tall * 0.8 && p.renderState().sq > 0.2, 'holding down crouches: shorter hitbox, drawn squashed (and it still blocks)');
+key('KeyR', true); frames(2); key('KeyR', false);
+check(p.move && p.move.kind === 'shoot' && p.move.low && p.crouched, 'shooting while crouched stays crouched');
+key('KeyS', false); frames(30);
+check(!p.crouched && p.box.h === tall, 'let go: stands back up');
+
 // ---- boss bumps you clear instead of pinning you ----
 function bossFight(level, block) {
   var c = camp(level); c.player.invuln = 0;
@@ -145,6 +169,7 @@ var strip = seen.join('|');
 SS.UI.controlsPanel(SS.Engine.ctx);
 var panel = seen.join('|');
 SS.UI.text = origText;
+check(/\|S\|crouch/.test(strip) && /LB\|crouch/.test(strip) && /Crouch \+ block/.test(panel), 'key hints and Pause > Controls say S / LB = crouch');
 check(/\|G\|grenade/.test(strip) && /\|'\|grenade/.test(strip) && /LT\|grenade/.test(strip) && /\|K\|big slap/.test(strip), 'key hints show G / \' / LT = grenade and K = big slap');
 check(/Grenade\|G\|' \(quote\)\|LT/.test(panel) && /Big Slap\|K\|/.test(panel), 'Pause > Controls lists Grenade (G, \', LT) and Big Slap on K');
 var tb = {}; SS.Touch.layout().forEach(function (b) { tb[b.id] = b; });

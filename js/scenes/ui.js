@@ -65,7 +65,7 @@
         ['', 'Player 1', 'Player 2', 'Gamepad'],
         ['Move', 'A / D', '← / →', 'D-pad / stick'],
         ['Jump (Zane: 2x)', 'W', '↑', 'A'],
-        ['Block (hold)', 'S', '↓', 'Down / LB'],
+        ['Crouch + block (hold)', 'S', '↓', 'Down / LB'],
         ['Slap', 'F', ', (comma)', 'X'],
         ['Big Slap', 'K', '. (period)', 'Y'],
         ['Special', 'H', '/ (slash)', 'B'],
@@ -82,7 +82,7 @@
         UI.text(ctx, r[3], 735, y, 17, col, 'center');
       });
       UI.text(ctx, "Solo also accepts arrows + J (slap) / K (big slap) / L (special) / ; (shoot) / ' (grenade).", W / 2, 446, 14, '#cccccc', 'center');
-      UI.text(ctx, 'Carry up to 10 grenades. "?" boxes hold a shotgun, rocket launcher or machine gun (hold Shoot).', W / 2, 466, 14, '#cccccc', 'center');
+      UI.text(ctx, 'Crouch + Shoot = low shots for small critters. Up to 10 grenades. "?" boxes hold big guns.', W / 2, 466, 14, '#cccccc', 'center');
       UI.text(ctx, 'Special needs a full blue meter. Phones & tablets: touch buttons appear when you tap.', W / 2, 486, 14, '#cccccc', 'center');
       UI.text(ctx, 'Press any key to go back.', W / 2, 508, 13, '#9bf6ff', 'center');
     },
@@ -94,11 +94,11 @@
     //  opts.tag / opts.tagColor: e.g. 'P1' in the player's color
     keyStrip(ctx, player, t, opts = {}) {
       const LAYOUTS = {
-        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'slap'], [['K'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade'], [['Esc'], 'pause']],
-        arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [['J'], 'slap'], [['K'], 'big slap'], [['L'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['Esc'], 'pause']],
-        pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'block'], [['X'], 'slap'], [['Y'], 'big slap'], [['B'], 'special'], [['RB'], 'shoot'], [['LT'], 'grenade'], [['Start'], 'pause']],
-        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'block'], [['F'], 'slap'], [['K'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade']],
-        p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'block'], [[','], 'slap'], [['.'], 'big slap'], [['/'], 'special'], [[';'], 'shoot'], [["'"], 'grenade']],
+        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'crouch'], [['F'], 'slap'], [['K'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade'], [['Esc'], 'pause']],
+        arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'crouch'], [['J'], 'slap'], [['K'], 'big slap'], [['L'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['Esc'], 'pause']],
+        pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'crouch'], [['X'], 'slap'], [['Y'], 'big slap'], [['B'], 'special'], [['RB'], 'shoot'], [['LT'], 'grenade'], [['Start'], 'pause']],
+        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'crouch'], [['F'], 'slap'], [['K'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade']],
+        p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'crouch'], [[','], 'slap'], [['.'], 'big slap'], [['/'], 'special'], [[';'], 'shoot'], [["'"], 'grenade']],
       };
       const SHORT = { 'big slap': 'big', special: 'spec', move: '', grenade: 'nade', shoot: 'shoot' };
       const compact = !!opts.compact;
@@ -109,7 +109,7 @@
         slap: kind === 'slap', 'big slap': kind === 'heavy',
         special: kind && kind !== 'slap' && kind !== 'heavy' && kind !== 'shoot' && kind !== 'grenade',
         shoot: kind === 'shoot', grenade: kind === 'grenade',
-        block: player.state === 'block', jump: !player.onGround && player.state !== 'ko',
+        crouch: player.state === 'block' || !!(player.move && player.move.low), jump: !player.onGround && player.state !== 'ko',
       };
       const fs = compact ? 11 : 12;
       const font = `bold ${fs}px ${FONT}`;

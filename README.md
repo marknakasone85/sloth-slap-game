@@ -103,7 +103,7 @@ npm run dist:win     # build dist/*.exe   (best run on Windows)
 
 Phones and tablets play in the web browser. On the computer, double-click `share-on-network.command`, then on the phone (on the same Wi-Fi) open the address it shows, like `http://<wifi-network-address>:8000`. Phones can't open the `index.html` file directly. Or just open the online version: https://marknakasone85.github.io/sloth-slap-game/
 
-- **Touch buttons** appear the first time you touch the screen, sized for thumbs and anchored to the screen corners (on wide phones they sit mostly in the black bars beside the game). Left: ◀ ▶ to move and BLOCK. Right: SLAP (big), JUMP, BIG, SHOOT and SUPER (glows when your special is ready). Pause is in the top-right corner. Use several fingers at once to run and slap together.
+- **Touch buttons** appear the first time you touch the screen, sized for thumbs and anchored to the screen corners (on wide phones they sit mostly in the black bars beside the game). Left: ◀ ▶ to move and CROUCH. Right: SLAP (big), JUMP, BIG, SHOOT, GRENADE and SUPER (glows when your special is ready). Pause is in the top-right corner. Use several fingers at once to run and slap together.
 - Hold the phone **sideways**. If you hold it upright, the game waits and asks you to turn it.
 - Menus work by tapping, and screens that use Esc have a **◀ Back** button.
 - Works for the solo campaign, Slapdown Duel vs the CPU, and **joining a Wi-Fi co-op game from a phone**.
@@ -134,7 +134,7 @@ The folder is a git repository, so every saved version of the game can be restor
 |---|---|---|
 | Move | A / D | ← / → |
 | Jump | W | ↑ |
-| Block (hold) | S | ↓ |
+| Crouch + block (hold). Shoot while crouched to fire low and hit small enemies like beetles, crabs and rats | S | ↓ |
 | Slap | F | , |
 | Big Slap | K | . |
 | Special (when the meter is full) | H | / |
@@ -142,7 +142,7 @@ The folder is a git repository, so every saved version of the game can be restor
 | Grenade (up to 10) | G | ' |
 | Pause | Esc / P | Esc / P |
 
-In single-player you can also use the arrow keys, Space, and J / K / L / ; / '. In both the campaign and Slapdown Duel, a key-hint strip along the bottom shows each player's keys and lights up the move they're doing. You can switch it off in the pause menu, and **Pause → Controls** shows the full list. Enemies splatter in their own color (monkeys red, beetles green, crabs blue, drones oil) and make silly noises when they go down. **Pause → Blood: OFF** swaps the blood for confetti. Gamepads work too: X = slap, Y = big slap, B = special, RB = shoot, LT = grenade, A = jump, LB = block. On phones and tablets there's a GRENADE touch button with your grenade count. Menus also work with the mouse or touch.
+In single-player you can also use the arrow keys, Space, and J / K / L / ; / '. In both the campaign and Slapdown Duel, a key-hint strip along the bottom shows each player's keys and lights up the move they're doing. You can switch it off in the pause menu, and **Pause → Controls** shows the full list. Enemies splatter in their own color (monkeys red, beetles green, crabs blue, drones oil) and make silly noises when they go down. **Pause → Blood: OFF** swaps the blood for confetti. Gamepads work too: X = slap, Y = big slap, B = special, RB = shoot, LT = grenade, A = jump, LB = crouch. On phones and tablets there's a GRENADE touch button with your grenade count. Menus also work with the mouse or touch.
 
 ## For developers
 

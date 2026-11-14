@@ -13,7 +13,7 @@
   const BUTTONS = [
     { id: 'Left', corner: 'bl', dx: 1.1, dy: 1.1, r: 1.1, icon: 'left' },
     { id: 'Right', corner: 'bl', dx: 3.5, dy: 1.1, r: 1.1, icon: 'right' },
-    { id: 'Down', corner: 'bl', dx: 2.3, dy: 3.3, r: 0.8, icon: 'block', label: 'BLOCK' },
+    { id: 'Down', corner: 'bl', dx: 2.3, dy: 3.3, r: 0.8, icon: 'block', label: 'CROUCH' },
     { id: 'Slap', corner: 'br', dx: 1.3, dy: 1.3, r: 1.3, label: 'SLAP', color: '#ffd23f' },
     { id: 'Jump', corner: 'br', dx: 3.9, dy: 0.95, r: 0.95, label: 'JUMP', color: '#9bf6ff' },
     { id: 'Heavy', corner: 'br', dx: 1.1, dy: 3.9, r: 0.9, label: 'BIG', color: '#ff4d6d' },

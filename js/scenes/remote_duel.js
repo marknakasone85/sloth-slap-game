@@ -166,7 +166,7 @@
       });
       const me = this.me();
       if (me && this.showStrip && !SS.Touch.enabled && !this.menu && ['intro', 'fight', 'roundEnd'].includes(s.st)) {
-        UI.keyStrip(ctx, { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am,
+        UI.keyStrip(ctx, { move: me.mk ? { kind: me.mk, low: me.sq > 0.2 } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am,
           weapon: me.wp || 'pistol', wAmmo: me.wa, grenades: me.gr },
           this.t, { tag: `YOU (${me.tag})`, tagColor: me.tc });
       }

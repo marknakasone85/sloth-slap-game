@@ -247,7 +247,7 @@
       const strips = [];
       if (this.showStrip && me && s.st === 'play' && !this.menu && !SS.Touch.enabled) {
         strips.push({
-          fighter: { move: me.mk ? { kind: me.mk } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am,
+          fighter: { move: me.mk ? { kind: me.mk, low: me.sq > 0.2 } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am,
             weapon: me.wp || 'pistol', wAmmo: me.wa, grenades: me.gr },
           opts: { tag: `YOU (P${me.id + 1})`, tagColor: SS.PLAYER_COLORS[me.id % 4] },
         });
