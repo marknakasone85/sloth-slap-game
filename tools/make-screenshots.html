@@ -1,0 +1,164 @@
+<!doctype html>
+<!--
+  Plays short, staged scenes of the real game and takes a picture of each one for the README.
+  tools/make-images.sh opens this in headless Chrome and saves the pictures into img/screenshots/.
+  Scenes: #boss #guns #duel #cave #select (1280x720). The random numbers are fixed, so the
+  pictures only change when the game's look or these scenes change.
+  (You can also open it in a browser to look: add one of those to the address.)
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Sloth Slap screenshots</title>
+  <style>html, body { margin: 0; overflow: hidden; background: #1b1430; } canvas { display: block; }</style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    // The same "random" numbers every time, so the pictures come out the same on every run.
+    (function () { let s = 20260101; Math.random = function () { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; })();
+  </script>
+  <script src="../js/core/engine.js"></script>
+  <script src="../js/core/input.js"></script>
+  <script src="../js/core/touch.js"></script>
+  <script src="../js/core/audio.js"></script>
+  <script src="../js/core/fx.js"></script>
+  <script src="../js/art/sloth.js"></script>
+  <script src="../js/art/enemies.js"></script>
+  <script src="../js/art/creatures2.js"></script>
+  <script src="../js/art/creatures3.js"></script>
+  <script src="../js/art/backgrounds.js"></script>
+  <script src="../js/data/characters.js"></script>
+  <script src="../js/data/levels.js"></script>
+  <script src="../js/entities/fighter.js"></script>
+  <script src="../js/entities/enemy.js"></script>
+  <script src="../js/entities/ai.js"></script>
+  <script src="../js/net/net.js"></script>
+  <script src="../js/net/sync.js"></script>
+  <script src="../js/scenes/ui.js"></script>
+  <script src="../js/scenes/menu.js"></script>
+  <script src="../js/scenes/select.js"></script>
+  <script src="../js/scenes/campaign_hud.js"></script>
+  <script src="../js/scenes/campaign.js"></script>
+  <script src="../js/scenes/remote.js"></script>
+  <script src="../js/scenes/remote_duel.js"></script>
+  <script src="../js/scenes/lobby.js"></script>
+  <script src="../js/scenes/duel.js"></script>
+  <script>
+    (function () {
+      const shot = location.hash.slice(1) || 'boss';
+      const E = SS.Engine, W = SS.W, H = SS.H, K = 1280 / W;
+      const cv = document.getElementById('game');
+      cv.width = W * K;
+      cv.height = H * K;
+      E.canvas = cv;
+      E.ctx = cv.getContext('2d');
+      E.pixel = K;
+      SS.Input.init(cv);
+
+      // Step the real game frame by frame (60 a second); `each(i)` runs before every frame.
+      let now = 1000;
+      function run(n, each) {
+        for (let i = 0; i < n; i++) { if (each) each(i); now += 1000 / 60; E.frame(now); }
+      }
+      // Campaign co-op where this page plays every sloth (their buttons go in slot.held / slot.presses).
+      function campaign(level, cids) {
+        const c = new SS.CampaignScene({ level, players: cids.map((cid, i) => ({ id: i, cid, local: null })) });
+        E.setScene(c);
+        run(2);
+        c.gates.forEach((g) => { g.opened = true; g.lift = 1; });
+        c.slots.forEach((s) => { s.f.hp = s.f.maxHp; });
+        return c;
+      }
+      // Jump the team and the camera to `x` on the map (co-op keeps everyone on one screen),
+      // after the map-name banner has gone.
+      function moveTo(c, x) {
+        c.t = 3;
+        c.camX = Math.max(0, Math.min(c.L.length - W, x - W / 2));
+        c.fighters.forEach((f, i) => { f.x = x + (i - (c.fighters.length - 1) / 2) * 70; f.vx = 0; });
+      }
+      const tough = (f) => { f.maxHp = f.hp = 5000; }; // nobody gets snoozed during the photo
+      const press = (s, k) => { s.presses[k] = true; };
+      // keep playing (up to `max` frames) until `ok()` says it's a good moment
+      function runUntil(max, ok, each) {
+        for (let i = 0; i < max && !ok(); i++) run(1, each ? () => each(i) : null);
+      }
+      // The last frame: no white "just got hit" flash and no blinking after a hit (a blinking
+      // sloth is invisible on every other frame), which look odd in a still picture.
+      function snap(list, each) {
+        list.forEach((o) => { o.flash = 0; if (o.invuln > 0) o.invuln = 0; });
+        run(1, each);
+      }
+
+      if (shot === 'select') {
+        const sc = new SS.SelectScene({ mode: 'coop' });
+        sc.cur = [9, 10]; // Gorilla Gainz and Zippy Zane
+        E.setScene(sc);
+        run(70);
+      } else if (shot === 'boss') {
+        // Three sloths against the Mega Pizza Rat in New York
+        const c = campaign(16, ['sir', 'gainz', 'sue']);
+        const [a, b, d] = c.slots;
+        c.fighters.forEach(tough);
+        moveTo(c, c.arenaX + 250); // walking into the arena wakes the boss
+        run(40);
+        const bx = c.boss.x = c.arenaX + 520;
+        a.f.x = bx - 300; b.f.x = bx - 190; d.f.x = bx + 220;
+        a.f.facing = b.f.facing = 1; d.f.facing = -1;
+        b.f.giveWeapon('rocket');
+        d.f.giveWeapon('shotgun');
+        run(12, (i) => { if (i === 1) press(b, 'shootP'); if (i === 5) press(d, 'shootP'); if (i === 9) press(a, 'slapP'); });
+        runUntil(40, () => c.fx.booms.length > 0);
+        run(4);
+        snap(c.fighters.concat(c.enemies));
+      } else if (shot === 'guns') {
+        // Crouch shots with the machine gun, and a grenade, on Pyramid Panic
+        const c = campaign(14, ['sarge', 'flo']);
+        const [a, b] = c.slots;
+        c.fighters.forEach(tough);
+        c.crates = c.crates.filter((cr) => cr.x !== 1550); // a clear line of fire for the photo
+        a.f.giveWeapon('lmg');
+        moveTo(c, 1465);
+        run(10);
+        a.f.x = 1500; b.f.x = 1420;
+        a.f.facing = b.f.facing = 1;
+        const fire = () => { a.held = { down: true, shoot: true }; };
+        run(24, (i) => { fire(); if (i === 4) press(b, 'grenadeP'); });
+        runUntil(60, () => c.fx.booms.length > 0, fire);
+        run(3, fire);
+        snap(c.fighters.concat(c.enemies), fire);
+      } else if (shot === 'cave') {
+        // The dark Crystal Caverns: light only around the sloths
+        const c = campaign(15, ['wizzy', 'dj']);
+        const [a, b] = c.slots;
+        c.fighters.forEach(tough);
+        c.enemies = c.enemies.filter((e) => !(e.x === 600 && e.d.behavior === 'dangler')); // keep the ceiling spider off Wizzy
+        moveTo(c, 520);
+        run(10);
+        a.f.x = 600; b.f.x = 440;
+        a.f.facing = b.f.facing = 1;
+        a.f.meter = 100; // special ready: Magic Snooze Missiles
+        run(24, (i) => { if (i === 1) press(a, 'specialP'); if (i === 8) press(b, 'jumpP'); });
+        snap(c.fighters.concat(c.enemies));
+      } else if (shot === 'duel') {
+        // A 4-sloth Wi-Fi battle with a weapon box parachuting in
+        const d = new SS.DuelScene({
+          theme: 'castle',
+          players: [{ id: 0, cid: 'queen', cpu: 2 }, { id: 1, cid: 'clawbeard', cpu: 2 }, { id: 2, cid: 'zane', cpu: 2 }, { id: 3, cid: 'chonk', cpu: 2 }],
+        });
+        d.tagOf = (s) => 'P' + (d.slots.indexOf(s) + 1);
+        E.setScene(d);
+        runUntil(60 * 30, () => d.state === 'fight' && d.pickups.some((p) => p.fall && p.y > 220));
+        snap(d.slots.map((s) => s.f));
+      }
+
+      // tools/make-images.sh reads the finished picture from here
+      const out = document.createElement('pre');
+      out.id = 'png';
+      out.hidden = true;
+      out.textContent = cv.toDataURL('image/png');
+      document.body.appendChild(out);
+    })();
+  </script>
+</body>
+</html>

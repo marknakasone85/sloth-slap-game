@@ -33,7 +33,7 @@ Current content: 17 campaign maps (every one ends with its own boss), 11 sloths 
 | Touch buttons (separate full-screen layer `#touchLayer`, virtual keys `TouchSlap` etc.) | `js/core/touch.js` |
 | Synth sound effects + step-sequencer music (`SONGS`), `funnyDeath(style)` | `js/core/audio.js` |
 | Particles, popups, shake, blood/confetti (`gore`, `splat`, `feathers`), slow-motion `finisher` (zoom via `fx.camera`, overlay via `fx.drawFinisher`; every scene that draws a world calls both), `SS.Settings.blood` | `js/core/fx.js` |
-| Icons + link-preview picture (`og:image`), drawn from the game's art by `tools/make-images.sh` (headless Chrome + `tools/make-images.html`). Not served by the home share server (only on GitHub Pages) | `img/` |
+| Icons + link-preview picture (`og:image`), drawn from the game's art by `tools/make-images.sh` (headless Chrome + `tools/make-images.html`). README screenshots in `img/screenshots/`: the same script plays staged scenes of the real game in `tools/make-screenshots.html` (fixed random numbers, so reruns give identical pictures; rerun after a visible change). Not served by the home share server (only on GitHub Pages) | `img/` |
 | Art: sloth (+ accessories), enemies/props/pickups, more creatures, backgrounds/themes + cave darkness | `js/art/*.js` |
 | Data: sloths (`SS.CHARACTERS`), maps (`SS.LEVELS`) | `js/data/*.js` |
 | Fighter (sloths, moves, specials, ammo, power-ups, guns `SS.WEAPONS` + grenades, `renderState`/`drawState`) + `SS.Projectile` (incl. `blast` for grenades/rockets, with a proximity fuse) | `js/entities/fighter.js` |

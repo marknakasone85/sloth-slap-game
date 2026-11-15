@@ -8,6 +8,22 @@ Free, nothing to install. It works on computers, phones and tablets.
 
 *Sloth Slap™ is a trademark of Mark A. Nakasone. See [Trademark and copyright](#trademark-and-copyright).*
 
+<p align="center">
+  <img src="img/screenshots/boss.png" width="100%" alt="Three sloths take on the Mega Pizza Rat boss in New York: a rocket explodes, a shotgun fires and a slap lands">
+  <br><sub>Wi-Fi co-op boss fight on Big Apple Bash: rocket launcher, shotgun and a good old slap against the Mega Pizza Rat</sub>
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="img/screenshots/guns.png" alt="A crouching sloth fires a machine gun low at a scorpion while a grenade blows up a mummy in Egypt"><br><sub>Crouch and shoot low to hit small enemies. Grenades unwrap mummies.</sub></td>
+    <td width="50%"><img src="img/screenshots/duel.png" alt="Four sloths slap it out at a castle while a weapon box parachutes in"><br><sub>4-sloth Slapdown Duel: a "?" weapon box parachutes in.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="img/screenshots/cave.png" alt="Wizzy the Wise fires glowing star missiles in a dark crystal cave while DJ Snooze jumps"><br><sub>Crystal Caverns: Wizzy's Magic Snooze Missiles light up the dark.</sub></td>
+    <td><img src="img/screenshots/select.png" alt="The sloth select screen with eleven sloths and their stat bars"><br><sub>11 sloths, each FAST, POWER or BALANCED.</sub></td>
+  </tr>
+</table>
+
 - **Campaign**: 17 side-scrolling maps, **each with its own boss**. Slap enemies, smash crates for bananas and hibiscus, ring gongs to open gates (each one is also a checkpoint), beat the boss, and reach the nap hammock. Progress and best scores are saved in the browser.
 
   | # | Map | Highlights |
@@ -155,7 +171,8 @@ In single-player you can also use the arrow keys, Space, and J / K / L / ; / '. 
 index.html            entry page (plain <script> tags, so it works from file://)
 artifact.html         the same game as a web page for claude.ai (no Wi-Fi play)
 css/style.css
-img/                  app icons + the link-preview picture (drawn from the game's art by tools/make-images.sh)
+img/                  app icons, the link-preview picture and the screenshots above (img/screenshots/),
+                      all drawn by the game itself with tools/make-images.sh
 js/core/              engine loop + scaling, input (keys/mouse/touch/gamepad), synth audio, FX
 js/art/               procedural cartoon art: sloths, enemies/props, parallax backgrounds
 js/data/              characters.js (roster + stats), levels.js (campaign maps)
