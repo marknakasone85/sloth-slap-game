@@ -17,7 +17,7 @@
       this.menu = null;
       this.ended = null;
       this.showControls = false;
-      this.showStrip = SS.Save.get('keyStrip', true);
+      this.showStrip = !SS.keyHintsOff; // key hints, unless switched off during this visit
     }
 
     enter() {

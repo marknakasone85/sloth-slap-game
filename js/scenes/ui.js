@@ -87,75 +87,93 @@
       UI.text(ctx, 'Press any key to go back.', W / 2, 508, 13, '#9bf6ff', 'center');
     },
 
-    // Key-hint strip along the bottom edge. Lights up the move the sloth is doing.
-    //  opts.layout: 'wasd' | 'arrows' | 'pad' (solo, follows the keys in use) or 'p1' | 'p2' (duel)
-    //  opts.x + opts.align ('left'|'right') to place it; centered otherwise
-    //  opts.compact: short labels, no pause key (for two strips side by side)
-    //  opts.tag / opts.tagColor: e.g. 'P1' in the player's color
-    keyStrip(ctx, player, t, opts = {}) {
-      const LAYOUTS = {
-        wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'crouch'], [['F'], 'slap'], [['K'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade'], [['Esc'], 'pause']],
-        arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'crouch'], [['J'], 'slap'], [['K'], 'big slap'], [['L'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['Esc'], 'pause']],
-        pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'crouch'], [['X'], 'slap'], [['Y'], 'big slap'], [['B'], 'special'], [['RB'], 'shoot'], [['LT'], 'grenade'], [['Start'], 'pause']],
-        p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'crouch'], [['F'], 'slap'], [['K'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade']],
-        p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'crouch'], [[','], 'slap'], [['.'], 'big slap'], [['/'], 'special'], [[';'], 'shoot'], [["'"], 'grenade']],
-      };
-      const SHORT = { 'big slap': 'big', special: 'spec', move: '', grenade: 'nade', shoot: 'shoot' };
-      const compact = !!opts.compact;
-      let items = LAYOUTS[opts.layout || SS.Input.lastDevice] || LAYOUTS.wasd;
-      if (compact) items = items.filter(([, label]) => label !== 'pause');
-      const kind = player.move ? player.move.kind : null;
-      const active = {
-        slap: kind === 'slap', 'big slap': kind === 'heavy',
-        special: kind && kind !== 'slap' && kind !== 'heavy' && kind !== 'shoot' && kind !== 'grenade',
-        shoot: kind === 'shoot', grenade: kind === 'grenade',
-        crouch: player.state === 'block' || !!(player.move && player.move.low), jump: !player.onGround && player.state !== 'ko',
-      };
-      const fs = compact ? 11 : 12;
-      const font = `bold ${fs}px ${FONT}`;
-      ctx.font = font;
-      const capW = (k) => Math.max(compact ? 16 : 20, ctx.measureText(k).width + (compact ? 8 : 10));
-      const gap = compact ? 6 : 14;
-      const shown = (label) => (compact && SHORT[label] !== undefined ? SHORT[label] : label);
-      const tagW = opts.tag ? ctx.measureText(opts.tag).width + 10 : 0;
-      let total = tagW;
-      for (const [keys, label] of items) {
-        for (const k of keys) total += capW(k) + 3;
-        total += ctx.measureText(shown(label)).width + 5 + gap;
-      }
-      total -= gap;
-      const y = SS.H - 20;
-      let x = opts.x === undefined ? (SS.W - total) / 2 : opts.align === 'right' ? opts.x - total : opts.x;
-      ctx.fillStyle = 'rgba(20,10,30,0.55)';
-      ctx.beginPath();
-      ctx.roundRect(x - 10, y - 14, total + 20, 28, 14);
-      ctx.fill();
-      if (opts.tag) {
-        UI.text(ctx, opts.tag, x, y, fs, opts.tagColor || '#ffd23f');
-        x += tagW;
-      }
-      for (const [keys, label] of items) {
-        const ready = label === 'special' && player.canSpecial;
-        const empty = (label === 'shoot' && UI.shotsLeft(player) <= 0) || (label === 'grenade' && player.grenades <= 0);
-        const on = active[label];
-        const glow = ready && Math.floor(t * 4) % 2 === 0;
-        for (const k of keys) {
-          const w = capW(k);
-          ctx.fillStyle = on ? '#ffd23f' : glow ? '#00f5d4' : empty ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.88)';
-          ctx.beginPath();
-          ctx.roundRect(x, y - 10, w, 20, 5);
-          ctx.fill();
-          ctx.fillStyle = 'rgba(0,0,0,0.25)';
-          ctx.fillRect(x + 2, y + 7, w - 4, 2);
-          UI.text(ctx, k, x + w / 2, y, fs, '#2b193d', 'center');
-          x += w + 3;
+    // Which key does what, for every move, along the bottom edge (computers; phones get touch
+    // buttons). Lights up the move the sloth is doing, glows when the special is ready and greys
+    // out an empty gun or grenade pouch.
+    //  KEY_LAYOUTS: 'wasd' | 'arrows' | 'pad' (one player: follows the keys in use) and
+    //  'p1' | 'p2' (two players on one keyboard).
+    KEY_LAYOUTS: {
+      wasd: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'crouch'], [['F'], 'slap'], [['K'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade'], [['Esc'], 'pause']],
+      arrows: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'crouch'], [['J'], 'slap'], [['K'], 'big slap'], [['L'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['Esc'], 'pause']],
+      pad: [[['◀', '▶'], 'move'], [['A'], 'jump'], [['LB'], 'crouch'], [['X'], 'slap'], [['Y'], 'big slap'], [['B'], 'special'], [['RB'], 'shoot'], [['LT'], 'grenade'], [['Start'], 'pause']],
+      p1: [[['A', 'D'], 'move'], [['W'], 'jump'], [['S'], 'crouch'], [['F'], 'slap'], [['K'], 'big slap'], [['H'], 'special'], [['R'], 'shoot'], [['G'], 'grenade'], [['Esc'], 'pause']],
+      p2: [[['←', '→'], 'move'], [['↑'], 'jump'], [['↓'], 'crouch'], [[','], 'slap'], [['.'], 'big slap'], [['/'], 'special'], [[';'], 'shoot'], [["'"], 'grenade'], [['P'], 'pause']],
+    },
+
+    // One row per player on this computer. Two rows (two players on one keyboard) are lined up
+    // in columns, so each move sits right above the other player's key for it.
+    //  rows: [{ player, layout, tag, tagColor }]
+    //   player: a fighter, or an object with the same fields (move, state, onGround, canSpecial,
+    //           ammo, weapon, wAmmo, grenades); layout: see KEY_LAYOUTS; tag: e.g. 'P1'
+    // Returns the box it drew in ({ x, y, w, h, size }).
+    keyStrips(ctx, rows, t) {
+      const lines = rows.map((r) => ({ r, items: UI.KEY_LAYOUTS[r.layout || SS.Input.lastDevice] || UI.KEY_LAYOUTS.wasd }));
+      const n = Math.max(...lines.map((l) => l.items.length));
+      let fs = 14, capW, gap, tagW, cols, total;
+      const measure = () => {
+        ctx.font = `bold ${fs}px ${FONT}`;
+        capW = (k) => Math.max(fs + 8, ctx.measureText(k).width + 10);
+        gap = Math.round(fs * 1.1);
+        tagW = Math.max(0, ...lines.map((l) => (l.r.tag ? ctx.measureText(l.r.tag).width + 12 : 0)));
+        cols = [];
+        for (let c = 0; c < n; c++) {
+          cols[c] = Math.max(0, ...lines.map((l) => {
+            const it = l.items[c];
+            return it ? it[0].reduce((s, k) => s + capW(k) + 3, 0) + 2 + ctx.measureText(it[1]).width : 0;
+          }));
         }
-        x += 2;
-        const text = shown(label);
-        UI.text(ctx, text, x, y, fs, on ? '#ffd23f' : ready ? '#00f5d4' : empty ? '#999999' : '#ffffff');
-        ctx.font = font;
-        x += ctx.measureText(text).width + gap + 3;
-      }
+        total = tagW + cols.reduce((s, w) => s + w, 0) + gap * (n - 1);
+      };
+      measure();
+      while (total > SS.W - 36 && fs > 10) { fs--; measure(); } // as big as fits on the screen
+      const rowH = fs + 13;
+      const x0 = Math.round((SS.W - total) / 2);
+      const yLast = SS.H - 6 - rowH / 2;
+      const box = { x: x0 - 10, y: yLast - (lines.length - 0.5) * rowH - 3, w: total + 20, h: lines.length * rowH + 6, size: fs };
+      ctx.fillStyle = 'rgba(20,10,30,0.72)';
+      ctx.beginPath();
+      ctx.roundRect(box.x, box.y, box.w, box.h, 12);
+      ctx.fill();
+      lines.forEach((l, i) => {
+        const y = yLast - (lines.length - 1 - i) * rowH;
+        const p = l.r.player;
+        const kind = p.move ? p.move.kind : null;
+        const active = {
+          slap: kind === 'slap', 'big slap': kind === 'heavy',
+          special: kind && kind !== 'slap' && kind !== 'heavy' && kind !== 'shoot' && kind !== 'grenade',
+          shoot: kind === 'shoot', grenade: kind === 'grenade',
+          crouch: p.state === 'block' || !!(p.move && p.move.low), jump: !p.onGround && p.state !== 'ko',
+        };
+        let x = x0;
+        if (l.r.tag) UI.text(ctx, l.r.tag, x, y, fs, l.r.tagColor || '#ffd23f');
+        x += tagW;
+        l.items.forEach(([keys, label], c) => {
+          const start = x;
+          const ready = label === 'special' && p.canSpecial;
+          const empty = (label === 'shoot' && UI.shotsLeft(p) <= 0) || (label === 'grenade' && p.grenades <= 0);
+          const on = active[label];
+          const glow = ready && Math.floor(t * 4) % 2 === 0;
+          for (const k of keys) {
+            const w = capW(k), ch = fs + 8;
+            ctx.fillStyle = on ? '#ffd23f' : glow ? '#00f5d4' : empty ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.92)';
+            ctx.beginPath();
+            ctx.roundRect(x, y - ch / 2, w, ch, 5);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(0,0,0,0.25)';
+            ctx.fillRect(x + 2, y + ch / 2 - 3, w - 4, 2);
+            UI.text(ctx, k, x + w / 2, y, fs, '#2b193d', 'center');
+            x += w + 3;
+          }
+          UI.text(ctx, label, x + 2, y, fs, on ? '#ffd23f' : ready ? '#00f5d4' : empty ? '#999999' : '#ffffff');
+          x = start + cols[c] + gap;
+        });
+      });
+      return box;
+    },
+
+    // A single player's row (see keyStrips). opts: { layout, tag, tagColor }
+    keyStrip(ctx, player, t, opts = {}) {
+      return UI.keyStrips(ctx, [Object.assign({ player }, opts)], t);
     },
 
     // Shots left in the gun in hand (pistol ammo, or the big gun's ammo).

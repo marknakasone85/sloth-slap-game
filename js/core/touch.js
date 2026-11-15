@@ -187,8 +187,8 @@
     },
   });
 
-  // Pause-menu option. Phones/tablets: touch buttons ON/OFF (this visit only, never stuck off).
-  // Computers: key hints -> touch buttons -> nothing.
+  // Pause-menu option. Phones/tablets: touch buttons ON/OFF. Computers: key hints -> touch
+  // buttons -> nothing. Either way only for this visit, so the controls are never stuck off.
   SS.onscreenLabel = (scene) => {
     if (T.isTouchDevice) return 'Touch buttons: ' + (T.enabled ? 'ON' : 'OFF');
     return 'On-screen controls: ' + (T.enabled ? 'TOUCH BUTTONS' : scene.showStrip ? 'KEY HINTS' : 'OFF');
@@ -209,6 +209,6 @@
       T.enabled = true;
       T.userOff = false;
     }
-    SS.Save.set('keyStrip', scene.showStrip);
+    SS.keyHintsOff = !scene.showStrip; // this visit only: the key hints are back next time
   };
 })();

@@ -31,7 +31,7 @@
       this.stateT = 0;
       this.menu = null;
       this.showControls = false;
-      this.showStrip = SS.Save.get('keyStrip', true);
+      this.showStrip = !SS.keyHintsOff; // key hints, unless switched off during this visit
       this.syncT = 0;
       this.uid = 0;
 
@@ -546,17 +546,14 @@
           respawnT: s.respawnT, ko: f.state === 'ko', combo: f.combo,
         };
       });
-      const strips = [];
+      // key hints: one row for one player, a row each for two players on one keyboard
+      let keyRows = [];
       if (this.showStrip && this.state === 'play' && !SS.Touch.enabled) {
         const locals = this.slots.filter((s) => s.local);
-        if (locals.length === 1) strips.push({ fighter: locals[0].f, opts: {} });
+        if (locals.length === 1) keyRows = [{ player: locals[0].f }];
         else {
-          locals.forEach((s, i) => strips.push({
-            fighter: s.f,
-            opts: {
-              layout: s.local === 'P2' ? 'p2' : 'p1', compact: true, x: i === 0 ? 16 : W - 16,
-              align: i === 0 ? 'left' : 'right', tag: `P${s.id + 1}`, tagColor: SS.PLAYER_COLORS[s.id % 4],
-            },
+          keyRows = locals.map((s) => ({
+            player: s.f, layout: s.local === 'P2' ? 'p2' : 'p1', tag: `P${s.id + 1}`, tagColor: SS.PLAYER_COLORS[s.id % 4],
           }));
         }
       }
@@ -566,7 +563,7 @@
         progress: lead.x / this.goalX,
         boss: this.bossAwake && this.boss.alive ? { name: this.boss.d.name, frac: this.boss.hp / this.boss.maxHp } : null,
         gateHint: !!this.gates.find((gt) => !gt.opened && gt.x > lead.x && gt.x - lead.x < 160),
-        strips,
+        keyRows,
       };
     }
 

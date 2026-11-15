@@ -63,4 +63,54 @@ check(!wifiAt('marknakasone85.github.io') && SS.Net.webOnly(), 'GitHub Pages: Wi
 check(wifiAt('localhost') && wifiAt('192.168.0.5') && wifiAt('my-mac.local') && wifiAt('[::1]'), 'home addresses keep Wi-Fi on');
 location.hostname = ''; location.protocol = 'file:';
 check(!SS.Net.available() && !SS.Net.webOnly(), 'double-clicked index.html: Wi-Fi shows the sharing instructions');
+
+// ---- key hints along the bottom (computers): every move, in full words, matching the real keys ----
+var ACTIONS = ['move', 'jump', 'crouch', 'slap', 'big slap', 'special', 'shoot', 'grenade', 'pause'];
+var FIELD = { move: ['left', 'right'], jump: ['up'], crouch: ['down'], slap: ['slap'], 'big slap': ['heavy'], special: ['special'], shoot: ['shoot'], grenade: ['grenade'] };
+var CODE = { A: 'KeyA', D: 'KeyD', W: 'KeyW', S: 'KeyS', F: 'KeyF', K: 'KeyK', H: 'KeyH', R: 'KeyR', G: 'KeyG', J: 'KeyJ', L: 'KeyL', P: 'KeyP', Esc: 'Escape',
+  '←': 'ArrowLeft', '→': 'ArrowRight', '↑': 'ArrowUp', '↓': 'ArrowDown', ',': 'Comma', '.': 'Period', '/': 'Slash', ';': 'Semicolon', "'": 'Quote' };
+var SCHEME = { wasd: SS.Controls.SOLO, arrows: SS.Controls.SOLO, p1: SS.Controls.P1, p2: SS.Controls.P2 };
+var wrongKeys = [];
+Object.keys(SS.UI.KEY_LAYOUTS).forEach(function (l) {
+  var items = SS.UI.KEY_LAYOUTS[l];
+  if (items.map(function (it) { return it[1]; }).join('|') !== ACTIONS.join('|')) wrongKeys.push(l + ': not all 9 actions');
+  if (!SCHEME[l]) return;
+  items.forEach(function (it) {
+    it[0].forEach(function (k, i) {
+      var code = CODE[k];
+      var ok = it[1] === 'pause' ? (code === 'Escape' || code === 'KeyP') : SCHEME[l][FIELD[it[1]][Math.min(i, FIELD[it[1]].length - 1)]].indexOf(code) >= 0;
+      if (!ok) wrongKeys.push(l + ' ' + k + ' ' + it[1]);
+    });
+  });
+});
+check(!wrongKeys.length, 'key hints show all 9 actions in full words, with the keys that really do them' + (wrongKeys.length ? ': ' + wrongKeys.join(', ') : ''));
+var kctx = SS.Engine.ctx, dummy = { move: null, state: 'idle', onGround: true, ammo: 3, grenades: 2 };
+kctx.measureText = function (str) { var m = /(\d+)px/.exec(kctx.font || ''); return { width: String(str).length * (m ? +m[1] : 12) * 0.62 }; };
+var two = SS.UI.keyStrips(kctx, [{ player: dummy, layout: 'p1', tag: 'P1' }, { player: dummy, layout: 'p2', tag: 'P2' }], 0);
+var one = SS.UI.keyStrip(kctx, dummy, 0, { layout: 'pad', tag: 'YOU (P4)' });
+delete kctx.measureText;
+var fits = function (b) { return b.x >= 0 && b.x + b.w <= SS.W && b.y + b.h <= SS.H && b.size >= 12; };
+check(fits(two) && fits(one) && two.h > one.h, 'key hints fit on the screen with big enough letters (two players: two rows, ' + two.size + 'px)');
+var rowsSeen = [], origRows = SS.UI.keyStrips;
+SS.UI.keyStrips = function (c, rows) { rowsSeen.push(rows.map(function (r) { return (r.tag || '-') + ':' + (r.layout || 'auto'); }).join(',')); return origRows.apply(SS.UI, arguments); };
+SS.Engine.setScene(new SS.CampaignScene({ level: 1, players: [{ id: 0, cid: 'sir', local: 'P1' }, { id: 1, cid: 'sue', local: 'P2' }] })); frames(3);
+var coopRows = rowsSeen.pop();
+SS.Engine.setScene(new SS.DuelScene({ p1: 'sir', p2: 'chonk', vsCpu: false, theme: 'jungle' })); frames(3);
+var duelRows = rowsSeen.pop();
+SS.Engine.setScene(new SS.DuelScene({ p1: 'sir', p2: 'chonk', vsCpu: true, cpuLevel: 1, theme: 'jungle' })); frames(3);
+var cpuRows = rowsSeen.pop();
+SS.Engine.setScene(new SS.CampaignScene({ charId: 'sir', level: 0 })); frames(3);
+var soloRows = rowsSeen.pop();
+SS.UI.keyStrips = origRows;
+check(coopRows === 'P1:p1,P2:p2' && duelRows === 'P1:p1,P2:p2' && cpuRows === 'YOU:auto' && soloRows === '-:auto',
+  'key hints: a row per player for 2 players on one keyboard (co-op and duel), one row otherwise (' + [coopRows, duelRows, cpuRows, soloRows].join(' / ') + ')');
+var ks = scene();
+SS.cycleOnscreen(ks); SS.cycleOnscreen(ks); // key hints -> touch buttons -> off
+var offNow = !ks.showStrip && !SS.Touch.enabled;
+SS.Engine.setScene(new SS.CampaignScene({ charId: 'sir', level: 0 })); frames(2);
+check(offNow && !scene().showStrip && SS.Save.get('keyStrip', 'never saved') === 'never saved', 'Pause > On-screen controls: OFF lasts for this visit only (never saved)');
+SS.cycleOnscreen(scene());
+check(scene().showStrip && !SS.keyHintsOff, 'key hints switch back on');
+SS.Touch.userOff = false;
+
 done('menus');

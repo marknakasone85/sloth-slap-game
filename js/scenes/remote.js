@@ -15,7 +15,7 @@
       this.heartbeat = 0;
       this.menu = null;
       this.showControls = false;
-      this.showStrip = SS.Save.get('keyStrip', true);
+      this.showStrip = !SS.keyHintsOff; // key hints, unless switched off during this visit
       this.ended = null;
       this.setLevel(opts.level || 0);
     }
@@ -244,12 +244,12 @@
       const me = s.pl.find((p) => p.id === SS.Net.id);
       const alive = s.pl.filter((p) => p.st !== 'ko');
       const leadX = (alive.length ? alive : s.pl).reduce((m, p) => Math.max(m, p.x), 0);
-      const strips = [];
+      const keyRows = [];
       if (this.showStrip && me && s.st === 'play' && !this.menu && !SS.Touch.enabled) {
-        strips.push({
-          fighter: { move: me.mk ? { kind: me.mk, low: me.sq > 0.2 } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am,
+        keyRows.push({
+          player: { move: me.mk ? { kind: me.mk, low: me.sq > 0.2 } : null, state: me.st, onGround: !!me.og, canSpecial: !!me.cs, ammo: me.am,
             weapon: me.wp || 'pistol', wAmmo: me.wa, grenades: me.gr },
-          opts: { tag: `YOU (P${me.id + 1})`, tagColor: SS.PLAYER_COLORS[me.id % 4] },
+          tag: `YOU (P${me.id + 1})`, tagColor: SS.PLAYER_COLORS[me.id % 4],
         });
       }
       SS.CampaignHUD.draw(ctx, {
@@ -263,7 +263,7 @@
           ammoRegen: p.amr, powers: p.pw, lucky: p.lk, respawnT: p.rt, ko: p.st === 'ko', combo: p.cb,
           weapon: p.wp || 'pistol', wAmmo: p.wa, grenades: p.gr,
         })),
-        strips,
+        keyRows,
       });
       SS.CampaignHUD.overlays(ctx, {
         state: s.st, stateT: s.stT, t: s.tm, levelIndex: this.levelIndex, L: this.L, score: s.sc, bananas: s.ba,

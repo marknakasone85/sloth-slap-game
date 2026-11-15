@@ -113,7 +113,7 @@
       this.round = 0;
       this.t = 0;
       this.syncT = 0;
-      this.showStrip = SS.Save.get('keyStrip', true);
+      this.showStrip = !SS.keyHintsOff; // key hints, unless switched off during this visit
       this.startRound();
     }
 
@@ -532,14 +532,11 @@
     drawKeyStrips(ctx) {
       if (SS.Touch.enabled) return; // the touch buttons are the controls
       const locals = this.slots.filter((s) => s.local);
-      if (locals.length === 1) {
-        UI.keyStrip(ctx, locals[0].f, this.t, { tag: this.tagOf(locals[0]), tagColor: this.colorOf(locals[0]) });
-        return;
-      }
-      locals.forEach((s, i) => UI.keyStrip(ctx, s.f, this.t, {
-        layout: s.local === 'P2' ? 'p2' : 'p1', compact: true, x: i === 0 ? 16 : W - 16,
-        align: i === 0 ? 'left' : 'right', tag: this.tagOf(s), tagColor: this.colorOf(s),
-      }));
+      if (!locals.length) return;
+      const two = locals.length > 1; // two players on one keyboard: a row each, lined up in columns
+      UI.keyStrips(ctx, locals.map((s) => ({
+        player: s.f, layout: two ? (s.local === 'P2' ? 'p2' : 'p1') : undefined, tag: this.tagOf(s), tagColor: this.colorOf(s),
+      })), this.t);
     }
   };
 })();

@@ -5,7 +5,7 @@
 //   t, coop, score, bananas, progress (0..1), boss: null | { name, frac },
 //   gateHint, players: [ { tag, color, name, hp, mhp, meter, canSpecial, ammo, maxAmmo,
 //                          ammoT, ammoRegen, powers, lucky, respawnT, ko, combo } ],
-//   strips: [ { fighter, opts } ]   key-hint strips to draw (fighter = object keyStrip understands)
+//   keyRows: [ { player, layout, tag, tagColor } ]   key hints along the bottom (see UI.keyStrips)
 // }
 (function () {
   const UI = SS.UI;
@@ -54,7 +54,8 @@
 
       // score + bananas + progress
       const prog = Math.max(0, Math.min(1, hud.progress));
-      if (hud.coop) {
+      const keyRows = hud.keyRows || [];
+      if (hud.coop && keyRows.length < 2) {
         // slim line on the ground strip so it never covers the sloths
         UI.outlineText(ctx, `TEAM SCORE ${hud.score}      BANANAS ${hud.bananas}`, W / 2, 482 - top, 15, '#ffffff', 'center');
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
@@ -62,9 +63,10 @@
         ctx.fillStyle = '#ffd23f';
         ctx.fillRect(W / 2 - 120, 494 - top, 240 * prog, 4);
       } else {
+        // solo, and two players on one keyboard (their two rows of key hints fill the bottom)
         const sx = W - 232, sy = 10;
         UI.panel(ctx, sx, sy, 220, 58);
-        UI.outlineText(ctx, `SCORE ${hud.score}`, sx + 110, sy + 18, 18, '#ffffff', 'center');
+        UI.outlineText(ctx, `${hud.coop ? 'TEAM SCORE' : 'SCORE'} ${hud.score}`, sx + 110, sy + 18, 18, '#ffffff', 'center');
         SS.Art.banana(ctx, sx + 52, sy + 52, 0);
         UI.text(ctx, `x ${hud.bananas}`, sx + 72, sy + 40, 16, '#ffe14d');
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
@@ -83,7 +85,7 @@
       }
       ctx.restore();
       if (hud.net) UI.netStrip(ctx, hud.net);
-      for (const s of hud.strips) UI.keyStrip(ctx, s.fighter, hud.t, s.opts);
+      if (keyRows.length) UI.keyStrips(ctx, keyRows, hud.t);
     },
 
     // o = { state, stateT, t, levelIndex, L, score, bananas, hpBonus, newBest, guest, hostMenu, showControls }
